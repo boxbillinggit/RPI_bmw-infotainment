@@ -1,9 +1,12 @@
-#
 # ignore these files when synchronizing
-#
 
 # ignore python compiles
 *.pyc
 
 # ignore temporary files
 *~
+
+# ignore EagleUp export files
+eagleUp/
+
+# ignore build files

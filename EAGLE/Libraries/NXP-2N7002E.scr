@@ -1,0 +1,91 @@
+# Created by Ultra Librarian Gold 5.3.71 Copyright © 1999-2010
+# Tanvir Mohammed, Premier Farnell
+
+Grid mil;
+Set Wire_Bend 2;
+
+
+Edit 'SOT95P230X110-3N.pac';
+Layer 1;
+Smd '1' 46 21 -0 R0 (-43 37);
+Layer 1;
+Smd '2' 46 21 -0 R0 (-43 -37);
+Layer 1;
+Smd '3' 46 19 -0 R0 (36 -8);
+Layer 21;
+Wire 6 (28 23) (28 59);
+Wire 6 (-14 -59) (28 -59);
+Wire 6 (28 -59) (28 -23);
+Wire 6 (28 59) (-14 59);
+Wire 6 (-28 14) (-28 -14);
+Wire 6 (12 59) -128 (-8 50);
+Change Size 50;
+Change Ratio 6;
+Text '*' SR0 (-76 53);
+Layer 51;
+Wire 0 (-28 -59) (28 -59);
+Wire 0 (28 -59) (28 59);
+Wire 0 (28 59) (-28 59);
+Wire 0 (-28 59) (-28 -59);
+Wire 0 (-28 28) (-28 47);
+Wire 0 (-28 47) (-49 47);
+Wire 0 (-49 47) (-49 28);
+Wire 0 (-49 28) (-28 28);
+Wire 0 (-28 -47) (-28 -28);
+Wire 0 (-28 -28) (-49 -28);
+Wire 0 (-49 -28) (-49 -47);
+Wire 0 (-49 -47) (-28 -47);
+Wire 0 (28 9) (28 -9);
+Wire 0 (28 -9) (49 -9);
+Wire 0 (49 -9) (49 9);
+Wire 0 (49 9) (28 9);
+Wire 0 (12 59) -180 (-12 59);
+Change Size 50;
+Change Ratio 6;
+Text '*' SR0 (-76 53);
+Layer 25;
+Change Size 82;
+Change Ratio 10;
+Text '>NAME' SR0 (-136 100);
+
+Layer 27;
+Change Size 82;
+Change Ratio 10;
+Text '>VALUE' SR0 (-136 -175);
+
+
+Edit '2N7002E.sym';
+Layer 94;
+Pin 'G' Pas None Middle R0 Both 0 (-700 0);
+Pin 'S' Pas None Middle R0 Both 0 (-700 -200);
+Pin 'D' Pas None Middle R180 Both 0 (700 0);
+Wire 16 (-500 200) (-500 -400);
+Wire 16 (-500 -400) (500 -400);
+Wire 16 (500 -400) (500 200);
+Wire 16 (500 200) (-500 200);
+Layer 97;
+Layer 95;
+Change Size 82;
+Change Ratio 10;
+Text '>NAME' SR0 (-195 311);
+Layer 96;
+Change Size 82;
+Change Ratio 10;
+Text '>VALUE' SR0 (-151 -568);
+
+Edit '2N7002E.dev';
+Prefix 'U';
+Description 'N-channel TrenchMOS FET';
+Value Off;
+Add 2N7002E 'A' Next  0 (0 0);
+Package 'SOT95P230X110-3N';
+Technology '';
+Attribute MPN '2N7002E';
+Attribute Package 'SOT-3';
+Attribute OC_FARNELL '1894721';
+Attribute OC_NEWARK '55T7740';
+Attribute Supplier 'NXP';
+Description 'N-channel TrenchMOS FET';
+Connect 'A.G' '1';
+Connect 'A.S' '2';
+Connect 'A.D' '3';

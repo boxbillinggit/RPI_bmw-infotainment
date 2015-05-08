@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+		
+		<!-- 
+			maps the actual message to a special action for KODI
+			TODO: have this in a separate file?
+		-->
+		<!-- listen to these -->
+		<TRIGGERS>
+		
+		</TRIGGERS>
+		
+		<!-- IBUS to KODI straight bindings. adds a listener to these messages.?  -->
+		<bindings>
+		
+			<!-- long push means go back -->
+			<event>
+				<state>
+					<button id="right-knob" state="hold">
+					<button id="right-knob" state="release">
+				</state>
+			
+			</event>
+			
+			<!-- right knob short push   select -->			
+			<event>
+			
+				<state>
+					<button id="right-knob" state="press">
+					<button id="right-knob" state="release">
+				</state>
+				
+				<!-- JSON RPC API Input.select()--->
+				<KODI method="Input" type="select">
+					<action do="select">Input.select()</action>
+				</KODI>
+
+			</event>
+		
+		</bindings>
