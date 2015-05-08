@@ -9,4 +9,8 @@
 # ignore EagleUp export files
 eagleUp/
 
+
+# ignore PyCharm settings
+.idea/
+
 # ignore build files
