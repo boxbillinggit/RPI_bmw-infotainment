@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!-- 
+	Settings for this  add-on/plugin/script/service???
+	Reference: http://kodi.wiki/view/Add-on_settings 
+-->
+
+<settings>
+
+	<!--- Gateway settings -->
+	<category label="TCP gateway">
+		<setting id="gateway.ip-address" label="Gateway address" type="ipaddress" default="127.0.0.1"/>
+	</category>
+
+</settings>
+
+

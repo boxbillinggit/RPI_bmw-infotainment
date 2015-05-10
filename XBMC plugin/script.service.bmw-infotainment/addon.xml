@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!--
+    Add-on definitions.
+    reference: http://kodi.wiki/view/Add-on_structure#addon.xml
+    http://kodi.wiki/view/Addon.xml
+
+    this service will be found in KODI under:
+    "Settings -> Addons -> enabled add-ons > services -> Raspberry Pi BMW Infotainment"
+-->
+
+<addon	id="script.bmw.infotainment"
+		name="Raspberry Pi BMW Infotainment"
+		version="1.0.0"
+		provider-name="Lars Gunnarsson">
+	 
+	<requires>
+		<import addon="xbmc.python" version="1.0"/>
+	</requires>
+	
+	<!-- Start service on XBMC startup (must handle ) -->
+	<extension point="xbmc.service" start="startup" library="TCP-server.py" />
+	
+	<!-- Default handler for script -->
+	<extension point="xbmc.python.script" library="default-handler.py" />
+			   
+	<!-- Show info about addon -->
+	<extension point="xbmc.addon.metadata">
+		<platform>all</platform>
+		<summary lang="en">BMW infotainment gateway</summary>
+		<description lang="en">A Script for controlling Raspberry Pi from original BMW infotainment</description>
+		<website>http://one-infiniteloop.com/dev/projects/car-media-player/</website>
+		<source>http://git.one-infiniteloop.com/larsa/bmw-infotainment</source>
+	</extension>
+</addon>

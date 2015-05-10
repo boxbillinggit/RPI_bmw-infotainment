@@ -13,4 +13,8 @@ eagleUp/
 # ignore PyCharm settings
 .idea/
 
-# ignore build files
+# ignore python compiled -and binaries
+*.pyo
+
+# ignore windows files
+Thumbs.db

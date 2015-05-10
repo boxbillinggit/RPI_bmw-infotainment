@@ -117,6 +117,13 @@ class MsgHandler(TCPClient, AliveSignal):
 		self.buffer = INIT
 		xbmc.log("BMW: are we connected? %s", self.connected)
 
+	def stop(self):
+
+		# close connection gracefully
+		# TODO: broadcast "close connection" to server!
+		self.close()
+
+
 	def handle_message(self, rx):
 		xbmc.log("BMW: received bytes on socket: %s", rx.encode('hex' ))
 		#print "Thread: %s" %(self.get_ident())
