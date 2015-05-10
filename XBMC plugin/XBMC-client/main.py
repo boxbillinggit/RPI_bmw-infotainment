@@ -3,10 +3,10 @@ __author__ = 'Lars'
 # from lib.KodiControls import Controls
 
 # import client lib
-from lib.TCPClientHandler import *
-
 import threading
 import logging
+
+from lib.TCPClientHandler import *
 
 # set up logging&/debug handler
 # https://docs.python.org/2/howto/logging-cookbook.html
@@ -57,6 +57,7 @@ def TCPClientThread():
 # if file is executed (not included)
 if __name__ == "__main__":
 
-	# launch the server thread.
+	# launch the server thread, then proceed.
 	threading.Thread( name='TCPServerThread', target=TCPClientThread ).start()
 
+	print "hello thread!"

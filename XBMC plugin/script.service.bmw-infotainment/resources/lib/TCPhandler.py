@@ -4,9 +4,15 @@ import socket
 import time
 import logging
 
-# set up logger
-log = logging.getLogger("KODI-client.TCPClientHandler")
-print "this module's  name is: %s" %( __name__)
+# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/13.0-gotham/
+import xbmc, xbmcplugin, xbmcgui
+
+# set up logger, no using XBMC instead.
+#log = logging.getLogger("KODI-client.TCPClientHandler")
+#print "this module's  name is: %s" %( __name__)
+
+# usage:
+# log.debug("DEBUG: Socket connected!")
 
 MAX_RECVBUFFER = 512
 PING_TIME = 3
@@ -29,7 +35,7 @@ class TCPClient(asyncore.dispatcher):
 		asyncore.dispatcher.__init__(self)
 
 		# DEBUG
-		log.debug("init TCP class")
+		xbmc.log("BMW: init TCP class")
 
 	def _reroute_connection(self, host, port):
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -40,10 +46,10 @@ class TCPClient(asyncore.dispatcher):
 	#	self.connected = True
 	
 	def handle_connect(self):
-		log.debug("DEBUG: Socket connected!")
+		xbmc.log("BMW: Socket connected!")
 
 	def handle_close(self):
-		log.debug("Socket closed...")
+		xbmc.log("BMW: Socket closed...")
 		self.connected = False
 		self.close()
 
@@ -59,7 +65,7 @@ class TCPClient(asyncore.dispatcher):
 		if (self.buffer):
 			sent = self.send(self.buffer)
 			self.buffer = self.buffer[sent:]
-			log.debug("writing to socket...")
+			xbmc.log("BMW: writing to socket...")
 		else:
 			pass
 
@@ -75,7 +81,7 @@ class TCPClient(asyncore.dispatcher):
 class AliveSignal(threading.Thread):
 
 	def __init__(self):
-		log.debug("INIT thread class")
+		xbmc.log("BMW: INIT thread class")
 		self.thread = threading.Thread(name='AliveSignalTransmitter', target=self._handler)
 		self.thread.daemon = True
 		self.connected = False
@@ -98,7 +104,7 @@ class MsgHandler(TCPClient, AliveSignal):
 		#TODO: is this right way to init class inheritance?
 		self.n_pings = 0
 
-		self.reconnections = 0
+		self.attempts = 0
 		self.connected = False
 		self.host = host
 		self.port = port
@@ -106,13 +112,13 @@ class MsgHandler(TCPClient, AliveSignal):
 		AliveSignal.__init__(self)
 		super(MsgHandler, self).__init__()
 
-	def init_connect(self):
+	def start(self):
 		self._reroute_connection(self.host, self.port)
 		self.buffer = INIT
-		log.info("are we connected? %s", self.connected)
+		xbmc.log("BMW: are we connected? %s", self.connected)
 
 	def handle_message(self, rx):
-		log.info("received bytes on socket: %s", rx.encode('hex' ))
+		xbmc.log("BMW: received bytes on socket: %s", rx.encode('hex' ))
 		#print "Thread: %s" %(self.get_ident())
 		# connection closed will emit an empty message
 		# special message (length 0) and reroute connection received!
@@ -122,7 +128,7 @@ class MsgHandler(TCPClient, AliveSignal):
 				route_port = int( str( rx[5] + rx[4] ).encode('hex'), 16 )
 
 				self._reroute_connection(self.host, self.port)
-				log.info("rerouting to port %s ... (start ping thread)", route_port)
+				xbmc.log("BMW: rerouting to port %s ... (start ping thread)", route_port)
 				#self.thread.start()
 				self.thread.start()
 
@@ -130,14 +136,14 @@ class MsgHandler(TCPClient, AliveSignal):
 			elif (str( rx[0] + rx[1] ) in PING):
 				self.recv_ping()
 		else:
-			log.info("no length on message (disconnect message?)")
+			xbmc.log("BMW: no length on message (disconnect message?)")
 
 	#def handle_close_connection(self):
 	#	print "sending close connection to server!"
 
 
 	def recv_ping(self):
-		log.info("received Ping")
+		xbmc.log("BMW: received Ping")
 		self.last_ping = time.time()
 
 	def transmit_ping(self):
@@ -147,6 +153,6 @@ class MsgHandler(TCPClient, AliveSignal):
 		self.n_pings = self.n_pings + 1
 
 		if (self.n_pings > 3):
-			log.info("5 pings. disconnecting.")
+			xbmc.log("BMW: 5 pings. disconnecting.")
 			self.buffer = DISCONNECT
 			#self._close_connection()
