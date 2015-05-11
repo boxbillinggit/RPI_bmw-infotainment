@@ -10,8 +10,7 @@ execute: (mklink --help)
 
 
 # KODI API docs
-*for Python*
- http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
+*API docs for Python*  http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 
 
 # OpenBM-gateway
