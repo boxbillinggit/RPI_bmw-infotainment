@@ -8,17 +8,14 @@
 
 	<category label="TCP gateway">
 
-		<!--- Connection status -->
-		<setting label="Status" type="lsep"/>
-		<setting label="Status" type="text" id="gateway.status" default="Disconnected" enable="false"/>
-
 		<!--- Gateway settings -->
 		<setting label="Gateway settings" type="lsep"/>
 		<setting label="Address" id="gateway.ip-address" type="ipaddress" default="127.0.0.1"/>
 		<setting label="Port" id="gateway.port" type="number" default="4287"/>
 
 		<!-- Launch connection (forced) -->
-		<setting label="Launch" type="lsep"/>
+		<setting label="Status" type="lsep"/>
+		<setting label="Connection status" type="text" id="gateway.status" default="Disconnected" enable="false"/>
 		<setting label="Connect" type="action" action="RunScript(script.bmw.infotainment, connect)"/>
 		<setting label="Disconnect" type="action" action="RunScript(script.bmw.infotainment, disconnect)"/>
 

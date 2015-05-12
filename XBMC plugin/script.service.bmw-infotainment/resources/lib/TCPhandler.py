@@ -4,8 +4,12 @@ import socket
 import time
 import logging
 
-# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/13.0-gotham/
+# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
+
+# Python addon development: http://kodi.wiki/view/Add-on_development
+
+# Threading docs: http://chimera.labs.oreilly.com/books/1230000000393/ch12.html
 
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
@@ -18,6 +22,7 @@ INIT = bytearray(['h', 'i', 0, 0, 0, 0, 0, 0])
 DISCONNECT = bytearray([0, 0, 0, 0, 0, 0, 0, 0])
 REROUTE = 'ct'
 
+
 # Base class			
 class TCPClient(asyncore.dispatcher):
 
@@ -25,7 +30,7 @@ class TCPClient(asyncore.dispatcher):
 
 		# init variables
 		self.buffer = None
-		self.connected = False
+		#self.connected = False
 
 		# init dispatcher class
 		asyncore.dispatcher.__init__(self)
@@ -34,17 +39,17 @@ class TCPClient(asyncore.dispatcher):
 		xbmc.log("BMW: init TCP class")
 
 	def _reroute_connection(self, host, port):
+
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.connect( (host, port) )
-		self.connected = True
 
 		# update status in "settings"
-		__addon__.setSetting("gateway.status", "Connected")
+		__addon__.setSetting("gateway.status", "Connecting...")
 		
 	#def handle_connect_event(self):
 	#	self.connected = True
 
-	#just when acting as server??
+	# just when acting as server??
 	def handle_connect(self):
 		xbmc.log("BMW: Socket opened...")
 
@@ -54,7 +59,8 @@ class TCPClient(asyncore.dispatcher):
 		# update status in "settings"
 		__addon__.setSetting("gateway.status", "Disconnected")
 
-		self.connected = False
+		# already declared in dispatcher class
+		#self.connected = False
 		self.close()
 
 	def handle_read(self):
@@ -89,14 +95,15 @@ class AliveSignal(threading.Thread):
 		xbmc.log("BMW: INIT thread class for ping thread")
 		self.thread = threading.Thread(name='PingThread', target=self._handler)
 		self.thread.daemon = True
-		self.connected = False
+		#self.connected = False
 
-	#TODO: nothing will set 'self.connected' to False at the moment
+	#TODO: works with connected?
 	def _handler(self):
 		while (self.connected):
 			self.transmit_ping()
 			time.sleep(PING_TIME)
-		
+
+		# TODO: set therad to sleep?
 	# this will be overridden in class inheritance
 	def transmit_ping(self):
 		pass
@@ -110,7 +117,8 @@ class MsgHandler(TCPClient, AliveSignal):
 		self.n_pings = 0
 
 		self.attempts = 0
-		self.connected = False
+
+		#self.connected = False
 		self.host = None
 		self.port = None
 
@@ -139,8 +147,14 @@ class MsgHandler(TCPClient, AliveSignal):
 		# close connection gracefully by broadcast "close connection" to server!
 		self.buffer = DISCONNECT
 
-		# TODO: how to handle termination of "asynchore.loop" ?
-		#self.close()
+		# Terminate socket
+		if self.connected:
+			# TODO: Check if socket has been closed within 1s, otherwise force a stop?
+			xbmc.log("BMW: Request to disconnect. Sending disconnnect to server (server will close socket for us)..")
+		else:
+			xbmc.log("BMW: Request to disconnect. we are not connected so we closing socket. ")
+			# close socket
+			self.close()
 
 
 	def handle_message(self, rx):

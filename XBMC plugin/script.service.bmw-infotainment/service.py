@@ -9,10 +9,10 @@ __author__ = 'Lars'
 # TODO implement SSH client for tesing OpenBM client https://github.com/paramiko/paramiko
 import sys
 
-# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/13.0-gotham/
+# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
-import threading
+from threading import Thread
 import asyncore
 from resources.lib.TCPhandler import *
 
@@ -25,36 +25,41 @@ MAX_RECONNECT = 3
 # init class
 connection = MsgHandler()
 
-
 # TCP server thread class.
 def TCP_server():
 
-	while (connection.attempts < MAX_RECONNECT):
+	# Consider if we're terminating, otherwise just loop over again.
+	# http://kodi.wiki/view/Service_addons
+	# TODO: is monitor initialized at this stage? better solution required.
+	# TODO: how to re-initialize a connection (from button in settings)? new thread? wake thread?
+	while (connection.attempts < MAX_RECONNECT and not monitor.abortRequested()):
 
 		connection.attempts += 1
 
 		# Init the TCP connection class
 		connection.start()
 
-		xbmc.log("BMW: Try connecting... (host: %s:%s)" % (connection.host, connection.port))
+		xbmc.log("BMW: start asyncore loop")
 
 		# blocking until disconnected..
 		asyncore.loop()
 
 		# inform user through a dialog
 		dialog = xbmcgui.Dialog()
-		if not dialog.yesno(__addonname__, "Connection lost... (host: %s:%s)" % (connection.host, connection.port), "Try to reconnect?" ):
+		if not dialog.yesno(__addonname__, "Connection lost... (host: %s:%s)" % (connection.host, connection.port), "reconnect?" ):
 			break
 
 		# reference: http://mirrors.kodi.tv/docs/python-docs/13.0-gotham/xbmc.html#-log
-		xbmc.log("BMW: Connection lost... (host: %s:%s)" % (connection.host, connection.port), level=xbmc.LOGDEBUG)
+		xbmc.log("BMW: Connection lost... user (probably, if not shutting down) answered yes to re-connect (host: %s:%s)" % (connection.host, connection.port), level=xbmc.LOGDEBUG)
 
 
 if __name__ == "__main__":
 	monitor = xbmc.Monitor()
 
-	# launch the server thread...
-	threading.Thread( name='TCPServerThread', target=TCP_server ).start()
+	# launch the server thread (daemon thread)...
+	t = Thread( name='TCPServerThread', target=TCP_server)
+	t.daemon = True
+	t.start()
 
 	# ...and wait for KODI to exit!
 	if monitor.waitForAbort():
@@ -62,7 +67,6 @@ if __name__ == "__main__":
 		# perform necessary shutdowns (stop threads, and more...)
 		xbmc.log("BMW: bye!", level=xbmc.LOGDEBUG)
 
-		# Close socket (graceful), then terminate thread (KODI waits for thread to finish before it closes down)
-		# TODO: fix thread termination (and send disconnect message before terminating).
+		# Close socket gracefully (KODI waits for thread to finish before it closes down)
 		connection.stop()
 
