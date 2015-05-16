@@ -30,7 +30,7 @@ monitor = xbmc.Monitor()
 # init the main service class
 service = TCPHandler()
 
-# TCP server thread class.
+# TCP service function.
 def tcp_service():
 
 	# Consider if we're terminating, otherwise just loop over again (restart connection).
@@ -51,7 +51,7 @@ def tcp_service():
 if __name__ == "__main__":
 
 	# launch the service thread...
-	t = Thread(name='TCPServerThread', target=tcp_service)
+	t = Thread(name='BMW-Service', target=tcp_service)
 	t.daemon = True
 	t.start()
 

@@ -30,8 +30,8 @@ class TCPHandler(TCPDaemonAsyncore):
 
 	# TCP protocol headers (TODO: must refactor length before use)
 	PING = [0xAA, 0xAA]
-	#REROUTE = [0x63, 0x74]	# ASCII: 'ct'
-	REROUTE = 'ct'
+	REROUTE = [0x63, 0x74]	# ASCII: 'ct'
+	#REROUTE = 'ct'
 	CONNECT = [0x68, 0x69]	# ASCII: 'hi'
 	DISCONNECT = []
 
@@ -39,12 +39,13 @@ class TCPHandler(TCPDaemonAsyncore):
 	def __init__(self):
 
 		# inherited from class 'TCPDaemon' (placeholder)
-		self.tx_buffer = None
+		#self.tx_buffer = None
+		#self.rx_buffer = None
 
 		# counter for ping thread.
 		self.pings_rx = 0
 		self.pings_tx = 0
-		self.ping_rx_timestamp = 0
+		self.ping_rx_timestamp = time.time()
 
 		# connection specefic data
 		self.attempts = 0
@@ -57,7 +58,7 @@ class TCPHandler(TCPDaemonAsyncore):
 		self.src = None
 		self.len_data = None
 
-		# TODO: is this right way to init class inheritance? (difference between superclass and old-style class??)
+		# init class
 		TCPDaemonAsyncore.__init__(self)
 
 	# adjust header to right length (looks more proper than writing a lot of zeroes in message definition above)
@@ -113,7 +114,6 @@ class TCPHandler(TCPDaemonAsyncore):
 	# handles the received TCP frames.
 	# this is called from 'TCPDaemon' class
 	def handle_message(self, rx):
-		xbmc.log("BMW: received bytes on socket: %s" % str(rx).encode('hex'), xbmc.LOGDEBUG)
 
 		# we have 3 possibilities:
 		#
@@ -126,15 +126,16 @@ class TCPHandler(TCPDaemonAsyncore):
 
 		# TODO: rewrite this (how -and where to convert between array <---> bytearray??
 		def header_only():
-			xbmc.log("BMW: received header only.", xbmc.LOGDEBUG)
+			#xbmc.log("BMW: received header only.", xbmc.LOGDEBUG)
 
-			if self.REROUTE in rx:
+			if bytearray(self.REROUTE) in rx:
 
 				# reform to base-16 (not very easy though)
 				_rx = map(chr, self.rx_buffer)
 				self.port = int((_rx[5]+_rx[4]).encode('hex'), 16)
 
 				# TODO: should be in 'TCPDaemon' class instead?
+				# function inherited from class 'TCPDaemon'
 				self.close()
 
 				# function inherited from class 'TCPDaemon'
@@ -267,7 +268,7 @@ class TCPHandler(TCPDaemonAsyncore):
 	# ping received
 	def rx_ping(self):
 
-		xbmc.log("BMW: receiving ping (number: %s, last received: %s [s] ago )" % (self.pings_rx, (time.time() - self.ping_rx_timestamp)), xbmc.LOGDEBUG)
+		xbmc.log("BMW: receiving ping (number: %s, last received: %.1f [s] ago )" % (self.pings_rx, (time.time() - self.ping_rx_timestamp)), xbmc.LOGDEBUG)
 
 		# increase counter, capture timestamp
 		self.pings_rx += 1
@@ -276,7 +277,7 @@ class TCPHandler(TCPDaemonAsyncore):
 	# ping transmitted
 	def tx_ping(self):
 
-		xbmc.log("BMW: sending ping (number: %s)" % (self.pings_tx), xbmc.LOGDEBUG)
+		#xbmc.log("BMW: sending ping (number: %s)" % (self.pings_tx), xbmc.LOGDEBUG)
 
 		# increase counter
 		self.pings_tx += 1

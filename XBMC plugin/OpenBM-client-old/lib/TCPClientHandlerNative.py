@@ -12,6 +12,8 @@ class TCPClient:
 		self.connected = False
 
 	def _reroute_connection(self, remote_host, remote_port):
+
+		# TODO: put in a list? (if more sockets exists?)
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		
 		try:
