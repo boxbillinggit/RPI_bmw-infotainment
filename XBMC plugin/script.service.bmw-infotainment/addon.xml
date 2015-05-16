@@ -2,8 +2,9 @@
 
 <!--
     Add-on definitions.
-    reference: http://kodi.wiki/view/Add-on_structure#addon.xml
-    http://kodi.wiki/view/Addon.xml
+    reference: http://kodi.wiki/view/Add-on_settings (root http://kodi.wiki/view/Add-on_development)
+
+    This plugin is both a service (automatic start up) -and a script (callable)
 -->
 
 <addon	id="script.bmw.infotainment"
@@ -16,22 +17,22 @@
 	</requires>
 	
 	<!--
-	    Start service on XBMC startup. Appears under
+	    Start service on XBMC startup. Service plugin can be found through:
 	    "Settings -> Addons -> enabled add-ons > services -> Raspberry Pi BMW Infotainment"
 	-->
 	<extension point="xbmc.service" start="startup" library="service.py" />
 
 	<!--
-	    Default handler for script. (this appears as "launch" button under settings)
-	     "Settings -> Addons -> enabled add-ons -> ... -> Raspberry Pi BMW Infotainment"
-	    <extension point="xbmc.python.script" library="default-handler.py" />
+	    Default handler for script. (this usually appears as "launch" button under settings)
+		"Settings -> Addons -> enabled add-ons -> ... -> Raspberry Pi BMW Infotainment"
 	-->
+	<extension point="xbmc.python.script" library="default-handler.py" />
 
 	<!-- Show info about addon -->
 	<extension point="xbmc.addon.metadata">
 		<platform>all</platform>
 		<summary lang="en">BMW infotainment gateway</summary>
-		<description lang="en">A Script for controlling Raspberry Pi from original BMW infotainment</description>
+		<description lang="en">A Script for controlling Raspberry Pi with original BMW infotainment</description>
 		<website>http://one-infiniteloop.com/dev/projects/car-media-player/</website>
 		<source>http://git.one-infiniteloop.com/larsa/bmw-infotainment</source>
 	</extension>

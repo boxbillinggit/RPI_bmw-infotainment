@@ -1,72 +1,66 @@
 __author__ = 'Lars'
 
-# reference: http://kodi.wiki/view/HOW-TO:Automatically_start_addons_using_services
-
-# enable DEBUG logging for kodi:
-# http://kodi.wiki/view/Log_file/Advanced#Enable_debugging
-# enter "settings -> system -> debugging"
-# logfile is under "C:\Users\Lars\AppData\Roaming\Kodi"
-# TODO implement SSH client for tesing OpenBM client https://github.com/paramiko/paramiko
-import sys
+# This is a service add'on for XBMC/KODI
+# ref:  http://kodi.wiki/view/Service_addons
+# TODO: how to re-initialize a connection (from button in settings)?
+# TODO: how to introduce a new subclass in 'XBMC' for storage/handlers/callbacks between python scripts?
 
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
+# start debug session with "WinPDB" console.
+import rpdb2
+#rpdb2.start_embedded_debugger('pw')
+#import resources.lib.debug
+
+# load libs
+from resources.lib.TCPhandler import TCPHandler
 from threading import Thread
-import asyncore
-from resources.lib.TCPhandler import *
+
 
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 
-# some connection data
-MAX_RECONNECT = 3
+# limit number of max connections (if something fatal goes wrong).
+MAX_RECONNECT = 5
 
-# init class
-connection = MsgHandler()
+# init XBMC/KODI monitor
+monitor = xbmc.Monitor()
+
+# init the main service class
+service = TCPHandler()
 
 # TCP server thread class.
-def TCP_server():
+def tcp_service():
 
-	# Consider if we're terminating, otherwise just loop over again.
-	# http://kodi.wiki/view/Service_addons
-	# TODO: is monitor initialized at this stage? better solution required.
-	# TODO: how to re-initialize a connection (from button in settings)? new thread? wake thread?
-	while (connection.attempts < MAX_RECONNECT and not monitor.abortRequested()):
+	# Consider if we're terminating, otherwise just loop over again (restart connection).
+	while service.attempts < MAX_RECONNECT and not monitor.abortRequested():
 
-		connection.attempts += 1
-
-		# Init the TCP connection class
-		connection.start()
-
-		xbmc.log("BMW: start asyncore loop")
-
-		# blocking until disconnected..
-		asyncore.loop()
-
-		# inform user through a dialog
 		dialog = xbmcgui.Dialog()
-		if not dialog.yesno(__addonname__, "Connection lost... (host: %s:%s)" % (connection.host, connection.port), "reconnect?" ):
+
+		# ask user to reconnect (if not the first initial connection attempt)
+		if service.attempts and not dialog.yesno(__addonname__, "Connection lost... (attempt: %s, host: %s:%s)" % (service.attempts, service.host, service.port), "Reconnect?" ):
 			break
 
-		# reference: http://mirrors.kodi.tv/docs/python-docs/13.0-gotham/xbmc.html#-log
-		xbmc.log("BMW: Connection lost... user (probably, if not shutting down) answered yes to re-connect (host: %s:%s)" % (connection.host, connection.port), level=xbmc.LOGDEBUG)
+		# Init the TCP daemon -and handler. Blocks until disconnected...
+		service.start()
 
+	# the loop exited
+	xbmc.log("BMW: service main loop stopped (function returns, thread terminates).", level=xbmc.LOGDEBUG)
 
 if __name__ == "__main__":
-	monitor = xbmc.Monitor()
 
-	# launch the server thread (daemon thread)...
-	t = Thread( name='TCPServerThread', target=TCP_server)
+	# launch the service thread...
+	t = Thread(name='TCPServerThread', target=tcp_service)
 	t.daemon = True
 	t.start()
 
-	# ...and wait for KODI to exit!
+	# ...and wait for XBMC/KODI to exit!
 	if monitor.waitForAbort():
 
 		# perform necessary shutdowns (stop threads, and more...)
-		xbmc.log("BMW: bye!", level=xbmc.LOGDEBUG)
+		xbmc.log("BMW: service exits. Bye!", level=xbmc.LOGDEBUG)
 
-		# Close socket gracefully (KODI waits for thread to finish before it closes down)
-		connection.stop()
+		# Close socket gracefully (XBMC/KODI waits for thread to finish before it closes down)
+		service.stop()
 

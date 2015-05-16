@@ -16,3 +16,14 @@ execute: (mklink --help)
 # OpenBM-gateway
 Launch gateway on Raspberry Pi:
 > ./gateway -d /dev/ttyUSB0 -i 0.0.0.0
+
+
+## Requirements / recommendations
+* install PyCharm (Python development environment)
+* install WinPDB (debugger) http://winpdb.org/download/
+
+> mklink "C:\Users\Lars\Documents\GitHub\bmw-infotainment\XBMC plugin\script.service.bmw-infotainment\rpdb2.py" "C:\Program Files\Python\Lib\site-packages\rpdb2.py"
+
+## references
+Python addon development: http://kodi.wiki/view/Add-on_development
+aGood reference about threads:  http://chimera.labs.oreilly.com/books/1230000000393/ch12.html
