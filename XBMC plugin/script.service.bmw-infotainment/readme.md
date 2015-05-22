@@ -12,13 +12,18 @@ execute: (mklink --help)
 # KODI API docs
 
 
+for easy acces to GUI elements in KODI/XBMC, activate debugging in "addon.xml" skin
+
+ref: http://kodi.wiki/view/Addon.xml#Overview
+
+
 
 # OpenBM-gateway
 Launch gateway on Raspberry Pi:
 > ./gateway -d /dev/ttyUSB0 -i 0.0.0.0
 
 if somethong goes wrong on OpenBM-daemon, kill proces by:
-get process ID from "ps aux | grep ./gateway"
+get process ID from "ps aux | grep ./gateway" --> in order [user] [PID] ...
 kill process "kill [Process ID]"
 
 

@@ -3,6 +3,7 @@ __author__ = 'Lars'
 import time
 from threading import Thread
 from TCPdaemon import TCPDaemonAsyncore
+from keymap import KeyMap
 
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
@@ -57,6 +58,9 @@ class TCPHandler(TCPDaemonAsyncore):
 		self.dst = None
 		self.src = None
 		self.len_data = None
+
+		# init handler for keys
+		self.map = KeyMap()
 
 		# init class
 		TCPDaemonAsyncore.__init__(self)
