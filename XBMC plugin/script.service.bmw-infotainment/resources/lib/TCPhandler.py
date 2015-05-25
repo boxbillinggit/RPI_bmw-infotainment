@@ -32,7 +32,6 @@ class TCPHandler(TCPDaemonAsyncore):
 	# TCP protocol headers (TODO: must refactor length before use)
 	PING = [0xAA, 0xAA]
 	REROUTE = [0x63, 0x74]	# ASCII: 'ct'
-	#REROUTE = 'ct'
 	CONNECT = [0x68, 0x69]	# ASCII: 'hi'
 	DISCONNECT = []
 
