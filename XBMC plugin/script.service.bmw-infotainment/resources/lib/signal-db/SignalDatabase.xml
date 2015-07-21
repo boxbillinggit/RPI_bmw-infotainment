@@ -15,7 +15,7 @@
 	<!-- IBUS Communication protocol definition -->
 	<COM-settings>
 		<BaudRate>9600</BaudRate>
-		<DatBits>8</DatBits>
+		<DataBits>8</DataBits>
 		<Parity>Even</Parity>
 		<StopBits>1</StopBits>
 		<Handshake>none</Handshake>
@@ -128,10 +128,10 @@
 
 			<!-- remote key buttons -->
 			<category type="button" ref="IBUS_MSG_REMOTE_KEY">
+				<byte val="0x02" name="remote-key.release"/>			
 				<byte val="0x12" name="remote-key.lock"/>
 				<byte val="0x22" name="remote-key.unlock"/>
 				<byte val="0x42" name="remote-key.boot-lid"/>
-				<byte val="0x02" name="remote-key.release"/>
 			</category>
 			
 			<!-- Volume control for steering wheel buttons (and left turn knob on board monitor) -->	
@@ -239,10 +239,10 @@
 				<byte val="0x05" name="right-knob.push"/>
 				<byte val="0x45" name="right-knob.hold"/>
 				<byte val="0x85" name="right-knob.release"/>
-		</category>
+			</category>
 
-		<!-- INFO-SELECT button (has a special identifier) -->
-		<category type="button" ref="IBUS_MSG_BMBT_INFO">
+			<!-- INFO-SELECT button (has a special identifier) -->
+			<category type="button" ref="IBUS_MSG_BMBT_INFO">
 		
 				<byte val="0x00 0x38" name="info.push"/>
 				<byte val="0x00 0x78" name="info.hold"/>
@@ -251,13 +251,13 @@
 				<byte val="0x00 0x0F" name="select.push"/>
 				<byte val="0x00 0x4F" name="select.hold"/>
 				<byte val="0x00 0x8F" name="select.release"/>				
-		</category>
+			</category>
 
-		<!-- right knob button (has a special identifier) -->
-		<category type="button" ref="IBUS_MSG_BMBT_RIGHT_KNOB">
+			<!-- right knob button (has a special identifier) -->
+			<category type="button" ref="IBUS_MSG_BMBT_RIGHT_KNOB">
 				<byte val="0x01" name="right-knob.turn-right"/>
 				<byte val="0x81" name="right-knob.turn-left"/>
-		</category>	
+			</category>	
 
 		
 		</DATA>

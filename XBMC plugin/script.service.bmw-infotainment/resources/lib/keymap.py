@@ -39,9 +39,6 @@ class Actions(object):
 		def method_err():
 			print "no action defined named %s" % namespace
 
-		# def def_method():
-		# 	self.default_method(action)
-
 		# execute action for 'push'...
 		try:
 			action = self.action[namespace]
@@ -114,7 +111,7 @@ class States(Actions):
 
 		# create and start a timer thread.
 		t = Thread(name='ButtonStateHold', target=self.check_state_hold)
-		#t.daemon = True
+		t.daemon = True
 		t.start()
 
 		print "start loop in thread for 'hold'"
@@ -147,7 +144,6 @@ class States(Actions):
 		else:
 			# ...or execute default action with the argument
 			self.default_method(action)
-
 
 	# action for state 'hold'. (some buttons has a message on the bus for this state already)
 	def hold(self):
@@ -188,33 +184,25 @@ class States(Actions):
 		# TODO get state from this function name instead?
 		self.state = self.state_map[2]
 
+class SignalDatabase(object):
+	# TODO: read - XML signal database and generate listeners
+
+	def __init__(self):
+
+		self.listeners = {}
+
+
 
 # filters and map the IBUS messages against correct action (determinate state)
 # Base class. This class handles the raw IBUS messages.
 class filter(object):
 
+	SIGNAL_DATABASE = 'signal-database.xml'
+
 	def __init__(self):
 
-		# empty entity means it doesn't matter.
-		self.hej = {
-
-			# states
-			"right_button.push" : 			{"src:": "", "dst": "", "data": ""},
-			"right_button.hold" : 			{"src:": "", "dst": "", "data": ""},
-			"right_button.release" :		{"src:": "", "dst": "", "data": ""},
-
-			# action
-			"right_button.rotate_left" 	: 	{"src:": "", "dst": "", "data": ""},
-			"right_button.rotate_right" : 	{"src:": "", "dst": "", "data": ""},
-		}
-
-		self.map = [
-			{"name": "right-button",
-			 "PDU": "",
-			 "states": ""}
-
-
-			]
+		# creates the messages and maps the actions.
+		self.map = SignalDatabase(self.SIGNAL_DATABASE)
 
 	def filer_msg(self, src, dst, data):
 
@@ -246,7 +234,7 @@ class KeyMap(object):
 		# http://bytebaker.com/2008/11/03/switch-case-statement-in-python/
 		# the actual map. execute local function.
 		# keyword : local function in "state()"
-
+		# TODO: get data from 'self.map'
 		setattr(self, "right_button", States(self.execute, {
 
 				# "state" : "XBMC/KODI action"
@@ -260,30 +248,13 @@ class KeyMap(object):
 				"rotate_right": "Right",
 		}))
 
-		# construct button states
-		# self.map = States("right_button", {
-		# 		# states
-		# 		"push": self.no_action,
-		# 		"hold": self.execute("back"),
-		# 		"release": self.execute("Select"),
-		#
-		# 		# direct actions, not states!  TODO: how to handle? best to make a own class (will override current state otherwise.
-		# 		"rotate_left": self.execute("Left"),
-		# 		"rotate_right": self.execute("Right"),
-		# })
-
 	# Execute the built-in control action for XBMC/KODI
 	# ref: http://kodi.wiki/view/Action_IDs
 	def execute(self, arg):
-		#return self._dummy(arg)
-		print "execute action: %s" % arg
+
+		xbmc.log("execute action: %s" % arg, level=xbmc.LOGDEBUG)
 		return xbmc.executebuiltin("Action(%s)" % arg)
 
-	# for testing ouitside KODI/XBMC
-	def _dummy(self, arg):
-		print "execute action: %s" % arg
-
-	# no action is
+	# no action
 	def no_action(self):
 		print "no action"
-		return

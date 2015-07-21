@@ -17,7 +17,7 @@ try:
 	arg = sys.argv[1]
 
 	dialog = xbmcgui.Dialog()
-	dialog.yesno(__addonname__, "Hello there! you want to %s (but this is not available at the moment.)" % arg )
+	dialog.yesno(__addonname__, "Request to \"%s\" is not available at the moment." % arg )
 	xbmc.log("BMW: dialog in execute script. with argument \"%s\"" % arg )
 
 except IndexError:
