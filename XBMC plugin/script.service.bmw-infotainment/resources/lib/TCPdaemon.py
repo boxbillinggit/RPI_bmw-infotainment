@@ -1,4 +1,6 @@
 __author__ = 'Lars'
+# this module handles the actual TCP transportation
+# TODO: rename module to "TCPsocket"
 
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
@@ -38,7 +40,7 @@ class TCPDaemonAsyncore(asyncore.dispatcher):
 		# DEBUG
 		xbmc.log("BMW: init 'TCPDaemonAsyncore' class done!", xbmc.LOGDEBUG)
 
-	def launch_tcp_daemon(self):
+	def launch_tcp_socket(self):
 
 		# update status in "settings"
 		__addon__.setSetting("gateway.status", "Connecting...")
@@ -143,7 +145,7 @@ class TCPDaemonNative:
 		# DEBUG
 		xbmc.log("BMW: init 'TCPDaemonNative' class done!", xbmc.LOGDEBUG)
 
-	def launch_tcp_daemon(self):
+	def launch_tcp_socket(self):
 
 		# update status in "settings"
 		__addon__.setSetting("gateway.status", "Connecting...")

@@ -1,32 +1,33 @@
 __author__ = 'Lars'
+# This module act as default handler for XBMC/KODI command "RunScript()"
 
 import sys
 
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
+import resources.lib.bmwaddon as bmwaddon
 
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 
-# default handler for "RunScript()"
-# good to know: http://kodi.wiki/view/List_of_built-in_functions
-# http://kodi.wiki/view/List_of_boolean_conditions
+# action selector based on argument passed from XBMC/KODI GUI
+select_action = {
+	"connect": bmwaddon.onConnect,
+	"disconnect": bmwaddon.onDisconnect
+}
 
-try:
-	# get the argument (if exists)
+# script is called with an argument
+if len(sys.argv) > 1:
+
+	# get the argument passed from XBMC/KODI GUI
 	arg = sys.argv[1]
 
-	dialog = xbmcgui.Dialog()
-	dialog.yesno(__addonname__, "Request to \"%s\" is not available at the moment." % arg )
-	xbmc.log("BMW: dialog in execute script. with argument \"%s\"" % arg )
+	# get action
+	exec_action = select_action[arg]
 
-except IndexError:
+	# execute action
+	exec_action()
 
-	# pop settings when launching script without arguments
+else:
+	# Default action: pop settings when launching script without arguments
 	__addon__.openSettings()
-
-
-# TODO: when executing script, we get a new thread. must find method to call
-
-
-

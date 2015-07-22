@@ -1,9 +1,6 @@
 __author__ = 'Lars'
-
-import time
-from threading import Thread
-from TCPdaemon import TCPDaemonAsyncore
-from keymap import KeyMap
+# this module handles the overlay TCP protocol and functions
+# TODO: rename module to "TCPdaemon"
 
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
@@ -11,7 +8,14 @@ import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 
-# initiate a monitor
+# import all libraries
+import time
+import resources.lib.settings as settings
+from threading import Thread
+from TCPdaemon import TCPDaemonAsyncore
+from keymap import KeyMap
+
+# init XBMC/KODI monitor
 monitor = xbmc.Monitor()
 
 # TODO: special log wrapper (if we're want to use class -and log outside XBMC/KODI)
@@ -49,6 +53,7 @@ class TCPHandler(TCPDaemonAsyncore):
 
 		# connection specefic data
 		self.attempts = 0
+		self.abort_requested = False
 		self.host = None
 		self.port = None
 
@@ -64,38 +69,29 @@ class TCPHandler(TCPDaemonAsyncore):
 		# init class
 		TCPDaemonAsyncore.__init__(self)
 
-	# adjust header to right length (looks more proper than writing a lot of zeroes in message definition above)
-	def reform_header(self, msg):
-		return msg + ([0] * (self.HEADER_LENGTH - len(msg)))
-
-	# start connection
+	# start TCP daemon service thread
 	def start(self):
 
-		self.attempts += 1
+		if self.is_connected():
+			xbmc.log("BMW: starting service, but we are already connected", xbmc.LOGDEBUG)
 
-		# TODO: put XBMC/KODI specific things in a separate class?
-		# read new ip settings (if settings has changed)
-		addon = xbmcaddon.Addon()
+		else:
+			# we're starting over again
+			self.abort_requested = False
 
-		# host and port from "settings.xml"
-		self.host = addon.getSetting("gateway.ip-address")
-		self.port = int(addon.getSetting("gateway.port"))
+			# launch the service thread...
+			t = Thread(name='BMW-Service', target=self.tcp_daemon)
+			t.daemon = True
+			t.start()
 
-		# Connect. (function inherited from class 'TCPDaemon')
-		self.reroute_connection(self.host, self.port)
-
-		# adjust size of header to 'HEADER_LENGTH' (fill with zeroes until length is correct)
-		self.tx_buffer = self.reform_header(self.CONNECT)
-		self.send_buffer()
-
-		# log.
-		xbmc.log("BMW: starting connection", xbmc.LOGINFO)
-
-		# inherited from 'TCPDaemon' class (blocking function)
-		self.launch_tcp_daemon()
-
-	# Terminate socket
+	# Terminate service
 	def stop(self):
+
+		# reset connection attempts also.
+		self.attempts = 0
+
+		# we force the TCP daemon to stop
+		self.abort_requested = True
 
 		# close connection gracefully by broadcast "close connection" to server!
 		if self.is_connected():
@@ -113,6 +109,57 @@ class TCPHandler(TCPDaemonAsyncore):
 
 			# close socket
 			self.close()
+
+
+	# TCP service thread. loop and blocks until a disconnection occurs.
+	def tcp_daemon(self):
+
+		# Consider if we're terminating, otherwise just loop over again (restart connection).
+		while self.attempts < settings.MAX_RECONNECT and not (monitor.abortRequested() or self.abort_requested):
+
+			dialog = xbmcgui.Dialog()
+
+			# ask user to reconnect (if not the first initial connection attempt)
+			if self.attempts and not dialog.yesno(__addonname__, "Connection lost... (attempt: %s, host: %s:%s)" % (self.attempts, self.host, self.port), "Reconnect?" ):
+				break
+
+			# Init the TCP daemon -and handler. Blocks until disconnected...
+			self.launch_tcp_service()
+
+		# the loop exited
+		xbmc.log("BMW: service main loop stopped (function returns, thread terminates).", level=xbmc.LOGDEBUG)
+
+	# start TCP service / socket
+	def launch_tcp_service(self):
+
+		self.attempts += 1
+
+		# TODO: put XBMC/KODI specific things in a separate class?
+		# read new ip settings (if settings has changed)
+
+		# we cant use __addon__ because we need to re-read from settings
+		addon = xbmcaddon.Addon()
+
+		# host and port from "settings.xml"
+		self.host = addon.getSetting("gateway.ip-address")
+		self.port = int(addon.getSetting("gateway.port"))
+
+		# Connect. (function inherited from class 'TCPDaemon')
+		self.reroute_connection(self.host, self.port)
+
+		# adjust size of header to 'HEADER_LENGTH' (fill with zeroes until length is correct)
+		self.tx_buffer = self.reform_header(self.CONNECT)
+		self.send_buffer()
+
+		# log.
+		xbmc.log("BMW: starting connection", xbmc.LOGINFO)
+
+		# inherited from 'TCPDaemon' class (blocking function)
+		self.launch_tcp_socket()
+
+	# adjust header to right length (looks more proper than writing a lot of zeroes in message definition above)
+	def reform_header(self, msg):
+		return msg + ([0] * (self.HEADER_LENGTH - len(msg)))
 
 	# handles the received TCP frames.
 	# this is called from 'TCPDaemon' class
@@ -290,7 +337,10 @@ class TCPHandler(TCPDaemonAsyncore):
 		self.send_buffer()
 
 		# DEBUG
-		if (self.pings_tx > 20):
+		if settings.DEBUG and self.pings_tx > 20:
 			xbmc.log("BMW: DEBUG - 20 pings transmitted, disconnecting.", xbmc.LOGDEBUG)
-			self.stop()
+
+			# fake a disconnection
+			self.tx_buffer = self.reform_header(self.DISCONNECT)
+			self.send_buffer()
 
