@@ -14,7 +14,7 @@ __addonid__		= __addon__.getAddonInfo('id')
 
 # load all libraries
 import resources.lib.settings as settings
-from resources.lib.TCPhandler import TCPIPHandler
+from resources.lib.TCPIPHandler import TCPIPHandler
 from resources.lib.callback import Callback
 
 # start debug session with "WinPDB" console - if switch is turned on in "settings.py".

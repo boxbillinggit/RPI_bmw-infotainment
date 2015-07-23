@@ -22,7 +22,7 @@ __addonid__		= __addon__.getAddonInfo('id')
 import time
 import settings
 from threading import Thread
-from TCPdaemon import TCPIPSocketAsyncore
+from TCPIPSocket import TCPIPSocketAsyncore
 from keymap import KeyMap
 
 # TCP/IP protocol settings
