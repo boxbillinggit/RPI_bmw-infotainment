@@ -7,12 +7,14 @@ __author__ = 'Lars'
 # load XBMC/KODI-specific modules
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
+__monitor__ = xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
+__addonid__		= __addon__.getAddonInfo('id')
 
 # load all libraries
 import resources.lib.settings as settings
-from resources.lib.TCPhandler import TCPHandler
+from resources.lib.TCPhandler import TCPIPHandler
 from resources.lib.callback import Callback
 
 # start debug session with "WinPDB" console - if switch is turned on in "settings.py".
@@ -25,12 +27,8 @@ if settings.DEBUGGER_ON:
 	import rpdb2
 	rpdb2.start_embedded_debugger('pw', timeout=settings.DEBUGGER_TIMEOUT)
 
-
-# init XBMC/KODI monitor
-monitor = xbmc.Monitor()
-
 # init the main service class
-service = TCPHandler()
+service = TCPIPHandler()
 
 # init callbacks from GUI. pass service methods for constructing callbacks.
 callback = Callback(service)
@@ -41,14 +39,14 @@ if __name__ == "__main__":
 	# set callbacks
 	callback.init_callbacks()
 
-	# init and start the TCP service thread...
+	# init and start the TCP/IP service thread...
 	service.start()
 
 	# ...and wait for XBMC/KODI to exit!
-	if monitor.waitForAbort():
+	if __monitor__.waitForAbort():
 
 		# perform necessary shutdowns (stop threads, and more...)
-		xbmc.log("BMW: BMW-infotainment service exits. Bye!", level=xbmc.LOGINFO)
+		xbmc.log("%s: BMW-infotainment service exits. Bye!" % __addonid__, level=xbmc.LOGINFO)
 
 		# Close socket gracefully (XBMC/KODI waits for thread to finish before it closes down)
 		service.stop()

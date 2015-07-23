@@ -1,90 +1,222 @@
 __author__ = 'Lars'
 # this module handles the overlay TCP protocol and functions
-# TODO: rename module to "TCPdaemon"
+
+# TODO: rename module to "TCPIPHandler".
+# TODO: restructure module (names, classes, and more)
+# TODO: ibus meesage method 'data_packet' is a dead end.
+# TODO: look over all loglevels -and log messages (decrease amount?)
+# TODO: implement tx of IBUS-messages
+
+# about loglevels:
+# http://kodi.wiki/view/Log_file/Advanced#advancedsettings.xml_for_normal_debugging
 
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
+__monitor__ 	= xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
+__addonid__		= __addon__.getAddonInfo('id')
 
 # import all libraries
 import time
-import resources.lib.settings as settings
+import settings
 from threading import Thread
-from TCPdaemon import TCPDaemonAsyncore
+from TCPdaemon import TCPIPSocketAsyncore
 from keymap import KeyMap
 
-# init XBMC/KODI monitor
-monitor = xbmc.Monitor()
+# TCP/IP protocol settings
+HEADER_LENGTH = 8
+PING_TIME_INTERVAL = 3		# seconds
 
-# TODO: special log wrapper (if we're want to use class -and log outside XBMC/KODI)
-class XBMCHandler:
-	def __init__(self):
-		pass
+# adjust header to correct length (8byte)
+def _resize_header(data):
+	return data + ([0] * (HEADER_LENGTH - len(data)))
 
-	def log(arg, level):
-		xbmc.log(arg, level)
+# TCP protocol headers. (also resize header to 8byte)
+PING 		= _resize_header([0xAA, 0xAA])
+CONNECT 	= _resize_header([0x68, 0x69])	# ASCII: 'hi'
+DISCONNECT 	= _resize_header([])
+REROUTE 	= [0x63, 0x74]					# ASCII: 'ct'
 
-# handler for the TCP protocol.
-class TCPHandler(TCPDaemonAsyncore):
+# static methods
 
-	# TCP protocol settings
-	HEADER_LENGTH = 8
-	PING_TIME_INTERVAL = 3
+def rx_ibus_frame(src, dst, data):
+	xbmc.log("%s: TODO: parse IBUS message." % __addonid__, xbmc.LOGDEBUG)
 
-	# TCP protocol headers (TODO: must refactor length before use)
-	PING = [0xAA, 0xAA]
-	REROUTE = [0x63, 0x74]	# ASCII: 'ct'
-	CONNECT = [0x68, 0x69]	# ASCII: 'hi'
-	DISCONNECT = []
+
+# rx errors
+def rx_err_frame_length():
+	xbmc.log("%s: No length on TCP/IP frame" % __addonid__, xbmc.LOGDEBUG)
+
+
+def rx_err_data_length():
+	xbmc.log("%s - Unexpected rx data length." % __addonid__, xbmc.LOGERROR)
+
+
+def rx_err_header_content(buf):
+	xbmc.log('%s - Unexpected rx header content. [%s]' % (__addonid__, str(buf).encode('hex')), xbmc.LOGERROR)
+
+
+# Base class handler for the TCP protocol. Main point for routing Rx -and Tx data.
+class TCPIPHandler(object):
 
 	# init the class
 	def __init__(self):
 
-		# inherited from class 'TCPDaemon' (placeholder)
-		#self.tx_buffer = None
-		#self.rx_buffer = None
+		# data for handling the TCP/IP frame
+		self.awaiting_data_chunk = False
+		self.dst = None
+		self.src = None
+		self.len_data = None
 
-		# counter for ping thread.
-		self.pings_rx = 0
-		self.pings_tx = 0
-		self.ping_rx_timestamp = time.time()
+		# init TCP/IP-socket
+		self.tcp_ip_socket = TCPIPSocketAsyncore()
+		self.tcp_ip_socket.handle_message = self.rx_tcp_ip_frame
 
-		# connection specefic data
+		# init TCP/IP-daemon
+		self.tcp_ip_daemon = TCPIPDaemon(self.tcp_ip_socket)
+		self.start = self.tcp_ip_daemon.start
+		self.stop = self.tcp_ip_daemon.stop
+
+		# init ping transmitter
+		self.ping_daemon = PingDaemon(self.tcp_ip_socket)
+
+		xbmc.log("%s: %s - init class." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+
+	# Main function for handling the received TCP/IP frames.
+	def rx_tcp_ip_frame(self, rx):
+
+		"""
+		We have 3 cases:
+
+		 * header has no length: disconnect message from OpenBM-daemon.
+		 * header only (data length is zero): special overlay TCP/IP-protocol message.
+		 * header+data: we have a IBUS message to parse (data frame can be transmitted in next TCP/IP frame though).
+		"""
+
+		# TCP/IP frame length
+		length = len(rx)
+
+		if not length:
+			# empty TCP/IP frame received.
+			rx_err_frame_length()
+
+		elif length and not (rx[2] or self.awaiting_data_chunk):
+			# received header only (data length is zero, header is not received in previous TCP/IP-frame)
+			self.rx_header_only(rx)
+
+		else:
+			# received header+data.
+			self.rx_header_and_data(rx)
+
+	# Header only. Handle the special overlay TCP/IP-protocol message.
+	def rx_header_only(self, rx):
+
+		if bytearray(REROUTE) in rx:
+
+			# reform to base-16 (not very easy though)
+			_rx = map(chr, rx)
+			_port = int((_rx[5]+_rx[4]).encode('hex'), 16)
+
+			# close connection...
+			self.tcp_ip_socket.close()
+
+			# ...and reroute to new port!
+			self.tcp_ip_socket.reroute_connection(self.tcp_ip_daemon.host, _port)
+
+			# start a ping thread.
+			self.ping_daemon.start()
+
+		elif bytearray(PING) == rx:
+			self.ping_daemon.rx_ping()
+
+		else:
+			rx_err_header_content(rx)
+
+	# Parse TCP/IP frame
+	def rx_header_and_data(self, rx):
+
+		# this is type 'bytearray'
+		length = len(rx)
+		len_data = rx[2]
+
+		# header is already received, this TCP/IP frame contains the data packet.
+		if self.awaiting_data_chunk:
+
+			# Check if length is as expected
+			if length == self.len_data:
+
+				# use src and dst stored from previous received header.
+				rx_ibus_frame(self.src, self.dst, rx)
+
+			else:
+				rx_err_data_length()
+
+			# reset flag
+			self.awaiting_data_chunk = False
+
+		# header+data in current TCP frame
+		elif len_data and length == (HEADER_LENGTH + len_data):
+
+			INDEX = (HEADER_LENGTH-1)
+
+			# data is located after the header
+			data = rx[INDEX:]
+			self.src = rx[0]
+			self.dst = rx[1]
+			self.len_data = rx[2]
+
+			rx_ibus_frame(self.src, self.dst, data)
+
+		# header received. data will be sent next TCP/IP-frame
+		elif len_data and (length < (HEADER_LENGTH + len_data)):
+
+			# save dst and src until data packet is received
+			self.src = rx[0]
+			self.dst = rx[1]
+			self.len_data = rx[2]
+
+			# set flag awaiting data
+			self.awaiting_data_chunk = True
+
+		# some error occured
+		else:
+			rx_err_data_length()
+
+			# clear flag (some error occured)
+			self.awaiting_data_chunk = False
+
+
+class TCPIPDaemon(object):
+
+	def __init__(self, tcp_ip_socket):
+
+		# socket instance
+		self.tcp_ip_socket = tcp_ip_socket
+
+		# connection specific data
 		self.attempts = 0
 		self.abort_requested = False
 		self.host = None
 		self.port = None
 
-		# data for handling the TCP frame
-		self.awaiting_data_packet = False
-		self.dst = None
-		self.src = None
-		self.len_data = None
-
-		# init handler for keys
-		self.map = KeyMap()
-
-		# init class
-		TCPDaemonAsyncore.__init__(self)
-
-	# start TCP daemon service thread
+	# start TCP/IP daemon service thread
 	def start(self):
 
-		if self.is_connected():
-			xbmc.log("BMW: starting service, but we are already connected", xbmc.LOGDEBUG)
+		if self.tcp_ip_socket.is_connected():
+			xbmc.log("%s: %s - Request to start service - we are already connected" % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
 		else:
 			# we're starting over again
 			self.abort_requested = False
 
 			# launch the service thread...
-			t = Thread(name='BMW-Service', target=self.tcp_daemon)
+			t = Thread(name='BMW-Service', target=self._tcp_daemon)
 			t.daemon = True
 			t.start()
 
-	# Terminate service
+	# Terminate TCP/IP daemon service thread
 	def stop(self):
 
 		# reset connection attempts also.
@@ -94,253 +226,114 @@ class TCPHandler(TCPDaemonAsyncore):
 		self.abort_requested = True
 
 		# close connection gracefully by broadcast "close connection" to server!
-		if self.is_connected():
+		if self.tcp_ip_socket.connected:
 
 			# log.
-			xbmc.log("BMW: Request to disconnect. Sending disconnect to server (server will close socket for us)..", xbmc.LOGDEBUG)
+			xbmc.log("%s: %s - Request to disconnect, sending disconnect to server." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
-			# adjust size of header to 'HEADER_LENGTH' (fill with zeroes until length is correct)
-			self.tx_buffer = self.reform_header(self.DISCONNECT)
-			self.send_buffer()
+			# send 'disconnect'
+			self.tcp_ip_socket.send_buffer(DISCONNECT)
 
 		# not connected, just terminate socket.
 		else:
-			xbmc.log("BMW: Request to disconnect. we are not connected so we closing socket. ", xbmc.LOGDEBUG)
+			xbmc.log("%s: %s - Request to disconnect, already disconnected " % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
 			# close socket
-			self.close()
+			self.tcp_ip_socket.close()
 
 
-	# TCP service thread. loop and blocks until a disconnection occurs.
-	def tcp_daemon(self):
+	# TCP/IP service thread.
+	def _tcp_daemon(self):
 
 		# Consider if we're terminating, otherwise just loop over again (restart connection).
-		while self.attempts < settings.MAX_RECONNECT and not (monitor.abortRequested() or self.abort_requested):
+		while self.attempts < settings.MAX_RECONNECT and not (__monitor__.abortRequested() or self.abort_requested):
 
 			dialog = xbmcgui.Dialog()
 
 			# ask user to reconnect (if not the first initial connection attempt)
-			if self.attempts and not dialog.yesno(__addonname__, "Connection lost... (attempt: %s, host: %s:%s)" % (self.attempts, self.host, self.port), "Reconnect?" ):
+			if self.attempts and not dialog.yesno(__addonid__, "Connection lost... (attempt: %s)" % self.attempts, "Reconnect?" ):
 				break
 
-			# Init the TCP daemon -and handler. Blocks until disconnected...
-			self.launch_tcp_service()
+			self.attempts += 1
+
+			# read new ip-settings (hence we cant use __addon__ if settings has changed)
+			addon = xbmcaddon.Addon()
+
+			# host and port from "settings.xml"
+			self.host = addon.getSetting("gateway.ip-address")
+			self.port = int(addon.getSetting("gateway.port"))
+
+			# Connect. (function inherited from class 'TCPDaemon')
+			self.tcp_ip_socket.reroute_connection(self.host, self.port)
+
+			# send 'connect'
+			self.tcp_ip_socket.send_buffer(CONNECT)
+
+			xbmc.log("%s: %s - launching TCP/IP socket. (start asyncore loop)" % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+
+			# inherited from 'TCPDaemon' class (blocking function)
+			self.tcp_ip_socket.start()
+
+			xbmc.log("%s: %s - connection lost. (exit asyncore loop)" % (__addonid__, self.__class__.__name__), xbmc.LOGINFO)
 
 		# the loop exited
-		xbmc.log("BMW: service main loop stopped (function returns, thread terminates).", level=xbmc.LOGDEBUG)
-
-	# start TCP service / socket
-	def launch_tcp_service(self):
-
-		self.attempts += 1
-
-		# TODO: put XBMC/KODI specific things in a separate class?
-		# read new ip settings (if settings has changed)
-
-		# we cant use __addon__ because we need to re-read from settings
-		addon = xbmcaddon.Addon()
-
-		# host and port from "settings.xml"
-		self.host = addon.getSetting("gateway.ip-address")
-		self.port = int(addon.getSetting("gateway.port"))
-
-		# Connect. (function inherited from class 'TCPDaemon')
-		self.reroute_connection(self.host, self.port)
-
-		# adjust size of header to 'HEADER_LENGTH' (fill with zeroes until length is correct)
-		self.tx_buffer = self.reform_header(self.CONNECT)
-		self.send_buffer()
-
-		# log.
-		xbmc.log("BMW: starting connection", xbmc.LOGINFO)
-
-		# inherited from 'TCPDaemon' class (blocking function)
-		self.launch_tcp_socket()
-
-	# adjust header to right length (looks more proper than writing a lot of zeroes in message definition above)
-	def reform_header(self, msg):
-		return msg + ([0] * (self.HEADER_LENGTH - len(msg)))
-
-	# handles the received TCP frames.
-	# this is called from 'TCPDaemon' class
-	def handle_message(self, rx):
-
-		# we have 3 possibilities:
-		#
-		# * header has no length: disconnect message from OpenBM-daemon.
-		# * header only (data length is zero): special TCP message.
-		# * data length is not zero: we have a IBUS message to parse.
-
-		def no_length():
-			xbmc.log("BMW: no length on TCP frame", xbmc.LOGDEBUG)
-
-		# TODO: rewrite this (how -and where to convert between array <---> bytearray??
-		def header_only():
-			#xbmc.log("BMW: received header only.", xbmc.LOGDEBUG)
-
-			if bytearray(self.REROUTE) in rx:
-
-				# reform to base-16 (not very easy though)
-				_rx = map(chr, self.rx_buffer)
-				self.port = int((_rx[5]+_rx[4]).encode('hex'), 16)
-
-				# TODO: should be in 'TCPDaemon' class instead?
-				# function inherited from class 'TCPDaemon'
-				self.close()
-
-				# function inherited from class 'TCPDaemon'
-				self.reroute_connection(self.host, self.port)
-
-				# start a ping thread.
-				self.launch_ping_daemon()
+		xbmc.log("%s: %s - service main loop stopped (function returns, thread terminates)." % (__addonid__, self.__class__.__name__), level=xbmc.LOGDEBUG)
 
 
-			elif rx == bytearray(self.reform_header(self.PING)):
-				self.rx_ping()
+# a separate class of 'ping-daemon'
+class PingDaemon(object):
 
-			else:
-				content_err()
+	def __init__(self, tcp_ip_socket):
 
-		def data_packet(src, dst, data):
-			xbmc.log("BMW: TODO: parse IBUS message.", xbmc.LOGDEBUG)
+		# socket instance
+		self.tcp_ip_socket = tcp_ip_socket
 
-		# error functions.
-		def length_err():
-			xbmc.log("ERROR: unexpected length.", xbmc.LOGERROR)
-
-		def content_err():
-			xbmc.log("ERROR: unexpected content.", xbmc.LOGERROR)
-
-		# Parse TCP frame from protocol definition
-		def parse_tcp_frame():
-
-			# TCP frame length
-			length = len(rx)
-
-			# empty TCP frame received.
-			if not length:
-				no_length()
-
-			# we have received some data...
-			else:
-
-				# this is type 'bytearray'
-				len_data = rx[2]
-
-				# header is already received, this TCP frame contains the data packet.
-				if self.awaiting_data_packet:
-
-					# Check if length is as expected
-					if length == self.len_data:
-						# use src and dst stored from previous received header.
-						data_packet(self.src, self.dst, rx)
-
-					else:
-						length_err()
-
-
-					# reset flag
-					self.awaiting_data_packet = False
-
-				# do we have header+data in this TCP frame?
-				elif len_data and length == (self.HEADER_LENGTH + len_data):
-
-					INDEX = (self.HEADER_LENGTH-1)
-
-					# data is located after the header
-					data = rx[INDEX:]
-					self.src = rx[0]
-					self.dst = rx[1]
-					self.len_data = rx[2]
-
-					data_packet(self.src, self.dst, data)
-
-				# nope, data packet is sent separate in the next TCP frame.
-				elif len_data and (length < (self.HEADER_LENGTH + len_data)):
-
-					# save dst and src until data packet is received
-					self.src = rx[0]
-					self.dst = rx[1]
-					self.len_data = rx[2]
-
-					# set flag awaiting data
-					self.awaiting_data_packet = True
-
-				# TCP protocol message
-				elif not len_data:
-					header_only()
-
-				# some error occured
-				else:
-					length_err()
-
-					# clear flag (some error occured)
-					self.awaiting_data_packet = False
-
-
-		# Start parsing the frame
-		parse_tcp_frame()
-
+		# counter for ping thread.
+		self.pings_rx = 0
+		self.pings_tx = 0
+		self.ping_rx_timestamp = time.time()
 
 	# request to start the ping daemon
-	def launch_ping_daemon(self):
+	def start(self):
 
 		# reset ping counters (if a restart occured)
 		self.pings_rx = 0
 		self.pings_tx = 0
 
 		# launch new thread
-		thread = Thread(name='PingDaemon', target=self.ping_daemon)
+		thread = Thread(name='PingDaemon', target=self._ping_daemon)
 		thread.daemon = True
 		thread.start()
 
 	# runs in a separate thread
-	def ping_daemon(self):
+	def _ping_daemon(self):
 
 		# log
-		xbmc.log("BMW: starting ping daemon", xbmc.LOGDEBUG)
+		xbmc.log("%s: %s - starting ping daemon." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
-		# loop until abort is requested from XBMC
-		# TODO: how about init of monitor? put all XBMC/KODI in a separate class?
-		while not monitor.abortRequested():
-
-			# terminate thread if we're not connected.
-			if not self.is_connected():
-				break
+		# loop while still connected and until abort is requested from XBMC/KODI
+		while self.tcp_ip_socket.is_connected() and not __monitor__.abortRequested():
 
 			self.tx_ping()
-			time.sleep(self.PING_TIME_INTERVAL)
+			time.sleep(PING_TIME_INTERVAL)
 
 		# log
-		xbmc.log("BMW: terminating ping thread (function returns)", xbmc.LOGDEBUG)
+		xbmc.log("%s: %s - terminating ping daemon (function returns)." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
-
-	# ping received
+	# received ping
 	def rx_ping(self):
 
-		xbmc.log("BMW: receiving ping (number: %s, last received: %.1f [s] ago )" % (self.pings_rx, (time.time() - self.ping_rx_timestamp)), xbmc.LOGDEBUG)
+		#xbmc.log("%s: %s - receiving ping (number: %s, last received: %.1f [s] ago )" % (__addonid__, self.__class__.__name__, self.pings_rx, (time.time() - self.ping_rx_timestamp)), xbmc.LOGDEBUG)
 
 		# increase counter, capture timestamp
 		self.pings_rx += 1
 		self.ping_rx_timestamp = time.time()
 
-	# ping transmitted
+	# transmit ping
 	def tx_ping(self):
-
-		#xbmc.log("BMW: sending ping (number: %s)" % (self.pings_tx), xbmc.LOGDEBUG)
 
 		# increase counter
 		self.pings_tx += 1
 
-		# send ping message (refactor length to exactly 8 bytes)
-		self.tx_buffer = self.reform_header(self.PING)
-		self.send_buffer()
-
-		# DEBUG
-		if settings.DEBUG and self.pings_tx > 20:
-			xbmc.log("BMW: DEBUG - 20 pings transmitted, disconnecting.", xbmc.LOGDEBUG)
-
-			# fake a disconnection
-			self.tx_buffer = self.reform_header(self.DISCONNECT)
-			self.send_buffer()
-
+		# send ping message
+		self.tcp_ip_socket.send_buffer(PING)

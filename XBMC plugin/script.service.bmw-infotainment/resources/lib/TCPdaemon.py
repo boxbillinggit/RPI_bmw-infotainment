@@ -1,6 +1,6 @@
 __author__ = 'Lars'
-# this module handles the actual TCP transportation
-# TODO: rename module to "TCPsocket"
+# this module handles the actual TCP/IP transportation on socket. two options is available (asyncore loop -or native sock)
+# TODO: rename module to "TCPIPSocket"
 
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
@@ -10,16 +10,15 @@ from threading import Thread
 
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
-
+__addonid__		= __addon__.getAddonInfo('id')
 
 # handles the actual transportation of TCP messages (rx and tx).
 # with asyncore -or native socket.
 
+# settings for TCP transport
+MAX_RECVBUFFER = 512
 
-class TCPDaemonAsyncore(asyncore.dispatcher):
-
-	# settings for TCP transport
-	MAX_RECVBUFFER = 512
+class TCPIPSocketAsyncore(asyncore.dispatcher):
 
 	def __init__(self):
 
@@ -37,39 +36,32 @@ class TCPDaemonAsyncore(asyncore.dispatcher):
 		# init dispatcher class
 		asyncore.dispatcher.__init__(self)
 
-		# DEBUG
-		xbmc.log("BMW: init 'TCPDaemonAsyncore' class done!", xbmc.LOGDEBUG)
-
-	def launch_tcp_socket(self):
+	def start(self):
 
 		# update status in "settings"
 		__addon__.setSetting("gateway.status", "Connecting...")
 
-		xbmc.log("BMW: launching TCP daemon. (start asyncore loop)", xbmc.LOGDEBUG)
-
 		# blocking until disconnected.. loop through all channels in 'map' each 0.1s
-		# TODO understand this loop-thing
 		asyncore.loop(0.1)
 
-		xbmc.log("BMW: connection lost. (exit asyncore loop)", xbmc.LOGINFO)
 
-	#TODO need to be called within the loop (need to select socket)
+	# TODO: need to be called within the loop (need to select socket)
 	def is_connected(self):
 
-		xbmc.log("BMW: are we connected [%s] or connecting [%s] " % (self.connected,  self.connecting), xbmc.LOGDEBUG)
-		return (self.connected or self.connecting)
+		xbmc.log("%s: %s - are we connected [%s] or connecting [%s] " % (__addonid__, self.__class__.__name__, self.connected,  self.connecting), xbmc.LOGDEBUG)
+		return self.connected or self.connecting
 
 	def reroute_connection(self, host, port):
 
-		xbmc.log("BMW: rerouting to port %s ..." % port, xbmc.LOGDEBUG)
+		xbmc.log("%s: %s - rerouting to port %s ..." % (__addonid__, self.__class__.__name__, port), xbmc.LOGDEBUG)
 
 		# adds a channel (connect a socket)
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.connect( (host, port) )
 
-
+	# overrides method in asynchore.dispatcher
 	def handle_connect(self):
-		xbmc.log("BMW: Socket opened... (%s %s)" % (self.socket.fileno(), self.socket.getsockname()), xbmc.LOGDEBUG)
+		xbmc.log("%s: %s - Socket opened... (%s %s)" % (__addonid__, self.__class__.__name__, self.socket.fileno(), self.socket.getsockname()), xbmc.LOGDEBUG)
 
 		# update status in "settings"
 		__addon__.setSetting("gateway.status", "Connected")
@@ -78,7 +70,7 @@ class TCPDaemonAsyncore(asyncore.dispatcher):
 		#generates error.
 		#xbmc.log("BMW: Socket closed... (%s %s)" % (self.socket.fileno(), self.socket.getsockname()), xbmc.LOGDEBUG)
 
-		xbmc.log("BMW: Socket closed...", xbmc.LOGDEBUG)
+		xbmc.log("%s: %s - Socket closed..." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
 		# update status in "settings"
 		__addon__.setSetting("gateway.status", "Disconnected")
@@ -89,11 +81,11 @@ class TCPDaemonAsyncore(asyncore.dispatcher):
 	def handle_read(self):
 
 		# convert from 'str' to 'bytearray'
-		self.rx_buffer = bytearray(self.recv(self.MAX_RECVBUFFER))
+		self.rx_buffer = bytearray(self.recv(MAX_RECVBUFFER))
 
 		# log
 		#xbmc.log("BMW: handle_read(): %s (%s %s)" % (str(self.rx_buffer).encode('hex'), self.socket.fileno(), self.socket.getsockname()), xbmc.LOGDEBUG)
-		xbmc.log("BMW: handle_read(): %s" % str(self.rx_buffer).encode('hex'), xbmc.LOGDEBUG)
+		xbmc.log("%s: %s - handle_read(): %s"  % (__addonid__, self.__class__.__name__, str(self.rx_buffer).encode('hex')), xbmc.LOGDEBUG)
 
 		self.handle_message(self.rx_buffer)
 
@@ -114,20 +106,19 @@ class TCPDaemonAsyncore(asyncore.dispatcher):
 			pass
 
 	# this will be overridden in inherited class
+	# TODO: rename to 'rx_tcp_ip_frame'??
 	def handle_message(self, rx):
 		pass
 
-	# dummy function does nothing (if we're want to use native sockets we're using this function.
-	def send_buffer(self):
-		pass
+	# linearization with class methods in 'TCPDaemonNative' (dummy function does nothing but fill buffer).
+	def send_buffer(self, buf):
+		self.tx_buffer = buf
+
 
 
 # use native sockets instead
-# TODO: not in use and fix this!
-class TCPDaemonNative:
-
-	# settings for TCP transport
-	MAX_RECVBUFFER = 512
+# TODO: not in use... fix this!
+class TCPIPSocketNative:
 
 	def __init__(self):
 
@@ -198,7 +189,7 @@ class TCPDaemonNative:
 		while self.connected:
 
 			# convert from 'str' to 'bytearray'
-			self.rx_buffer = bytearray(self.socket.recv(self.MAX_RECVBUFFER))
+			self.rx_buffer = bytearray(self.socket.recv(MAX_RECVBUFFER))
 
 			# handle closed connections here?
 			if self.tx_buffer:
