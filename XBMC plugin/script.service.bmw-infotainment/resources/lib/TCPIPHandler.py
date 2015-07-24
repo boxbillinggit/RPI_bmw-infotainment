@@ -1,9 +1,7 @@
 __author__ = 'Lars'
 # this module handles the overlay TCP protocol and functions
 
-# TODO: rename module to "TCPIPHandler".
 # TODO: restructure module (names, classes, and more)
-# TODO: ibus meesage method 'data_packet' is a dead end.
 # TODO: look over all loglevels -and log messages (decrease amount?)
 # TODO: implement tx of IBUS-messages
 
@@ -18,12 +16,15 @@ __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 __addonid__		= __addon__.getAddonInfo('id')
 
-# import all libraries
+# import built-in libraries
 import time
-import settings
 from threading import Thread
+
+# import the script's libraries
 from TCPIPSocket import TCPIPSocketAsyncore
-from keymap import KeyMap
+from IBUSHandler import Filter
+import settings
+
 
 # TCP/IP protocol settings
 HEADER_LENGTH = 8
@@ -39,11 +40,9 @@ CONNECT 	= _resize_header([0x68, 0x69])	# ASCII: 'hi'
 DISCONNECT 	= _resize_header([])
 REROUTE 	= [0x63, 0x74]					# ASCII: 'ct'
 
+#
 # static methods
-
-def rx_ibus_frame(src, dst, data):
-	xbmc.log("%s: TODO: parse IBUS message." % __addonid__, xbmc.LOGDEBUG)
-
+#
 
 # rx errors
 def rx_err_frame_length():
@@ -81,6 +80,9 @@ class TCPIPHandler(object):
 
 		# init ping transmitter
 		self.ping_daemon = PingDaemon(self.tcp_ip_socket)
+
+		# init IBUS handler
+		self.ibus_handler = Filter()
 
 		xbmc.log("%s: %s - init class." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
@@ -148,7 +150,7 @@ class TCPIPHandler(object):
 			if length == self.len_data:
 
 				# use src and dst stored from previous received header.
-				rx_ibus_frame(self.src, self.dst, rx)
+				self.ibus_handler.find_event(self.src, self.dst, rx)
 
 			else:
 				rx_err_data_length()
@@ -167,7 +169,7 @@ class TCPIPHandler(object):
 			self.dst = rx[1]
 			self.len_data = rx[2]
 
-			rx_ibus_frame(self.src, self.dst, data)
+			self.ibus_handler.find_event(self.src, self.dst, data)
 
 		# header received. data will be sent next TCP/IP-frame
 		elif len_data and (length < (HEADER_LENGTH + len_data)):

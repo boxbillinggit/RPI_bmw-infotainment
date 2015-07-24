@@ -1,6 +1,5 @@
 __author__ = 'Lars'
 # this module handles the actual TCP/IP transportation on socket. two options is available (asyncore loop -or native sock)
-# TODO: rename module to "TCPIPSocket"
 
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
