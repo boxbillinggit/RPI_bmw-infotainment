@@ -20,6 +20,12 @@
 		<setting label="Disconnect" type="action" action="RunScript(script.bmw.infotainment, disconnect)"/>
 
 	</category>
+
+	<category label="BMW addon">
+		<setting label="Welcome text in IKE" type="text" id="welcome-text" />
+		<setting label="Let me know when the champagne is cooled" type="bool" id="background" default="true"/>
+	</category>
+
 </settings>
 
 

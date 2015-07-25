@@ -2,64 +2,51 @@ __author__ = 'Lars'
 
 # This is a service add'on for XBMC/KODI
 # ref:  http://kodi.wiki/view/Service_addons
-# TODO: how to re-initialize a connection (from button in settings)?
-# TODO: how to introduce a new subclass in 'XBMC' for storage/handlers/callbacks between python scripts?
-
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
+
+# load XBMC/KODI-specific modules
 import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
-# start debug session with "WinPDB" console.
-import rpdb2
-#rpdb2.start_embedded_debugger('pw')
-#import resources.lib.debug
-
-# load libs
-from resources.lib.TCPhandler import TCPHandler
-from threading import Thread
-
-
+__monitor__ = xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
+__addonid__		= __addon__.getAddonInfo('id')
 
-# limit number of max connections (if something fatal goes wrong).
-MAX_RECONNECT = 5
+# load all libraries
+import resources.lib.settings as settings
+from resources.lib.TCPIPHandler import TCPIPHandler
+from resources.lib.callback import Callback
 
-# init XBMC/KODI monitor
-monitor = xbmc.Monitor()
+# start debug session with "WinPDB" console - if switch is turned on in "settings.py".
+if settings.DEBUGGER_ON:
+
+	# notify user that debugging is on
+	dialog = xbmcgui.Dialog()
+	dialog.notification("Python debugger on","Waiting for WinPDB (%ss)..." % settings.DEBUGGER_TIMEOUT)
+
+	import rpdb2
+	rpdb2.start_embedded_debugger('pw', timeout=settings.DEBUGGER_TIMEOUT)
 
 # init the main service class
-service = TCPHandler()
+service = TCPIPHandler()
 
-# TCP service function.
-def tcp_service():
+# init callbacks from GUI. pass service methods for constructing callbacks.
+callback = Callback(service)
 
-	# Consider if we're terminating, otherwise just loop over again (restart connection).
-	while service.attempts < MAX_RECONNECT and not monitor.abortRequested():
-
-		dialog = xbmcgui.Dialog()
-
-		# ask user to reconnect (if not the first initial connection attempt)
-		if service.attempts and not dialog.yesno(__addonname__, "Connection lost... (attempt: %s, host: %s:%s)" % (service.attempts, service.host, service.port), "Reconnect?" ):
-			break
-
-		# Init the TCP daemon -and handler. Blocks until disconnected...
-		service.start()
-
-	# the loop exited
-	xbmc.log("BMW: service main loop stopped (function returns, thread terminates).", level=xbmc.LOGDEBUG)
-
+# Launch the service
 if __name__ == "__main__":
 
-	# launch the service thread...
-	t = Thread(name='BMW-Service', target=tcp_service)
-	t.daemon = True
-	t.start()
+	# set callbacks
+	callback.init_callbacks()
+
+	# init and start the TCP/IP service thread...
+	service.start()
 
 	# ...and wait for XBMC/KODI to exit!
-	if monitor.waitForAbort():
+	if __monitor__.waitForAbort():
 
 		# perform necessary shutdowns (stop threads, and more...)
-		xbmc.log("BMW: service exits. Bye!", level=xbmc.LOGDEBUG)
+		xbmc.log("%s: BMW-infotainment service exits. Bye!" % __addonid__, level=xbmc.LOGINFO)
 
 		# Close socket gracefully (XBMC/KODI waits for thread to finish before it closes down)
 		service.stop()
