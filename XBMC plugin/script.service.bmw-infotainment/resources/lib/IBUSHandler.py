@@ -1,6 +1,5 @@
 __author__ = 'Lars'
 
-#from keymap import States
 try:
 	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
@@ -8,12 +7,19 @@ try:
 	__addonid__		= __addon__.getAddonInfo('id')
 
 except ImportError as err:
-	print "WARNING: Failed to import XBMC/KODI modules."
+
+	from debug import XBMC
+	xbmc = XBMC()
+
+	__addonid__ = "script.ibus.bmw"
+
+	print "WARNING: Failed to import XBMC/KODI modules - using 'XBMCdebug'-module instead."
 
 # ref: https://docs.python.org/2/library/xml.etree.elementtree.html
 import xml.etree.ElementTree as ElementTree
 import os
 import settings
+from keymap import Button
 
 # path settings (problem occurs else in XBMC/KODI)
 BASE_LIB_PATH = os.path.join( os.getcwd(), "resources", "lib" )
@@ -25,16 +31,25 @@ class Filter(object):
 
 	def __init__(self):
 
-		# init events
-		# TODO: how should we implement state-machine for buttons?
+		# init event class
 		self.event = Events()
+
+		# init button states and it's actions
+		self.button = Button()
+
+		# create namespaces for buttons -> self.button.right_knob.push() and will be executed from state-machine.
+		# internally, the functions are stored in: self.button.right_knob.action.get("push|hold|release")
+		self.button.create(button="right_knob", states={"hold": self.event.execute("back"), "release": self.event.execute("enter")})
+
+
+		# TODO: have an 'self.event.create' also? -or self.ass_listener
 
 		# 'map' and 'filter' is x-refereed by its index: 'list[i]'
 		# ref: http://kodi.wiki/view/Action_IDs
 		self.event_filter = [
-			{"src": "IBUS_DEV_BMBT", "data": "right-knob.push", "action": None},
-			{"src": "IBUS_DEV_BMBT", "data": "right-knob.hold", "action": None}, # self.action.execute("back")
-			{"src": "IBUS_DEV_BMBT", "data": "right-knob.release", "action": None}, # self.action.execute("Select")
+			{"src": "IBUS_DEV_BMBT", "data": "right-knob.push", "action": self.button.right_knob.push},
+			{"src": "IBUS_DEV_BMBT", "data": "right-knob.hold", "action": self.button.right_knob.hold},
+			{"src": "IBUS_DEV_BMBT", "data": "right-knob.release", "action": self.button.right_knob.release},
 			{"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-left", "action": self.event.execute("Left")},
 			{"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-right", "action": self.event.execute("Right")},
 			{"src": "IBUS_DEV_BMBT", "data": "info.push", "action": None},
@@ -43,7 +58,12 @@ class Filter(object):
 		# init Signal-class (convert names to bytes)
 		self.signals = Signals(self.event_filter)
 
+	# TODO: make static method?
 	def find_event(self, src, dst, data):
+
+		# TODO: print better HEX in log (spaces between chunks).
+		# TODO: interpret bytes (from XML-db)?
+		xbmc.log("%s: %s - receiving signal: 'data'='%s'" % (__addonid__, self.__class__.__name__, str(data).encode('hex')), xbmc.LOGDEBUG)
 
 		# find a matching event
 		# TODO: what suits best for type on 'src', 'dst', and 'data' (list -or bytearray)?
@@ -61,6 +81,8 @@ class Filter(object):
 			# proceed if data is correct (empty '_data' means don't evaluate)
 			if item.has_key('data') and item.get('data') != list(data):
 				continue
+
+			xbmc.log("%s: %s - found a match for received signal: '%s'" % (__addonid__, self.__class__.__name__, self.event_filter[index].get('data')), xbmc.LOGDEBUG)
 
 			# We've found a match, stop looking and execute current action.
 			execute_action = self.event_filter[index].get('action')
@@ -83,6 +105,14 @@ def _str_2_array(str_buf):
 	return map(lambda str: int(str, 16), str_buf.split(" "))
 
 
+# XBMC controls:
+# 	command for control: xbmc.executebuiltin("Action(select)")
+#
+# 	reference: (hieraecally)
+#	http://kodi.wiki/view/keymap
+# 	http://kodi.wiki/view/List_of_Built_In_Functions
+#	http://mirrors.kodi.tv/docs/python-docs/14.x-helix/xbmc.html#-executebuiltin
+
 # define events and generate calbacks.
 class Events(object):
 
@@ -91,17 +121,16 @@ class Events(object):
 
 		pass
 
+	# TODO: make static? rename to 'create()'
 	def execute(self, arg):
 
 		# DEBUG
-		#xbmc.log("execute action: %s" % arg, level=xbmc.LOGDEBUG)
+		xbmc.log("%s: %s - Creating event for: %s" % (__addonid__, self.__class__.__name__, arg), xbmc.LOGDEBUG)
 
 		# return a function. ref: http://kodi.wiki/view/Action_IDs
 		return lambda: xbmc.executebuiltin("Action(%s)" % arg)
-		#return lambda: self.debug_emulate_fcn(arg)
 
-	def debug_emulate_fcn(self, arg):
-		print("Execute: %s" % arg)
+
 
 # TODO: fix better fault-handling for XML-database search..
 class Signals(object):
@@ -158,7 +187,7 @@ class Signals(object):
 		src = self.root.find("./MESSAGE/DEVICES/byte[@id='%s']" % identifier ).get('val')
 
 		if not len(src):
-			print "error - no element found in XML-database"
+			xbmc.log("%s: %s - no element found in XML-database for: %s" % (__addonid__, self.__class__.__name__, identifier), xbmc.LOGERROR)
 			return None
 
 		# convert to integer array
@@ -170,7 +199,7 @@ class Signals(object):
 		element = self.root.find("./MESSAGE/DATA/CATEGORY/byte[@id='%s']/.." % identifier )
 
 		if not len(element):
-			print "error - no element found in XML-database"
+			xbmc.log("%s: %s - no element found in XML-database for: %s" % (__addonid__, self.__class__.__name__, identifier), xbmc.LOGERROR)
 			return None
 
 		# get the refereed byte for 'operation'
