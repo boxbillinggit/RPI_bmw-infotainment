@@ -19,7 +19,7 @@ except ImportError as err:
 import xml.etree.ElementTree as ElementTree
 import os
 import settings
-from keymap import Button
+from BMButtons import Button
 
 # path settings (problem occurs else in XBMC/KODI)
 BASE_LIB_PATH = os.path.join( os.getcwd(), "resources", "lib" )
