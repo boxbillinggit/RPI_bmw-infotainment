@@ -5,18 +5,16 @@ try:
 	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
-	__addon__		= xbmcaddon.Addon()
-	__addonname__	= __addon__.getAddonInfo('name')
-	__addonid__		= __addon__.getAddonInfo('id')
-
 except ImportError as err:
+	print "%s: %s - using 'XBMCdebug'-modules instead" % (__name__, err.message)
+	import debug.XBMC as xbmc
+	import debug.XBMCGUI as xbmcgui
+	import debug.XBMCADDON as xbmcaddon
 
-	from debug import XBMC
-	xbmc = XBMC()
-
-	__addonid__ = "script.ibus.bmw"
-
-	print "WARNING: Failed to import XBMC/KODI modules - using 'XBMCdebug'-module instead."
+__monitor__ 	= xbmc.Monitor()
+__addon__		= xbmcaddon.Addon()
+__addonname__	= __addon__.getAddonInfo('name')
+__addonid__		= __addon__.getAddonInfo('id')
 
 # handles the actual transportation of TCP messages (rx and tx).
 # with asyncore -or native socket.
@@ -41,15 +39,15 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 	def __init__(self):
 
 		# init variables (TODO: one buffer for each socket?)
-		self.tx_buffer = None
-		self.rx_buffer = None
+		self.tx_buffer = bytearray()
+		self.rx_buffer = bytearray()
 
 		# TODO: which socket we're interested in (in this case only one, but anyway..
 		self.map_selector = None
 
 		# inherited from 'asyncore.dispatcher'
-		#self.connected = False
-		#self.connecting = False
+		self.connected = False
+		self.connecting = False
 
 		# init dispatcher class
 		asyncore.dispatcher.__init__(self)
@@ -98,13 +96,13 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 
 	def handle_read(self):
 
-		# convert from 'str' to 'bytearray'
-		self.rx_buffer = bytearray(self.recv(MAX_RECVBUFFER))
+		# fill buffer with more frames
+		self.rx_buffer += bytearray(self.recv(MAX_RECVBUFFER))
 
 		# DEBUG
 		xbmc.log("%s: %s - handle_read(): %s"  % (__addonid__, self.__class__.__name__, to_hexstr(self.rx_buffer)), xbmc.LOGDEBUG)
 
-		self.handle_message(self.rx_buffer)
+		self.handle_message()
 
 
 
@@ -124,12 +122,12 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 
 	# this will be overridden in inherited class
 	# TODO: rename to 'rx_tcp_ip_frame'??
-	def handle_message(self, rx):
+	def handle_message(self):
 		pass
 
 	# linearization with class methods in 'TCPDaemonNative' (dummy function does nothing but fill buffer).
 	def send_buffer(self, buf):
-		self.tx_buffer = buf
+		self.tx_buffer += bytearray(buf)
 
 
 

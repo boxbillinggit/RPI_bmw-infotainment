@@ -4,8 +4,15 @@ __author__ = 'Lars'
 # ref:  http://kodi.wiki/view/Service_addons
 # Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 
-# load XBMC/KODI-specific modules
-import xbmc, xbmcplugin, xbmcgui, xbmcaddon
+try:
+	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
+	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
+
+except ImportError as err:
+	print "%s: %s - using 'XBMCdebug'-modules instead" % (__name__, err.message)
+	import resources.lib.debug.XBMC as xbmc
+	import resources.lib.debug.XBMCGUI as xbmcgui
+	import resources.lib.debug.XBMCADDON as xbmcaddon
 
 __monitor__ = xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()

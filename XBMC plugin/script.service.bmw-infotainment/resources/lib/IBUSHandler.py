@@ -3,17 +3,17 @@ __author__ = 'Lars'
 try:
 	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
-	__addon__		= xbmcaddon.Addon()
-	__addonid__		= __addon__.getAddonInfo('id')
 
 except ImportError as err:
+	print "%s: %s - using 'XBMCdebug'-modules instead" % (__name__, err.message)
+	import debug.XBMC as xbmc
+	import debug.XBMCGUI as xbmcgui
+	import debug.XBMCADDON as xbmcaddon
 
-	from debug import XBMC
-	xbmc = XBMC()
-
-	__addonid__ = "script.ibus.bmw"
-
-	print "WARNING: Failed to import XBMC/KODI modules - using 'XBMCdebug'-module instead."
+__monitor__ 	= xbmc.Monitor()
+__addon__		= xbmcaddon.Addon()
+__addonname__	= __addon__.getAddonInfo('name')
+__addonid__		= __addon__.getAddonInfo('id')
 
 # ref: https://docs.python.org/2/library/xml.etree.elementtree.html
 import xml.etree.ElementTree as ElementTree
