@@ -68,7 +68,7 @@ class TCPIPHandler(object):
 		self.awaiting_data_chunk = False
 		self.dst = None
 		self.src = None
-		self.data = None
+		self.data = list()
 		self.data_len = None
 
 		# init TCP/IP-socket
