@@ -38,9 +38,11 @@ def hexstr_to_int(str_buf):
 	return map(lambda str: int(str, 16), str_buf.split(" "))
 
 
-# filters and map the IBUS messages against correct action (determinate state)
-# Base class. This class handles the raw IBUS messages.
 class Filter(object):
+
+	"""
+	This is the base class. This class handles -and route all IBUS-messages to it's events
+	"""
 
 	def __init__(self):
 
@@ -50,78 +52,59 @@ class Filter(object):
 		# init button states and it's actions
 		self.button = Button()
 
-		# create namespaces for buttons -> self.button.right_knob.push() and will be executed from state-machine.
-		# internally, the functions are stored in: self.button.right_knob.action.get("push|hold|release")
-		self.button.create(button="right_knob", states={"hold": self.event.execute("back"), "release": self.event.execute("enter")})
-		self.button.create(button="right", states={"hold": self.event.execute("right"), "release": self.event.execute("right")})
-		self.button.create(button="left", states={"hold": self.event.execute("left"), "release": self.event.execute("left")})
-
-		# TODO: get a nicer way to create listeners -and buttons (2 types: buttons, events)
-		# TODO: have an 'self.event.create' also? -or self.ass_listener
-
-		"""
-		This flow:
-
-		# create an event
-		self.event.create("left")
-		self.event.bind( self.signal.translate({"src": "IBUS_DEV_BMBT", "data": "right-knob.push"}), self.event.execute("enter"))
-
-		#add listener (translate database)
-
-		"""
-
-		# 'map' and 'filter' is x-refereed by its index: 'list[i]'
-		# ref: http://kodi.wiki/view/Action_IDs
-		self.event_filter = [
-			{"src": "IBUS_DEV_BMBT", "data": "right-knob.push", "action": self.button.right_knob.push},
-			{"src": "IBUS_DEV_BMBT", "data": "right-knob.hold", "action": self.button.right_knob.hold},
-			{"src": "IBUS_DEV_BMBT", "data": "right-knob.release", "action": self.button.right_knob.release},
-			{"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-left", "action": self.event.execute("Left")},
-			{"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-right", "action": self.event.execute("Right")},
-
-			{"src": "IBUS_DEV_BMBT", "data": "left.push", "action": self.button.left.push},
-			{"src": "IBUS_DEV_BMBT", "data": "left.hold", "action": self.button.left.hold},
-			{"src": "IBUS_DEV_BMBT", "data": "left.release", "action": self.button.left.release},
-
-			{"src": "IBUS_DEV_BMBT", "data": "right.push", "action": self.button.right.push},
-			{"src": "IBUS_DEV_BMBT", "data": "right.hold", "action": self.button.right.hold},
-			{"src": "IBUS_DEV_BMBT", "data": "right.release", "action": self.button.right.release},
-			#{"src": "IBUS_DEV_BMBT", "data": "info.push", "action": None},
-		]
-
 		# init Signal-class (convert names to bytes)
-		self.signals = Signals(self.event_filter)
+		self.signal = Signals()
+
+		# init all events
+		self.init_events()
+
+	def init_events(self):
+
+		# create namespaces for buttons: self.button.right_knob.push() -> this will trigger state 'push'.
+		self.button.create(button="right_knob", states={"hold": self.event.execute("back"), "release": self.event.execute("enter")})
+		self.button.create(button="right", states={"push": self.event.execute("right"), "hold": self.event.execute("right")})
+		self.button.create(button="left", states={"push": self.event.execute("left"), "hold": self.event.execute("left")})
+
+		# bind events to listeners
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.push"}), event=self.button.right_knob.push)
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.push"}), event=self.button.right_knob.push)
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.hold"}), event=self.button.right_knob.hold)
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.release"}), event=self.button.right_knob.release)
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-left"}), event=self.event.execute("Left"))
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-right" }), event=self.event.execute("Right"))
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "left.push"}), event=self.button.left.push)
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "left.hold"}), event=self.button.left.hold)
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "left.release"}), event=self.button.left.release)
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right.push"}), event=self.button.right.push)
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right.hold"}), event=self.button.right.hold)
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right.release"}), event=self.button.right.release)
+
 
 	# TODO: make static method?
 	def find_event(self, src, dst, data):
 
-		# TODO: print better HEX in log (spaces between chunks).
-		# TODO: interpret bytes (from XML-db)?
+		# DEBUG
 		xbmc.log("%s: %s - receiving signal: [%s]" % (__addonid__, self.__class__.__name__, to_hexstr(data)), xbmc.LOGDEBUG)
 
-		#xbmc.log("%s: %s - not iterable? types: src:%s dst:%s data:%s filter:%s" % (__addonid__, self.__class__.__name__, type(src), type(dst), type(data), type(self.signals.map)), xbmc.LOGDEBUG)
-
 		# find a matching event
-		# TODO: what suits best for type on 'src', 'dst', and 'data' (list -or bytearray)?
-		# TODO: exclude checksum in 'data'?
-		for index, item in enumerate(self.signals.map):
+		for index, item in enumerate(self.event.map):
 
-			# proceed if source is correct (empty '_src' means don't evaluate)
+			# proceed if source is correct (don't evaluate empty items)
 			if item.has_key('src') and item.get('src') != src:
 				continue
 
-			# proceed if destination is correct (empty '_dst' means don't evaluate)
+			# proceed if destination is correct (don't evaluate empty items)
 			if item.has_key('dst') and item.get('dst') != dst:
 				continue
 
-			# proceed if data is correct (empty '_data' means don't evaluate)
+			# proceed if data is correct (don't evaluate empty items)
 			if item.has_key('data') and item.get('data') != data:
 				continue
 
-			xbmc.log("%s: %s - found a match for received signal: '%s'" % (__addonid__, self.__class__.__name__, self.event_filter[index].get('data')), xbmc.LOGDEBUG)
+			xbmc.log("%s: %s - found a event for received signal '%s'" % (__addonid__, self.__class__.__name__, item.get('description')), xbmc.LOGDEBUG)
 
 			# We've found a match, stop looking and execute current action.
-			execute_action = self.event_filter[index].get('action')
+			execute_action = self.event.action[index]
 
 			# execute action
 			execute_action()
@@ -129,21 +112,29 @@ class Filter(object):
 			# stop searching.
 			break
 
-# XBMC controls:
-# 	command for control: xbmc.executebuiltin("Action(select)")
-#
-# 	reference: (hieraecally)
-#	http://kodi.wiki/view/keymap
-# 	http://kodi.wiki/view/List_of_Built_In_Functions
-#	http://mirrors.kodi.tv/docs/python-docs/14.x-helix/xbmc.html#-executebuiltin
 
-# define events and generate calbacks.
 class Events(object):
+
+	"""
+	This class implements all actions triggered by a IBUS-message
+
+	Reference:
+	http://kodi.wiki/view/keymap
+	http://kodi.wiki/view/List_of_Built_In_Functions
+	http://kodi.wiki/view/Action_IDs
+	"""
 
 	def __init__(self):
 		self.map = list()
+		self.action = list()
 
-		pass
+	def bind(self, signal, event):
+
+		if len(self.map) == len(self.action):
+			self.map.append(signal)
+			self.action.append(event)
+		else:
+			xbmc.log("%s: %s - Fatal error when binding event for: %s. 'map' and 'action' has unequal length" % (__addonid__, self.__class__.__name__, event.get('data')), xbmc.LOGDEBUG)
 
 	# TODO: make static? rename to 'create()'
 	def execute(self, arg):
@@ -151,7 +142,7 @@ class Events(object):
 		# DEBUG
 		xbmc.log("%s: %s - Creating event for: %s" % (__addonid__, self.__class__.__name__, arg), xbmc.LOGDEBUG)
 
-		# return a function. ref: http://kodi.wiki/view/Action_IDs
+		# return a function.
 		return lambda: xbmc.executebuiltin("Action(%s)" % arg)
 
 
@@ -161,48 +152,40 @@ class Signals(object):
 	Convert signals from name to bytes with help of the XML-database.
 	"""
 
-	def __init__(self, signals):
+	def __init__(self):
 
-		self.root = None
-
-		# contains the converted bytes
-		self.map = list()
-
-		# construct bytearay from XML signal-database
-		self.convert_names_to_bytes(signals)
-
-	def convert_names_to_bytes(self, signals):
-
+		# read in the database
 		tree = ElementTree.parse(SIGNAL_DB_PATH)
 
 		# get root element
 		self.root = tree.getroot()
 
-		# iter over constructors -and translate the data references to bytes. - get byte from XML-database.
-		for item in signals:
+	# create signal from descriptors
+	def create(self, descriptor):
 
-			# dictionary constructor
-			ibus_frame = dict()
+		# dictionary constructor
+		signal = dict()
 
-			if item.has_key('src') and item.get('src'):
+		if descriptor.get('src'):
 
-				# translate 'source'
-				ibus_frame['src'] = self.get_dev(item.get('src'))
+			# translate 'source'
+			signal['src'] = self._get_dev(descriptor.get('src'))
 
-			if item.has_key('dst') and item.get('dst'):
+		if descriptor.get('dst'):
 
-				# translate 'destination'
-				ibus_frame['dst'] = self.get_dev(item.get('dst'))
+			# translate 'destination'
+			signal['dst'] = self._get_dev(descriptor.get('dst'))
 
-			# translate 'data'
-			if item.has_key('data') and item.get('data'):
+		# translate 'data'
+		if descriptor.get('data'):
 
-				ibus_frame['data'] = self.get_data(item.get('data'))
+			signal['data'] = self._get_data(descriptor.get('data'))
+			signal['description'] = descriptor.get('data')
 
-			# append also empty items. otherwise we loose the x-referencde.
-			self.map.append(ibus_frame)
+		# return signal
+		return signal
 
-	def get_dev(self, identifier):
+	def _get_dev(self, identifier):
 
 		# find 'src' by id from XML-database
 		src = self.root.findall("./MESSAGE/DEVICES/byte[@id='%s']" % identifier )
@@ -215,7 +198,7 @@ class Signals(object):
 		byte_str = src[0].get('val')
 		return hexstr_to_int(byte_str).pop()
 
-	def get_data(self, identifier):
+	def _get_data(self, identifier):
 
 		# get byte from XML-database.
 		element_obj = self.root.findall("./MESSAGE/DATA/CATEGORY/byte[@id='%s']/.." % identifier )

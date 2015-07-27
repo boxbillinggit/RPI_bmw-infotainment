@@ -189,7 +189,7 @@ class TCPIPHandler(object):
 			rx_err_length(rx_buf_len, (HEADER_LENGTH+self.data_len), rx_buf)
 			self.awaiting_data_chunk = False
 
-	# header is already received, this TCP/IP frame contains the leftovers of the data packet.
+	# header is already received, this TCP/IP frame contains the remaining bytes of data packet.
 	def rx_data_only(self, rx_buf):
 
 		rx_buf_len = len(rx_buf)
