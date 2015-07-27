@@ -18,9 +18,11 @@ except ImportError as err:
 # ref: https://docs.python.org/2/library/xml.etree.elementtree.html
 import xml.etree.ElementTree as ElementTree
 import os
+
 import settings
 from BMButtons import Button
 from TCPIPSocket import to_hexstr
+
 
 # path settings (problem occurs else in XBMC/KODI)
 BASE_LIB_PATH = os.path.join( os.getcwd(), "resources", "lib" )

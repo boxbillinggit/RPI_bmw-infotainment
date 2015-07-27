@@ -1,5 +1,4 @@
 __author__ = 'Lars'
-# TODO: rename to 'XBMCWrapper'
 
 # fixes the log-problem, for using functions within IDE (PyCharm)
 

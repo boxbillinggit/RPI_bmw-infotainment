@@ -21,8 +21,11 @@ except ImportError as err:
 # handles the actual transportation of TCP messages (rx and tx).
 # with asyncore -or native socket.
 
-import asyncore, socket, errno
+import asyncore
+import socket
+import errno
 from threading import Thread
+
 
 # settings for TCP transport
 MAX_RECVBUFFER = 512
