@@ -1,21 +1,37 @@
 __author__ = 'Lars'
 # this module handles the actual TCP/IP transportation on socket. two options is available (asyncore loop -or native sock)
 
-# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
-import xbmc, xbmcplugin, xbmcgui, xbmcaddon
+try:
+	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
+	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
-import asyncore, socket, errno
-from threading import Thread
+	__addon__		= xbmcaddon.Addon()
+	__addonname__	= __addon__.getAddonInfo('name')
+	__addonid__		= __addon__.getAddonInfo('id')
 
-__addon__		= xbmcaddon.Addon()
-__addonname__	= __addon__.getAddonInfo('name')
-__addonid__		= __addon__.getAddonInfo('id')
+except ImportError as err:
+
+	from debug import XBMC
+	xbmc = XBMC()
+
+	__addonid__ = "script.ibus.bmw"
+
+	print "WARNING: Failed to import XBMC/KODI modules - using 'XBMCdebug'-module instead."
 
 # handles the actual transportation of TCP messages (rx and tx).
 # with asyncore -or native socket.
 
+import asyncore, socket, errno
+from threading import Thread
+
 # settings for TCP transport
 MAX_RECVBUFFER = 512
+
+
+# print a well formed HEX-string from a 'bytearray'
+def to_hexstr(bytearray):
+	return " ".join(map(lambda byte: "%X" % byte, bytearray))
+
 
 class TCPIPSocketAsyncore(asyncore.dispatcher):
 
@@ -82,9 +98,8 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 		# convert from 'str' to 'bytearray'
 		self.rx_buffer = bytearray(self.recv(MAX_RECVBUFFER))
 
-		# log
-		#xbmc.log("BMW: handle_read(): %s (%s %s)" % (str(self.rx_buffer).encode('hex'), self.socket.fileno(), self.socket.getsockname()), xbmc.LOGDEBUG)
-		xbmc.log("%s: %s - handle_read(): %s"  % (__addonid__, self.__class__.__name__, str(self.rx_buffer).encode('hex')), xbmc.LOGDEBUG)
+		# DEBUG
+		xbmc.log("%s: %s - handle_read(): %s"  % (__addonid__, self.__class__.__name__, to_hexstr(self.rx_buffer)), xbmc.LOGDEBUG)
 
 		self.handle_message(self.rx_buffer)
 

@@ -21,7 +21,7 @@ import time
 from threading import Thread
 
 # import the script's libraries
-from TCPIPSocket import TCPIPSocketAsyncore
+from TCPIPSocket import TCPIPSocketAsyncore, to_hexstr
 from IBUSHandler import Filter
 import settings
 
@@ -29,6 +29,7 @@ import settings
 # TCP/IP protocol settings
 HEADER_LENGTH = 8
 PING_TIME_INTERVAL = 3		# seconds
+
 
 # adjust header to correct length (8byte)
 def _resize_header(data):
@@ -44,17 +45,17 @@ REROUTE 	= [0x63, 0x74]					# ASCII: 'ct'
 # static methods
 #
 
-# rx errors
-def rx_err_frame_length():
-	xbmc.log("%s: No length on TCP/IP frame" % __addonid__, xbmc.LOGDEBUG)
+
+def rx_no_frame_length():
+	xbmc.log("%s: No length on TCP/IP-frame. (disconnect message from server)" % __addonid__, xbmc.LOGDEBUG)
 
 
-def rx_err_data_length():
-	xbmc.log("%s - Unexpected rx data length." % __addonid__, xbmc.LOGERROR)
+def rx_err_length(rx_buf_len, data_len, rx_buf):
+	xbmc.log("%s - Unexpected rx length. (current buffer length:%d, expected:%d, frame: [%s]" % (__addonid__, rx_buf_len, data_len, to_hexstr(rx_buf)), xbmc.LOGERROR)
 
 
-def rx_err_header_content(buf):
-	xbmc.log('%s - Unexpected rx header content. [%s]' % (__addonid__, str(buf).encode('hex')), xbmc.LOGERROR)
+def rx_err_header_content(rx_buf):
+	xbmc.log('%s - Unexpected rx header content. [%s]' % (__addonid__, to_hexstr(rx_buf)), xbmc.LOGERROR)
 
 
 # Base class handler for the TCP protocol. Main point for routing Rx -and Tx data.
@@ -67,7 +68,8 @@ class TCPIPHandler(object):
 		self.awaiting_data_chunk = False
 		self.dst = None
 		self.src = None
-		self.len_data = None
+		self.data = None
+		self.data_len = None
 
 		# init TCP/IP-socket
 		self.tcp_ip_socket = TCPIPSocketAsyncore()
@@ -87,38 +89,55 @@ class TCPIPHandler(object):
 		xbmc.log("%s: %s - init class." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
 	# Main function for handling the received TCP/IP frames.
-	def rx_tcp_ip_frame(self, rx):
+	def rx_tcp_ip_frame(self, rx_buf):
 
 		"""
-		We have 3 cases:
+		We have 7 states for the TCP/IP-communication:
 
 		 * header has no length: disconnect message from OpenBM-daemon.
-		 * header only (data length is zero): special overlay TCP/IP-protocol message.
-		 * header+data: we have a IBUS message to parse (data frame can be transmitted in next TCP/IP frame though).
+		 * header only(data length is zero): special overlay TCP/IP-protocol message.
+		 * header only: data will be transmitted in next TCP/IP-frame
+		 * header+data: we have a complete IBUS message to parse.
+		 * header+data(partly): at least a complete header -and part of 'data'
+		 * data only: the leftovers from the state above receives.
+		 * errors (length is not as expected)
 		"""
 
 		# TCP/IP frame length
-		length = len(rx)
+		rx_buf_len = len(rx_buf)
 
-		if not length:
-			# empty TCP/IP frame received.
-			rx_err_frame_length()
+		# disconnect message
+		if not rx_buf_len:
+			rx_no_frame_length()
 
-		elif length and not (rx[2] or self.awaiting_data_chunk):
-			# received header only (data length is zero, header is not received in previous TCP/IP-frame)
-			self.rx_header_only(rx)
+		# 'header' only
+		elif rx_buf_len == HEADER_LENGTH and not self.awaiting_data_chunk:
 
+			# if length is zero we have an special overlay TCP/IP-protocol message. else its a part of a message
+			if rx_buf[2]:
+				self.rx_header_only(rx_buf)
+			else:
+				self.rx_special_header(rx_buf)
+
+		# 'header+data(partly or complete)'
+		elif rx_buf_len > HEADER_LENGTH and not self.awaiting_data_chunk:
+			self.rx_header_and_data(rx_buf)
+
+		# 'data' only. the remaining 'data' would be expected here.
+		elif self.awaiting_data_chunk:
+			self.rx_data_only(rx_buf)
+
+		# some random babbeling received.
 		else:
-			# received header+data.
-			self.rx_header_and_data(rx)
+			rx_err_length(rx_buf_len, HEADER_LENGTH, rx_buf)
 
 	# Header only. Handle the special overlay TCP/IP-protocol message.
-	def rx_header_only(self, rx):
+	def rx_special_header(self, rx_buf):
 
-		if bytearray(REROUTE) in rx:
+		if bytearray(REROUTE) in rx_buf:
 
-			# reform to base-16 (not very easy though)
-			_rx = map(chr, rx)
+			# encode to base-16, and in reverse order (DOOH! not so easy..)
+			_rx = map(chr, rx_buf)
 			_port = int((_rx[5]+_rx[4]).encode('hex'), 16)
 
 			# close connection...
@@ -130,65 +149,62 @@ class TCPIPHandler(object):
 			# start a ping thread.
 			self.ping_daemon.start()
 
-		elif bytearray(PING) == rx:
+		elif bytearray(PING) == rx_buf:
 			self.ping_daemon.rx_ping()
 
 		else:
-			rx_err_header_content(rx)
+			rx_err_header_content(rx_buf)
 
-	# Parse TCP/IP frame
-	def rx_header_and_data(self, rx):
+	def rx_header_only(self, rx_buf):
+		xbmc.log("%s: %s - 'header' only. 'data' comes in next TCP/IP-frame." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
-		# this is type 'bytearray'
-		length = len(rx)
-		len_data = rx[2]
+		# save data from header -and wait for next TCP/IP-frame
+		self.awaiting_data_chunk = True
 
-		# header is already received, this TCP/IP frame contains the data packet.
-		if self.awaiting_data_chunk:
+		self.src = rx_buf[0]
+		self.dst = rx_buf[1]
+		self.data_len = rx_buf[2]
 
-			# Check if length is as expected
-			if length == self.len_data:
+	# We have at least a complete 'header' + data(partly -or complete)
+	def rx_header_and_data(self, rx_buf):
 
-				# use src and dst stored from previous received header.
-				self.ibus_handler.find_event(self.src, self.dst, rx)
+		rx_buf_len = len(rx_buf)
+		self.src = rx_buf[0]
+		self.dst = rx_buf[1]
+		self.data_len = rx_buf[2]
+		self.data = rx_buf[HEADER_LENGTH:]
 
-			else:
-				rx_err_data_length()
+		# do we have a complete header+data within this frame?
+		if rx_buf_len == (HEADER_LENGTH + self.data_len):
+			xbmc.log("%s: %s - 'header+data' in current TCP/IP-frame." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+			self.ibus_handler.find_event(self.src, self.dst, self.data)
 
-			# reset flag
-			self.awaiting_data_chunk = False
-
-		# header+data in current TCP frame
-		elif len_data and length == (HEADER_LENGTH + len_data):
-
-			INDEX = (HEADER_LENGTH-1)
-
-			# data is located after the header
-			data = rx[INDEX:]
-			self.src = rx[0]
-			self.dst = rx[1]
-			self.len_data = rx[2]
-
-			self.ibus_handler.find_event(self.src, self.dst, data)
-
-		# header received. data will be sent next TCP/IP-frame
-		elif len_data and (length < (HEADER_LENGTH + len_data)):
-
-			# save dst and src until data packet is received
-			self.src = rx[0]
-			self.dst = rx[1]
-			self.len_data = rx[2]
-
-			# set flag awaiting data
+		# data packet not completly sent
+		elif rx_buf_len < (HEADER_LENGTH + self.data_len):
+			xbmc.log("%s: %s - 'header' in current TCP frame. 'data' partly received." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 			self.awaiting_data_chunk = True
 
-		# some error occured
+		# data chunk larger than expected. TODO: investigate this state - could we have a part of a new message?
 		else:
-			rx_err_data_length()
-
-			# clear flag (some error occured)
+			rx_err_length(rx_buf_len, (HEADER_LENGTH+self.data_len), rx_buf)
 			self.awaiting_data_chunk = False
 
+	# header is already received, this TCP/IP frame contains the leftovers of the data packet.
+	def rx_data_only(self, rx_buf):
+
+		rx_buf_len = len(rx_buf)
+
+		# did we receive the expected leftovers from 'data'?
+		if rx_buf_len + len(self.data) == self.data_len:
+			xbmc.log("%s: %s - 'data' only. received remaining data." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+			self.ibus_handler.find_event(self.src, self.dst, self.data+rx_buf)
+
+		# we didn't. either less -or larger than expected. TODO: investigate this state - could we have a part of a new message?
+		else:
+			rx_err_length(rx_buf_len, (self.data_len-len(self.data)), rx_buf)
+
+		# reset flag
+		self.awaiting_data_chunk = False
 
 class TCPIPDaemon(object):
 

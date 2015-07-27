@@ -20,10 +20,23 @@ import xml.etree.ElementTree as ElementTree
 import os
 import settings
 from BMButtons import Button
+from TCPIPSocket import to_hexstr
 
 # path settings (problem occurs else in XBMC/KODI)
 BASE_LIB_PATH = os.path.join( os.getcwd(), "resources", "lib" )
 SIGNAL_DB_PATH = os.path.join(BASE_LIB_PATH, settings.SIGNAL_DATABASE)
+
+
+#
+# static methods
+#
+
+
+def hexstr_to_int(str_buf):
+
+	# create 'int' array from string
+	return map(lambda str: int(str, 16), str_buf.split(" "))
+
 
 # filters and map the IBUS messages against correct action (determinate state)
 # Base class. This class handles the raw IBUS messages.
@@ -40,9 +53,22 @@ class Filter(object):
 		# create namespaces for buttons -> self.button.right_knob.push() and will be executed from state-machine.
 		# internally, the functions are stored in: self.button.right_knob.action.get("push|hold|release")
 		self.button.create(button="right_knob", states={"hold": self.event.execute("back"), "release": self.event.execute("enter")})
+		self.button.create(button="next", states={"hold": self.event.execute("right"), "release": self.event.execute("right")})
+		self.button.create(button="previous", states={"hold": self.event.execute("left"), "release": self.event.execute("left")})
 
-
+		# TODO: get a nicer way to create listeners -and buttons (2 types: buttons, events)
 		# TODO: have an 'self.event.create' also? -or self.ass_listener
+
+		"""
+		This flow:
+
+		# create an event
+		self.event.create("left")
+		self.event.bind( self.signal.translate({"src": "IBUS_DEV_BMBT", "data": "right-knob.push"}), self.event.execute("enter"))
+
+		#add listener (translate database)
+
+		"""
 
 		# 'map' and 'filter' is x-refereed by its index: 'list[i]'
 		# ref: http://kodi.wiki/view/Action_IDs
@@ -52,7 +78,15 @@ class Filter(object):
 			{"src": "IBUS_DEV_BMBT", "data": "right-knob.release", "action": self.button.right_knob.release},
 			{"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-left", "action": self.event.execute("Left")},
 			{"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-right", "action": self.event.execute("Right")},
-			{"src": "IBUS_DEV_BMBT", "data": "info.push", "action": None},
+
+			{"src": "IBUS_DEV_BMBT", "data": "previous.push", "action": self.button.previous.push},
+			{"src": "IBUS_DEV_BMBT", "data": "previous.hold", "action": self.button.previous.hold},
+			{"src": "IBUS_DEV_BMBT", "data": "previous.release", "action": self.button.previous.release},
+
+			{"src": "IBUS_DEV_BMBT", "data": "next.push", "action": self.button.next.push},
+			{"src": "IBUS_DEV_BMBT", "data": "next.hold", "action": self.button.next.hold},
+			{"src": "IBUS_DEV_BMBT", "data": "next.release", "action": self.button.next.release},
+			#{"src": "IBUS_DEV_BMBT", "data": "info.push", "action": None},
 		]
 
 		# init Signal-class (convert names to bytes)
@@ -63,7 +97,9 @@ class Filter(object):
 
 		# TODO: print better HEX in log (spaces between chunks).
 		# TODO: interpret bytes (from XML-db)?
-		xbmc.log("%s: %s - receiving signal: 'data'='%s'" % (__addonid__, self.__class__.__name__, str(data).encode('hex')), xbmc.LOGDEBUG)
+		xbmc.log("%s: %s - receiving signal: [%s]" % (__addonid__, self.__class__.__name__, to_hexstr(data)), xbmc.LOGDEBUG)
+
+		#xbmc.log("%s: %s - not iterable? types: src:%s dst:%s data:%s filter:%s" % (__addonid__, self.__class__.__name__, type(src), type(dst), type(data), type(self.signals.map)), xbmc.LOGDEBUG)
 
 		# find a matching event
 		# TODO: what suits best for type on 'src', 'dst', and 'data' (list -or bytearray)?
@@ -71,15 +107,15 @@ class Filter(object):
 		for index, item in enumerate(self.signals.map):
 
 			# proceed if source is correct (empty '_src' means don't evaluate)
-			if item.has_key('src') and  item.get('src') != list(src):
+			if item.has_key('src') and item.get('src') != src:
 				continue
 
 			# proceed if destination is correct (empty '_dst' means don't evaluate)
-			if item.has_key('dst') and item.get('dst') != list(dst):
+			if item.has_key('dst') and item.get('dst') != dst:
 				continue
 
 			# proceed if data is correct (empty '_data' means don't evaluate)
-			if item.has_key('data') and item.get('data') != list(data):
+			if item.has_key('data') and item.get('data') != data:
 				continue
 
 			xbmc.log("%s: %s - found a match for received signal: '%s'" % (__addonid__, self.__class__.__name__, self.event_filter[index].get('data')), xbmc.LOGDEBUG)
@@ -92,18 +128,6 @@ class Filter(object):
 
 			# stop searching.
 			break
-
-
-#
-# static methods
-#
-
-
-def _str_2_array(str_buf):
-
-	# return a array of integers
-	return map(lambda str: int(str, 16), str_buf.split(" "))
-
 
 # XBMC controls:
 # 	command for control: xbmc.executebuiltin("Action(select)")
@@ -190,8 +214,8 @@ class Signals(object):
 			xbmc.log("%s: %s - no element found in XML-database for: %s" % (__addonid__, self.__class__.__name__, identifier), xbmc.LOGERROR)
 			return None
 
-		# convert to integer array
-		return _str_2_array(src)
+		# convert to integer array. return the 'int' (not as list with only one single byte)
+		return hexstr_to_int(src).pop()
 
 	def get_data(self, identifier):
 
@@ -209,4 +233,4 @@ class Signals(object):
 		action = element.find("byte[@id='%s']" % identifier).get('val')
 
 		# merge arrays and return
-		return _str_2_array(operation) + _str_2_array(action)
+		return bytearray(hexstr_to_int(operation) + hexstr_to_int(action))

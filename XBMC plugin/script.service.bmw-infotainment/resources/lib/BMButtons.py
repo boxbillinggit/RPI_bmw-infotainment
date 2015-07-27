@@ -1,5 +1,4 @@
 __author__ = 'Lars'
-# TODO: rename module to 'BMButtons'
 
 import time
 from threading import Thread
@@ -21,6 +20,7 @@ except ImportError as err:
 
 # define timing in seconds [s] for state "hold"
 STATE_HOLD_TIME = 1
+STATE_HOLD_TIME_INIT = 2
 STATE_HOLD_TIME_ABORT = 5
 
 
@@ -74,14 +74,18 @@ class States(object):
 
 		xbmc.log("%s: %s - init the while loop for state 'hold'" % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
-		# loop until we're in state 'release' or max time has occured.
+		# loop until we're in state 'release' or max time has occurred.
 		while self._still_holding():
 
-			# execute action, restart timer.
+			# if we're have a message on the bus, we don't want to interfere with this event
+			if self.previous_state == "hold":
+				time.sleep(STATE_HOLD_TIME)
+			else:
+				time.sleep(STATE_HOLD_TIME_INIT)
+
+			# execute action
 			self.hold()
 
-			# sleep for a while
-			time.sleep(STATE_HOLD_TIME)
 
 		xbmc.log("%s: %s - exits the while loop for state 'hold'" % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
