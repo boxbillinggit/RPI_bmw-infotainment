@@ -53,8 +53,8 @@ class Filter(object):
 		# create namespaces for buttons -> self.button.right_knob.push() and will be executed from state-machine.
 		# internally, the functions are stored in: self.button.right_knob.action.get("push|hold|release")
 		self.button.create(button="right_knob", states={"hold": self.event.execute("back"), "release": self.event.execute("enter")})
-		self.button.create(button="next", states={"hold": self.event.execute("right"), "release": self.event.execute("right")})
-		self.button.create(button="previous", states={"hold": self.event.execute("left"), "release": self.event.execute("left")})
+		self.button.create(button="right", states={"hold": self.event.execute("right"), "release": self.event.execute("right")})
+		self.button.create(button="left", states={"hold": self.event.execute("left"), "release": self.event.execute("left")})
 
 		# TODO: get a nicer way to create listeners -and buttons (2 types: buttons, events)
 		# TODO: have an 'self.event.create' also? -or self.ass_listener
@@ -79,13 +79,13 @@ class Filter(object):
 			{"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-left", "action": self.event.execute("Left")},
 			{"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-right", "action": self.event.execute("Right")},
 
-			{"src": "IBUS_DEV_BMBT", "data": "previous.push", "action": self.button.previous.push},
-			{"src": "IBUS_DEV_BMBT", "data": "previous.hold", "action": self.button.previous.hold},
-			{"src": "IBUS_DEV_BMBT", "data": "previous.release", "action": self.button.previous.release},
+			{"src": "IBUS_DEV_BMBT", "data": "left.push", "action": self.button.left.push},
+			{"src": "IBUS_DEV_BMBT", "data": "left.hold", "action": self.button.left.hold},
+			{"src": "IBUS_DEV_BMBT", "data": "left.release", "action": self.button.left.release},
 
-			{"src": "IBUS_DEV_BMBT", "data": "next.push", "action": self.button.next.push},
-			{"src": "IBUS_DEV_BMBT", "data": "next.hold", "action": self.button.next.hold},
-			{"src": "IBUS_DEV_BMBT", "data": "next.release", "action": self.button.next.release},
+			{"src": "IBUS_DEV_BMBT", "data": "right.push", "action": self.button.right.push},
+			{"src": "IBUS_DEV_BMBT", "data": "right.hold", "action": self.button.right.hold},
+			{"src": "IBUS_DEV_BMBT", "data": "right.release", "action": self.button.right.release},
 			#{"src": "IBUS_DEV_BMBT", "data": "info.push", "action": None},
 		]
 
@@ -221,7 +221,7 @@ class Signals(object):
 		element_obj = self.root.findall("./MESSAGE/DATA/CATEGORY/byte[@id='%s']/.." % identifier )
 
 		if len(element_obj) != 1:
-			xbmc.log("%s: %s - %d refeered operator(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(element_obj), identifier), xbmc.LOGERROR)
+			xbmc.log("%s: %s - %d refereed operator(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(element_obj), identifier), xbmc.LOGERROR)
 			return None
 
 		# get the refereed byte for 'operation'

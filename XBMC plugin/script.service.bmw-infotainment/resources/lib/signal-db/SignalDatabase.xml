@@ -225,13 +225,13 @@
 				<byte val="0x44" id="tone.hold"/>
 				<byte val="0x84" id="tone.release"/>
 				
-				<byte val="0x10" id="previous.push"/>
-				<byte val="0x50" id="previous.hold"/>
-				<byte val="0x90" id="previous.release"/>
+				<byte val="0x10" id="left.push"/>
+				<byte val="0x50" id="left.hold"/>
+				<byte val="0x90" id="left.release"/>
 				
-				<byte val="0x00" id="next.push"/>
-				<byte val="0x40" id="next.hold"/>
-				<byte val="0x80" id="next.release"/>
+				<byte val="0x00" id="right.push"/>
+				<byte val="0x40" id="right.hold"/>
+				<byte val="0x80" id="right.release"/>
 
 				<byte val="0x34" id="menu.push"/>
 				<byte val="0x74" id="menu.hold"/>
