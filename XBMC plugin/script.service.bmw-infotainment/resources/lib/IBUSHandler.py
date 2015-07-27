@@ -155,8 +155,6 @@ class Events(object):
 		return lambda: xbmc.executebuiltin("Action(%s)" % arg)
 
 
-
-# TODO: fix better fault-handling for XML-database search..
 class Signals(object):
 
 	"""
@@ -172,7 +170,6 @@ class Signals(object):
 
 		# construct bytearay from XML signal-database
 		self.convert_names_to_bytes(signals)
-
 
 	def convert_names_to_bytes(self, signals):
 
@@ -208,29 +205,42 @@ class Signals(object):
 	def get_dev(self, identifier):
 
 		# find 'src' by id from XML-database
-		src = self.root.find("./MESSAGE/DEVICES/byte[@id='%s']" % identifier ).get('val')
+		src = self.root.findall("./MESSAGE/DEVICES/byte[@id='%s']" % identifier )
 
-		if not len(src):
-			xbmc.log("%s: %s - no element found in XML-database for: %s" % (__addonid__, self.__class__.__name__, identifier), xbmc.LOGERROR)
+		if len(src) != 1:
+			xbmc.log("%s: %s - %d element(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(src), identifier), xbmc.LOGERROR)
 			return None
 
 		# convert to integer array. return the 'int' (not as list with only one single byte)
-		return hexstr_to_int(src).pop()
+		byte_str = src[0].get('val')
+		return hexstr_to_int(byte_str).pop()
 
 	def get_data(self, identifier):
 
 		# get byte from XML-database.
-		element = self.root.find("./MESSAGE/DATA/CATEGORY/byte[@id='%s']/.." % identifier )
+		element_obj = self.root.findall("./MESSAGE/DATA/CATEGORY/byte[@id='%s']/.." % identifier )
 
-		if not len(element):
-			xbmc.log("%s: %s - no element found in XML-database for: %s" % (__addonid__, self.__class__.__name__, identifier), xbmc.LOGERROR)
+		if len(element_obj) != 1:
+			xbmc.log("%s: %s - %d refeered operator(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(element_obj), identifier), xbmc.LOGERROR)
 			return None
 
 		# get the refereed byte for 'operation'
-		operation = self.root.find("./MESSAGE/DATA/OPERATIONS/byte[@id='%s']" % element.get('ref') ).get('val')
+		operation_obj = self.root.findall("./MESSAGE/DATA/OPERATIONS/byte[@id='%s']" % element_obj[0].get('ref') )
+
+		if len(operation_obj) != 1:
+			xbmc.log("%s: %s - %d element(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(operation_obj), identifier), xbmc.LOGERROR)
+			return None
+
+		operation = operation_obj[0].get('val')
 
 		# get bytes from XML-database
-		action = element.find("byte[@id='%s']" % identifier).get('val')
+		action_obj = element_obj[0].findall("byte[@id='%s']" % identifier)
 
-		# merge arrays and return
+		if len(action_obj) != 1:
+			xbmc.log("%s: %s - %d element(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(action_obj), identifier), xbmc.LOGERROR)
+			return None
+
+		action = action_obj[0].get('val')
+
+		# finally - if no errors occured, merge arrays and return
 		return bytearray(hexstr_to_int(operation) + hexstr_to_int(action))
