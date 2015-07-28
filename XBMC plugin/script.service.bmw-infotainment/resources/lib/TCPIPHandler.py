@@ -100,7 +100,7 @@ class TCPIPHandler(object):
 		buf = strbuf.split(" ")
 
 		# convert string to bytes
-		self.tcp_ip_socket.rx_buffer = map(lambda str: int(str, 16), buf)
+		self.tcp_ip_socket.rx_buffer = bytearray(map(lambda str: int(str, 16), buf))
 
 		# execute
 		self.rx_tcp_ip_buf()
@@ -140,11 +140,13 @@ class TCPIPHandler(object):
 				# header+data+header...
 				elif rx_buf_len >= HEADER_LENGTH:
 
+					header = rx_buf[:HEADER_LENGTH]
+
 					# if length is zero we have an special overlay TCP/IP-protocol message. else its a part of a message
-					if rx_buf[2]:
-						self.rx_header_chunk(rx_buf)
+					if header[2]:
+						self.rx_header_chunk(header)
 					else:
-						self.rx_special_header(rx_buf)
+						self.rx_special_header(header)
 
 					bytes_handled = HEADER_LENGTH
 
@@ -159,12 +161,12 @@ class TCPIPHandler(object):
 				self.tcp_ip_socket.rx_buffer = rx_buf[bytes_handled:]
 
 	# Header only. Handle the special overlay TCP/IP-protocol message.
-	def rx_special_header(self, rx_buf):
+	def rx_special_header(self, header):
 
-		if bytearray(REROUTE) in rx_buf:
+		if bytearray(REROUTE) in header:
 
 			# encode to base-16, and in reverse order (DOOH! not so easy..)
-			_rx = map(chr, rx_buf)
+			_rx = map(chr, header)
 			_port = int((_rx[5]+_rx[4]).encode('hex'), 16)
 
 			# close connection...
@@ -176,27 +178,27 @@ class TCPIPHandler(object):
 			# start a ping thread.
 			self.ping_daemon.start()
 
-		elif bytearray(PING) == rx_buf:
+		elif bytearray(PING) == header:
 			self.ping_daemon.rx_ping()
 
 		else:
-			rx_err_header_content(rx_buf)
+			rx_err_header_content(header)
 
-	def rx_header_chunk(self, rx_buf):
-		log.debug("%s - 'header' parsed." % self.__class__.__name__)
+	def rx_header_chunk(self, header):
+		#log.debug("%s - 'header' parsed." % self.__class__.__name__)
 
 		# save data from header -and wait for next TCP/IP-frame
 		self.header_received = True
 
-		self.src = rx_buf[0]
-		self.dst = rx_buf[1]
-		self.data_len = rx_buf[2]
+		self.src = header[0]
+		self.dst = header[1]
+		self.data_len = header[2]
 
 	# header is already received, parse out the data frame.
 	def rx_data_chunk(self, rx_buf):
 
 		# DEBUG
-		log.debug("%s - 'data' parsed." % self.__class__.__name__)
+		#log.debug("%s - 'data' parsed." % self.__class__.__name__)
 
 		# get data chunk length from previous received header
 		data_chunk_len = self.data_len
