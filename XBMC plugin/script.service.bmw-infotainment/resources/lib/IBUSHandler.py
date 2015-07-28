@@ -74,11 +74,10 @@ class Filter(object):
 
 		# bind events to listeners
 		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.push"}), event=self.button.right_knob.push)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.push"}), event=self.button.right_knob.push)
 		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.hold"}), event=self.button.right_knob.hold)
 		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.release"}), event=self.button.right_knob.release)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-left"}), event=self.event.execute("Left"))
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-right" }), event=self.event.execute("Right"))
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-left"}), event=self.event.execute("Up"))
+		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-right" }), event=self.event.execute("Down"))
 		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "left.push"}), event=self.button.left.push)
 		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "left.hold"}), event=self.button.left.hold)
 		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "left.release"}), event=self.button.left.release)
@@ -108,7 +107,7 @@ class Filter(object):
 			if item.has_key('data') and item.get('data') != data:
 				continue
 
-			log.debug("%s - found a event for received signal '%s'" % (self.__class__.__name__, item.get('description')))
+			log.info("%s - found a event for received signal '%s'" % (self.__class__.__name__, item.get('description')))
 
 			# We've found a match, stop looking and execute current action.
 			execute_action = self.event.action[index]
