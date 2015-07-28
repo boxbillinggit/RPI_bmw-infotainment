@@ -1,14 +1,25 @@
-__author__ = 'Lars'
-# This module act as default handler for XBMC/KODI command "RunScript()"
+"""
+This module act as default handler for XBMC/KODI command "RunScript()"
+"""
 
-import sys
+import log as logger
+log = logger.init_logger(__name__)
 
-# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
-import xbmc, xbmcplugin, xbmcgui, xbmcaddon
-import resources.lib.bmwaddon as bmwaddon
+try:
+	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
+except ImportError as err:
+	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
+	import debug.XBMC as xbmc
+	import debug.XBMCGUI as xbmcgui
+	import debug.XBMCADDON as xbmcaddon
+
+__author__ 		= 'Lars'
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
+
+import sys
+import resources.lib.bmwaddon as bmwaddon
 
 # action selector based on argument passed from XBMC/KODI GUI
 select_action = {

@@ -1,20 +1,25 @@
-__author__ = 'Lars'
+"""
+This is a service add'on for XBMC/KODI
 
-# This is a service add'on for XBMC/KODI
-# ref:  http://kodi.wiki/view/Service_addons
-# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
+References:
+http://kodi.wiki/view/Service_addons
+Python dev docs - http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
+"""
+
+import resources.lib.log as logger
+log = logger.init_logger(__name__)
 
 try:
-	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
 except ImportError as err:
-	print "%s: %s - using 'XBMCdebug'-modules instead" % (__name__, err.message)
+	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
 	import resources.lib.debug.XBMC as xbmc
 	import resources.lib.debug.XBMCGUI as xbmcgui
 	import resources.lib.debug.XBMCADDON as xbmcaddon
 
-__monitor__ = xbmc.Monitor()
+__author__ 		= 'Lars'
+__monitor__ 	= xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 __addonid__		= __addon__.getAddonInfo('id')
@@ -53,8 +58,7 @@ if __name__ == "__main__":
 	if __monitor__.waitForAbort():
 
 		# perform necessary shutdowns (stop threads, and more...)
-		xbmc.log("%s: BMW-infotainment service exits. Bye!" % __addonid__, level=xbmc.LOGINFO)
+		log.info("Service add-on exits.")
 
 		# Close socket gracefully (XBMC/KODI waits for thread to finish before it closes down)
 		service.stop()
-

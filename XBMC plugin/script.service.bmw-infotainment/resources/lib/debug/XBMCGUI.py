@@ -1,5 +1,6 @@
 __author__ = 'Lars'
 
+import time
 
 class Dialog(object):
 
@@ -7,7 +8,10 @@ class Dialog(object):
 		pass
 
 	def yesno(self, *arg):
-		return "y" == raw_input(". ".join(arg))
+
+		# prevents the prompt to be disturbed from log message
+		time.sleep(0.5)
+		return "y" == raw_input(". ".join(arg)+"(y/n) >> ")
 
 	def notification(self, *arg):
-		print "%s - Notification dialog: %s " % (__name__, (". ".join(arg)))
+		print("%s - Notification: %s " % (__name__, (". ".join(arg))))

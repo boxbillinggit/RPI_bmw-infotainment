@@ -1,15 +1,20 @@
-__author__ = 'Lars'
+"""
+This module map events against IBUS-message
+"""
+
+import log as logger
+log = logger.init_logger(__name__)
 
 try:
-	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
 except ImportError as err:
-	print "%s: %s - using 'XBMCdebug'-modules instead" % (__name__, err.message)
+	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
 	import debug.XBMC as xbmc
 	import debug.XBMCGUI as xbmcgui
 	import debug.XBMCADDON as xbmcaddon
 
+__author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
@@ -86,7 +91,7 @@ class Filter(object):
 	def find_event(self, src, dst, data):
 
 		# DEBUG
-		xbmc.log("%s: %s - receiving signal: [%s]" % (__addonid__, self.__class__.__name__, to_hexstr(data)), xbmc.LOGDEBUG)
+		log.debug("%s - receiving signal data: [%s]" % (self.__class__.__name__, to_hexstr(data)))
 
 		# find a matching event
 		for index, item in enumerate(self.event.map):
@@ -103,7 +108,7 @@ class Filter(object):
 			if item.has_key('data') and item.get('data') != data:
 				continue
 
-			xbmc.log("%s: %s - found a event for received signal '%s'" % (__addonid__, self.__class__.__name__, item.get('description')), xbmc.LOGDEBUG)
+			log.debug("%s - found a event for received signal '%s'" % (self.__class__.__name__, item.get('description')))
 
 			# We've found a match, stop looking and execute current action.
 			execute_action = self.event.action[index]
@@ -136,13 +141,10 @@ class Events(object):
 			self.map.append(signal)
 			self.action.append(event)
 		else:
-			xbmc.log("%s: %s - Fatal error when binding event for: %s. 'map' and 'action' has unequal length" % (__addonid__, self.__class__.__name__, event.get('data')), xbmc.LOGDEBUG)
+			log.error("%s - could not bind event for '%s'. due to unequal length" % (self.__class__.__name__, event.get('data')))
 
 	# TODO: make static? rename to 'create()'
 	def execute(self, arg):
-
-		# DEBUG
-		xbmc.log("%s: %s - Creating event for: %s" % (__addonid__, self.__class__.__name__, arg), xbmc.LOGDEBUG)
 
 		# return a function.
 		return lambda: xbmc.executebuiltin("Action(%s)" % arg)
@@ -193,7 +195,7 @@ class Signals(object):
 		src = self.root.findall("./MESSAGE/DEVICES/byte[@id='%s']" % identifier )
 
 		if len(src) != 1:
-			xbmc.log("%s: %s - %d element(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(src), identifier), xbmc.LOGERROR)
+			log.error("%s - %d item(s) found in XML-database for '%s'. Expecting one item" %(self.__class__.__name__, len(src), identifier))
 			return None
 
 		# convert to integer array. return the 'int' (not as list with only one single byte)
@@ -206,14 +208,14 @@ class Signals(object):
 		element_obj = self.root.findall("./MESSAGE/DATA/CATEGORY/byte[@id='%s']/.." % identifier )
 
 		if len(element_obj) != 1:
-			xbmc.log("%s: %s - %d refereed operator(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(element_obj), identifier), xbmc.LOGERROR)
+			log.error("%s - %d reference(s) found in XML-database for '%s'. Expecting one reference" % (self.__class__.__name__, len(element_obj), identifier))
 			return None
 
 		# get the refereed byte for 'operation'
 		operation_obj = self.root.findall("./MESSAGE/DATA/OPERATIONS/byte[@id='%s']" % element_obj[0].get('ref') )
 
 		if len(operation_obj) != 1:
-			xbmc.log("%s: %s - %d element(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(operation_obj), identifier), xbmc.LOGERROR)
+			log.error("%s - %d item(s) found in XML-database for '%s'. Expecting one item" % (self.__class__.__name__, len(operation_obj), identifier))
 			return None
 
 		operation = operation_obj[0].get('val')
@@ -222,7 +224,7 @@ class Signals(object):
 		action_obj = element_obj[0].findall("byte[@id='%s']" % identifier)
 
 		if len(action_obj) != 1:
-			xbmc.log("%s: %s - %d element(s) found in XML-database for: %s" % (__addonid__, self.__class__.__name__, len(action_obj), identifier), xbmc.LOGERROR)
+			log.error("%s - %d item(s) found in XML-database for '%s'. Expecting one item" % (self.__class__.__name__, len(action_obj), identifier))
 			return None
 
 		action = action_obj[0].get('val')

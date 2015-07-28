@@ -1,29 +1,29 @@
-__author__ = 'Lars'
-# this module handles the actual TCP/IP transportation on socket. two options is available (asyncore loop -or native sock)
+"""
+This module handles the actual TCP/IP transportation on socket. two options is available (asyncore loop -or native socket)
+"""
+
+import log as logger
+log = logger.init_logger(__name__)
 
 try:
-	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
 except ImportError as err:
-	print "%s: %s - using 'XBMCdebug'-modules instead" % (__name__, err.message)
+	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
 	import debug.XBMC as xbmc
 	import debug.XBMCGUI as xbmcgui
 	import debug.XBMCADDON as xbmcaddon
 
+__author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 __addonid__		= __addon__.getAddonInfo('id')
 
-# handles the actual transportation of TCP messages (rx and tx).
-# with asyncore -or native socket.
-
 import asyncore
 import socket
 import errno
 from threading import Thread
-
 
 # settings for TCP transport
 MAX_RECVBUFFER = 512
@@ -64,12 +64,11 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 	# TODO: need to be called within the loop (need to select socket)
 	def is_connected(self):
 
-		xbmc.log("%s: %s - are we connected [%s] or connecting [%s] " % (__addonid__, self.__class__.__name__, self.connected,  self.connecting), xbmc.LOGDEBUG)
 		return self.connected or self.connecting
 
 	def reroute_connection(self, host, port):
 
-		xbmc.log("%s: %s - rerouting to port %s ..." % (__addonid__, self.__class__.__name__, port), xbmc.LOGDEBUG)
+		log.debug("%s - rerouting to port [%s] ..." % (self.__class__.__name__, port))
 
 		# adds a channel (connect a socket)
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -77,16 +76,13 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 
 	# overrides method in asynchore.dispatcher
 	def handle_connect(self):
-		xbmc.log("%s: %s - Socket opened... (%s %s)" % (__addonid__, self.__class__.__name__, self.socket.fileno(), self.socket.getsockname()), xbmc.LOGDEBUG)
+		log.debug("%s - Socket opened [file-no:%s name:%s]" % (self.__class__.__name__, self.socket.fileno(), self.socket.getsockname()))
 
 		# update status in "settings"
 		__addon__.setSetting("gateway.status", "Connected")
 
 	def handle_close(self):
-		#generates error.
-		#xbmc.log("BMW: Socket closed... (%s %s)" % (self.socket.fileno(), self.socket.getsockname()), xbmc.LOGDEBUG)
-
-		xbmc.log("%s: %s - Socket closed..." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+		log.debug("%s - Socket closed [file-no:%s name:%s]" % (self.__class__.__name__, self.socket.fileno(), self.socket.getsockname()))
 
 		# update status in "settings"
 		__addon__.setSetting("gateway.status", "Disconnected")
@@ -100,7 +96,7 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 		self.rx_buffer += bytearray(self.recv(MAX_RECVBUFFER))
 
 		# DEBUG
-		xbmc.log("%s: %s - handle_read(): %s"  % (__addonid__, self.__class__.__name__, to_hexstr(self.rx_buffer)), xbmc.LOGDEBUG)
+		log.debug("%s - handle_read - [%s]" % (self.__class__.__name__, to_hexstr(self.rx_buffer)))
 
 		self.handle_message()
 
@@ -115,7 +111,7 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 	def handle_write(self):
 		if self.tx_buffer:
 			sent = self.send(self.tx_buffer)
-			#xbmc.log("%s: %s - sending chunk: [%s] (bytes sent:%s)" % (__addonid__, self.__class__.__name__, to_hexstr(self.tx_buffer), sent), xbmc.LOGDEBUG)
+			log.debug("%s - sending chunk: [%s] (bytes sent:%s)" % (self.__class__.__name__, to_hexstr(self.tx_buffer), sent))
 			self.tx_buffer = self.tx_buffer[sent:]
 
 		else:

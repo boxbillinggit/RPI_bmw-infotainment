@@ -1,22 +1,27 @@
-__author__ = 'Lars'
+"""
+Create states for boardmonitor-buttons
+"""
 
-import time
-from threading import Thread
+import log as logger
+log = logger.init_logger(__name__)
 
 try:
-	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
 except ImportError as err:
-	print "%s: %s - using 'XBMCdebug'-modules instead" % (__name__, err.message)
+	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
 	import debug.XBMC as xbmc
 	import debug.XBMCGUI as xbmcgui
 	import debug.XBMCADDON as xbmcaddon
 
+__author__ = 'Lars'
 __monitor__ 	= xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 __addonid__		= __addon__.getAddonInfo('id')
+
+import time
+from threading import Thread
 
 # define timing in seconds [s] for state "hold"
 STATE_HOLD_TIME = 1
@@ -39,7 +44,7 @@ class Button(object):
 	# TODO: better handling. (if calling 'not_existing_button.hold()'
 	# def __getattr__(self, namespace):
 	#
-	# 	xbmc.log("%s: %s - No button found for '%s'" % (__addonid__, self.__class__.__name__, namespace), xbmc.LOGDEBUG)
+	#	log.error("%s - No button found for '%s'" % (self.__class__.__name__, namespace))
 
 
 # Construction class. Create states for each button
@@ -72,7 +77,7 @@ class States(object):
 	# periodic execution during state 'hold'
 	def _check_state_hold(self):
 
-		xbmc.log("%s: %s - init the while loop for state 'hold'" % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+		log.debug("%s - init the while loop for state 'hold'" % (self.__class__.__name__))
 
 		# loop until we're in state 'release' or max time has occurred.
 		while self._still_holding():
@@ -86,8 +91,7 @@ class States(object):
 			# execute action
 			self.hold()
 
-
-		xbmc.log("%s: %s - exits the while loop for state 'hold'" % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+		log.debug("%s - exits the while loop for state 'hold'" % (self.__class__.__name__))
 
 	# start the timer when holding button (to evaluate if holding)
 	def _start_timer(self):
@@ -97,7 +101,7 @@ class States(object):
 		t.daemon = True
 		t.start()
 
-		xbmc.log("%s: %s - start loop in thread for 'hold'" % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+		log.debug("%s - start loop in thread for 'hold'" % (self.__class__.__name__))
 
 	# action for state 'push'.
 	def push(self):
@@ -105,7 +109,7 @@ class States(object):
 		self.state = "push"
 		self.timestamp = time.time()
 
-		xbmc.log("%s: %s - triggered state '%s'" % (__addonid__, self.__class__.__name__, self.state), xbmc.LOGDEBUG)
+		log.debug("%s - triggered state '%s'" % (self.__class__.__name__, self.state))
 
 		# check that action for state 'hold' is not empty, else don't bother start timer.
 		# must be triggered only if previous state was 'release' (none is the init previous state)
@@ -120,17 +124,16 @@ class States(object):
 		if hasattr(action, '__call__'):
 			action()
 		else:
-			xbmc.log("%s: %s - state '%s' has no action" % (__addonid__, self.__class__.__name__, self.state), xbmc.LOGDEBUG)
+			log.debug("%s - state '%s' has no action" % (self.__class__.__name__, self.state))
 
 		self.previous_state = self.state
-
 
 	# action for state 'hold'. (some buttons has a message on the bus for this state already)
 	def hold(self):
 
 		self.state = "hold"
 
-		xbmc.log("%s: %s - triggered state '%s'" % (__addonid__, self.__class__.__name__, self.state), xbmc.LOGDEBUG)
+		log.debug("%s - triggered state '%s'" % (self.__class__.__name__, self.state))
 
 		# execute action for 'hold'...
 		action = self.action.get('hold')
@@ -139,7 +142,7 @@ class States(object):
 		if hasattr(action, '__call__'):
 			action()
 		else:
-			xbmc.log("%s: %s - state '%s' has no action" % (__addonid__, self.__class__.__name__, self.state), xbmc.LOGDEBUG)
+			log.debug("%s - state '%s' has no action" % (self.__class__.__name__, self.state))
 
 		self.previous_state = self.state
 
@@ -149,7 +152,7 @@ class States(object):
 		# update current state
 		self.state = "release"
 
-		xbmc.log("%s: %s - triggered state '%s'" % (__addonid__, self.__class__.__name__, self.state), xbmc.LOGDEBUG)
+		log.debug("%s - triggered state '%s'" % (self.__class__.__name__, self.state))
 
 		# If previous state was 'hold' or 'release' we won't execute action 'release'.
 		if self.previous_state == ("hold" or "release"):
@@ -162,6 +165,6 @@ class States(object):
 		if hasattr(action, '__call__'):
 			action()
 		else:
-			xbmc.log("%s: %s - state '%s' has no action" % (__addonid__, self.__class__.__name__, self.state), xbmc.LOGDEBUG)
+			log.debug("%s - state '%s' has no action" % (self.__class__.__name__, self.state))
 
 		self.previous_state = self.state

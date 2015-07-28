@@ -1,23 +1,20 @@
-__author__ = 'Lars'
-# this module handles the overlay TCP protocol and functions
+"""
+This module handles the overlay TCP protocol and functions
+"""
 
-# TODO: restructure module (names, classes, and more)
-# TODO: look over all loglevels -and log messages (decrease amount?)
-# TODO: implement tx of IBUS-messages
-
-# about loglevels:
-# http://kodi.wiki/view/Log_file/Advanced#advancedsettings.xml_for_normal_debugging
+import log as logger
+log = logger.init_logger(__name__)
 
 try:
-	# Python dev docs: http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
 except ImportError as err:
-	print "%s: %s - using 'XBMCdebug'-modules instead" % (__name__, err.message)
+	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
 	import debug.XBMC as xbmc
 	import debug.XBMCGUI as xbmcgui
 	import debug.XBMCADDON as xbmcaddon
 
+__author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
@@ -38,6 +35,7 @@ HEADER_LENGTH = 8
 PING_TIME_INTERVAL = 3		# seconds
 NO_LENGTH=0
 
+
 # adjust header to correct length (8byte)
 def _resize_header(data):
 	return data + ([0] * (HEADER_LENGTH - len(data)))
@@ -54,15 +52,15 @@ REROUTE 	= [0x63, 0x74]					# ASCII: 'ct'
 
 
 def rx_no_frame_length():
-	xbmc.log("%s: No length on TCP/IP-frame. (disconnect message from server)" % __addonid__, xbmc.LOGDEBUG)
+	log.debug("No length on TCP/IP-frame. (disconnect message from server)")
 
 
 def rx_err_length(rx_buf_len, data_len, rx_buf):
-	xbmc.log("%s - Unexpected rx length. (current buffer length:%d, expected:%d, frame: [%s]" % (__addonid__, rx_buf_len, data_len, to_hexstr(rx_buf)), xbmc.LOGERROR)
+	log.debug("Unexpected rx length [%s] (length:%d, expected:%d, frame: " % (to_hexstr(rx_buf), rx_buf_len, data_len))
 
 
 def rx_err_header_content(rx_buf):
-	xbmc.log('%s - Unexpected rx header content. [%s]' % (__addonid__, to_hexstr(rx_buf)), xbmc.LOGERROR)
+	log.debug('Unexpected rx header content [%s]' % to_hexstr(rx_buf))
 
 
 # Base class handler for the TCP protocol. Main point for routing Rx -and Tx data.
@@ -92,8 +90,6 @@ class TCPIPHandler(object):
 
 		# init IBUS handler
 		self.ibus_handler = Filter()
-
-		xbmc.log("%s: %s - init class." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
 
 	def debug_recv_rxbuf(self, strbuf):
 
@@ -187,7 +183,7 @@ class TCPIPHandler(object):
 			rx_err_header_content(rx_buf)
 
 	def rx_header_chunk(self, rx_buf):
-		xbmc.log("%s: %s - 'header' parsed." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+		log.debug("%s - 'header' parsed." % self.__class__.__name__)
 
 		# save data from header -and wait for next TCP/IP-frame
 		self.header_received = True
@@ -200,7 +196,7 @@ class TCPIPHandler(object):
 	def rx_data_chunk(self, rx_buf):
 
 		# DEBUG
-		xbmc.log("%s: %s - 'data' parsed." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+		log.debug("%s - 'data' parsed." % self.__class__.__name__)
 
 		# get data chunk length from previous received header
 		data_chunk_len = self.data_len
@@ -237,7 +233,7 @@ class TCPIPDaemon(object):
 	def start(self):
 
 		if self.tcp_ip_socket.is_connected():
-			xbmc.log("%s: %s - Request to start service - we are already connected" % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+			log.debug("%s - Request to start service - we are already connected" % self.__class__.__name__)
 
 		else:
 			# we're starting over again
@@ -261,18 +257,17 @@ class TCPIPDaemon(object):
 		if self.tcp_ip_socket.connected:
 
 			# log.
-			xbmc.log("%s: %s - Request to disconnect, sending disconnect to server." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+			log.debug("%s - Request to disconnect, sending disconnect to server." % self.__class__.__name__)
 
 			# send 'disconnect'
 			self.tcp_ip_socket.send_buffer(DISCONNECT)
 
 		# not connected, just terminate socket.
 		else:
-			xbmc.log("%s: %s - Request to disconnect, already disconnected " % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+			log.debug("%s - Request to disconnect, already disconnected" % self.__class__.__name__)
 
 			# close socket
 			self.tcp_ip_socket.close()
-
 
 	# TCP/IP service thread.
 	def _tcp_daemon(self):
@@ -301,15 +296,12 @@ class TCPIPDaemon(object):
 			# send 'connect'
 			self.tcp_ip_socket.send_buffer(CONNECT)
 
-			xbmc.log("%s: %s - launching TCP/IP socket. (start asyncore loop)" % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+			log.info("%s - connecting..." % self.__class__.__name__)
 
 			# inherited from 'TCPDaemon' class (blocking function)
 			self.tcp_ip_socket.start()
 
-			xbmc.log("%s: %s - connection lost. (exit asyncore loop)" % (__addonid__, self.__class__.__name__), xbmc.LOGINFO)
-
-		# the loop exited
-		xbmc.log("%s: %s - service main loop stopped (function returns, thread terminates)." % (__addonid__, self.__class__.__name__), level=xbmc.LOGDEBUG)
+			log.info("%s - connection lost..." % self.__class__.__name__)
 
 
 # a separate class of 'ping-daemon'
@@ -341,7 +333,7 @@ class PingDaemon(object):
 	def _ping_daemon(self):
 
 		# log
-		xbmc.log("%s: %s - starting ping daemon." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+		log.debug("%s - starting ping daemon" % self.__class__.__name__)
 
 		# loop while still connected and until abort is requested from XBMC/KODI
 		while self.tcp_ip_socket.is_connected() and not __monitor__.abortRequested():
@@ -350,12 +342,12 @@ class PingDaemon(object):
 			time.sleep(PING_TIME_INTERVAL)
 
 		# log
-		xbmc.log("%s: %s - terminating ping daemon (function returns)." % (__addonid__, self.__class__.__name__), xbmc.LOGDEBUG)
+		log.debug("%s - terminating ping daemon (function returns)" % self.__class__.__name__)
 
 	# received ping
 	def rx_ping(self):
 
-		#xbmc.log("%s: %s - receiving ping (number: %s, last received: %.1f [s] ago )" % (__addonid__, self.__class__.__name__, self.pings_rx, (time.time() - self.ping_rx_timestamp)), xbmc.LOGDEBUG)
+		#log.debug("%s - receiving ping (number: %s, last received: %.1f [s] ago )" % (self.__class__.__name__, self.pings_rx, (time.time() - self.ping_rx_timestamp)))
 
 		# increase counter, capture timestamp
 		self.pings_rx += 1
