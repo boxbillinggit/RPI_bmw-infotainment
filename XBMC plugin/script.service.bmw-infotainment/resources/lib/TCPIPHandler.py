@@ -121,17 +121,16 @@ class TCPIPHandler(object):
 		 * error (unexpected length)
 		"""
 
-		rx_buf = self.tcp_ip_socket.rx_buffer
-
 		# disconnect message
-		if not len(rx_buf):
+		if not len(self.tcp_ip_socket.rx_buffer):
 			rx_no_frame_length()
 
 		# parse TCP/IP-frame:
 		else:
 
-			while len(rx_buf):
+			while len(self.tcp_ip_socket.rx_buffer):
 
+				rx_buf = self.tcp_ip_socket.rx_buffer
 				rx_buf_len = len(rx_buf)
 
 				# data+header+data...
@@ -160,8 +159,8 @@ class TCPIPHandler(object):
 					bytes_handled = rx_buf_len
 					self.header_received = False
 
-				# empty buffer for bytes handled -and loop over.
-				rx_buf = rx_buf[bytes_handled:]
+				# empty buffer for bytes handled -and loop over. Here we loose the binding between 'rx_buf' and 'self.tcp_ip_socket.rx_buffer'
+				self.tcp_ip_socket.rx_buffer = rx_buf[bytes_handled:]
 
 	# Header only. Handle the special overlay TCP/IP-protocol message.
 	def rx_special_header(self, rx_buf):

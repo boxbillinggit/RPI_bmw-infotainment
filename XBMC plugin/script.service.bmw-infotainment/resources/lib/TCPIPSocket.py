@@ -114,9 +114,10 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 	# TODO: how are we selecting socket to send to??
 	def handle_write(self):
 		if self.tx_buffer:
-			sent = self.send(bytearray(self.tx_buffer))
+			sent = self.send(self.tx_buffer)
+			#xbmc.log("%s: %s - sending chunk: [%s] (bytes sent:%s)" % (__addonid__, self.__class__.__name__, to_hexstr(self.tx_buffer), sent), xbmc.LOGDEBUG)
 			self.tx_buffer = self.tx_buffer[sent:]
-			#xbmc.log("BMW: handle_write(): %s (%s %s)" % (str(self.tx_buffer).encode('hex'), self.socket.fileno(), self.socket.getsockname()), xbmc.LOGDEBUG)
+
 		else:
 			pass
 
@@ -128,8 +129,6 @@ class TCPIPSocketAsyncore(asyncore.dispatcher):
 	# linearization with class methods in 'TCPDaemonNative' (dummy function does nothing but fill buffer).
 	def send_buffer(self, buf):
 		self.tx_buffer += bytearray(buf)
-
-
 
 # use native sockets instead
 # TODO: not in use... fix this!
