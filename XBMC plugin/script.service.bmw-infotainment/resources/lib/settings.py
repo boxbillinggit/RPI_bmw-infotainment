@@ -18,7 +18,7 @@ DEBUGGER_TIMEOUT = 30
 # logger
 # Note: if we're using XBMC- we pipe console-messages to 'xbmc.log' instead
 
-LOGFILE="logs/events.log"
+LOGPATH="logs/"
 
 LOG_TO_CONSOLE = True
 LOG_TO_FILE = True

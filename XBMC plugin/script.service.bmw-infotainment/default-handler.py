@@ -2,7 +2,7 @@
 This module act as default handler for XBMC/KODI command "RunScript()"
 """
 
-import log as logger
+import resources.lib.log as logger
 log = logger.init_logger(__name__)
 
 try:
