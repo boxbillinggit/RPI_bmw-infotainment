@@ -19,6 +19,7 @@ __monitor__ 	= xbmc.Monitor()
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 __addonid__		= __addon__.getAddonInfo('id')
+__addonpath__	= __addon__.getAddonInfo('path')
 
 # ref: https://docs.python.org/2/library/xml.etree.elementtree.html
 import xml.etree.ElementTree as ElementTree
@@ -30,8 +31,7 @@ from TCPIPSocket import to_hexstr
 
 
 # path settings (problem occurs else in XBMC/KODI)
-BASE_LIB_PATH = os.path.join( os.getcwd(), "resources", "lib" )
-SIGNAL_DB_PATH = os.path.join(BASE_LIB_PATH, settings.SIGNAL_DATABASE)
+SIGNAL_DB_PATH = os.path.join(__addonpath__, "resources", "data", settings.SIGNAL_DATABASE)
 
 
 #

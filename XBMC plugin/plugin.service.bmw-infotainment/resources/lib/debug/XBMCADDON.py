@@ -1,11 +1,12 @@
 __author__ = 'Lars'
 
+import os
 
 class Addon(object):
 
 	def __init__(self):
 		self.mem = {"gateway.ip-address": "169.254.0.1", "gateway.port": "4287"}
-		self.addon_info = {"name": "XBMC BMW addon", "id": "script.ibus.bmw"}
+		self.addon_info = {"name": "XBMC BMW addon", "id": "script.ibus.bmw", "path": os.getcwd()}
 
 	def getSetting(self, setting):
 

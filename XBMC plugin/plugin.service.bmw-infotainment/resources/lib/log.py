@@ -23,6 +23,7 @@ except ImportError as err:
 __author__ 		= 'Lars'
 __addon__		= xbmcaddon.Addon()
 __addonid__		= __addon__.getAddonInfo('id')
+__addonpath__	= __addon__.getAddonInfo('path')
 
 import settings, logging
 import os, datetime
@@ -48,7 +49,7 @@ def environment():
 now = datetime.datetime.now()
 
 FILENAME="%s%s.events-%s.log" % (settings.LOGPATH, environment(), now.strftime("%Y-%m-%d-%H%M%S"))
-LOGPATH = os.path.join(os.getcwd(), FILENAME)
+LOGPATH = os.path.join(__addonpath__, FILENAME)
 
 # ref: https://docs.python.org/3/library/logging.html?highlight=logger#logging.Formatter
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
