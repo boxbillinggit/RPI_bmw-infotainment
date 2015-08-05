@@ -5,7 +5,7 @@ from xml.dom import minidom
 
 # path to deploy, trough sftp
 SFTP_PATH="public-repository/kodi"
-ADDON_DIR="script.service.bmw-infotainment"
+ADDON_DIR="plugin.service.bmw-infotainment"
 
 # this script must be run from folder "deploy"
 RELATIVE_PATH="../XBMC plugin"
