@@ -9,8 +9,8 @@ Build OpenBM-daemon:
   tags: 
   except:
   - tags
-#  only:
-#  - master
+  only:
+  - master
   
 Deploy to repository:
   script:
@@ -24,5 +24,5 @@ Deploy to repository:
   tags: 
   except:
   - tags
-#  only:
-#  - master
+  only:
+  - master
