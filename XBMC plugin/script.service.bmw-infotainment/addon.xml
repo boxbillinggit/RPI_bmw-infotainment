@@ -1,39 +1,40 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon	id="script.service.bmw-infotainment"
+		name="Raspberry Pi BMW Infotainment"
+		version="1.0.0"
+		provider-name="Lars Gunnarsson">
 
 <!--
     Add-on definitions.
     reference: http://kodi.wiki/view/Add-on_settings (root http://kodi.wiki/view/Add-on_development)
 
     This plugin is both a service (automatic start up) -and a script (callable)
+	
+	Service starts on XBMC/KODI startup. Service plugin can be found through:
+	"Settings -> Addons -> enabled add-ons > services -> Raspberry Pi BMW Infotainment"
+
+	Script usually appears as "launch" button under settings (in our case it's called internally). 
+	"Settings -> Addons -> enabled add-ons -> ... -> Raspberry Pi BMW Infotainment.
+	
+	Repository for automatic updates. Ref: http://kodi.wiki/view/HOW-TO:Create_a_repository_for_add-ons
 -->
 
-<addon	id="script.bmw.infotainment"
-		name="Raspberry Pi BMW Infotainment"
-		version="1.0.0"
-		provider-name="Lars Gunnarsson">
-	 
 	<requires>
-		<import addon="xbmc.python" version="1.0"/>
+		<import addon="xbmc.python" version="2.1.0"/>
 	</requires>
-	
-	<!--
-	    Start service on XBMC startup. Service plugin can be found through:
-	    "Settings -> Addons -> enabled add-ons > services -> Raspberry Pi BMW Infotainment"
-	-->
 	<extension point="xbmc.service" start="startup" library="service.py" />
-
-	<!--
-	    Default handler for script. (this usually appears as "launch" button under settings)
-		"Settings -> Addons -> enabled add-ons -> ... -> Raspberry Pi BMW Infotainment"
-	-->
 	<extension point="xbmc.python.script" library="default-handler.py" />
-
-	<!-- Show info about addon -->
 	<extension point="xbmc.addon.metadata">
 		<platform>all</platform>
 		<summary lang="en">BMW infotainment gateway</summary>
 		<description lang="en">A Script for controlling Raspberry Pi with original BMW infotainment</description>
 		<website>http://one-infiniteloop.com/dev/projects/car-media-player/</website>
+		<email>lars.gunnarsson@one-infiniteloop.com</email>
 		<source>http://git.one-infiniteloop.com/larsa/bmw-infotainment</source>
+	</extension>
+	<extension point="xbmc.addon.repository" name="BMW-infotainment Repository for automatic updates">
+		<info compressed="true">http://deploy.one-infiniteloop.com/kodi/xml/addons.xml</info>
+		<checksum>http://deploy.one-infiniteloop.com/kodi/xml/addons.xml.md5</checksum>
+		<datadir zip="true">http://deploy.one-infiniteloop.com/kodi/latest-release</datadir>
 	</extension>
 </addon>
