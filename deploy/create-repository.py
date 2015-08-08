@@ -6,12 +6,17 @@ from xml.dom import minidom
 # path to deploy, trough sftp
 SFTP_PATH="public-repository/kodi"
 ADDON_DIR="plugin.service.bmw-infotainment"
+WINRAR="C:/Program Files/WinRAR/Rar.exe"
 
 # this script must be run from folder "deploy"
 RELATIVE_PATH="../XBMC plugin"
 
 PATH=os.path.realpath("%s/%s" % (RELATIVE_PATH, ADDON_DIR))
 
+
+# change dir to execute in base path! (it's a mess with relative pathes else.)
+#if "deploy" in os.getcwd():
+#	os.chdir("../")
 
 def prettify_xml(elem):
 	"""
@@ -79,13 +84,7 @@ def generate_repository(ver, addon_name):
 	# rename changelog with version-ending
 	os.system("mv %s/changelog.txt %s/changelog-%s.txt" % (addon_name, addon_name, ver))
 
-	# finally create the ZIP-archive
-	tar_cmd = "tar -cf %s/%s.zip --directory=\"%s\" %s" % (addon_name, archive_name, os.path.realpath(RELATIVE_PATH), ADDON_DIR)
-	#print(tar_cmd)
-
-	os.system(tar_cmd)
-
-	# Finally, create sftp batch-comand file for moving files to repository. (dir must exist on remote!)
+	# Create sftp batch-comand file for moving files to repository. (dir must exist on remote!)
 	sftp_cmd = "put -r %s %s/latest-release\n" % (addon_name, SFTP_PATH) + \
 				"put addons.xml %s/xml\n" % (SFTP_PATH) + \
 				"put addons.xml.md5 %s/xml\n" % (SFTP_PATH) + \
@@ -93,6 +92,16 @@ def generate_repository(ver, addon_name):
 
 	# create file
 	open("sftp.batch", "w" ).write(sftp_cmd)
+
+	if sys.platform == "win32":
+		# finally create the ZIP-archive
+		tar_cmd = "\"%s\" a -w('%s') %s/%s.zip %s" % (WINRAR, RELATIVE_PATH, addon_name, archive_name, ADDON_DIR)
+		print(tar_cmd)
+	else:
+		tar_cmd = "cd \"%s\"\n"% RELATIVE_PATH + \
+		"zip -qr ../deploy/%s/%s.zip %s\n" % (addon_name, archive_name, ADDON_DIR)
+
+	os.system(tar_cmd)
 
 
 if __name__ == "__main__":
@@ -103,10 +112,5 @@ if __name__ == "__main__":
 
 	# prepare files for deploy to repo. (works both on UBUNTU and WIN)
 	generate_repository(plugin_ver, plugin_id)
-
-	# if sys.platform == "win32":
-	# 	generate_repository_win(plugin_ver, plugin_id)
-	# else:
-	# 	generate_repository_unix(plugin_ver, plugin_id)
 
 	# TODO: get latest history from GIT and add to changelog ;)
