@@ -12,16 +12,16 @@ CND_ARTIFACT_DIR_Debug=dist/Debug/MinGW-Windows
 CND_ARTIFACT_NAME_Debug=bmwaddon.pyd
 CND_ARTIFACT_PATH_Debug=dist/Debug/MinGW-Windows/bmwaddon.pyd
 CND_PACKAGE_DIR_Debug=dist/Debug/MinGW-Windows/package
-CND_PACKAGE_NAME_Debug=libXBMC-dll.dll.tar
-CND_PACKAGE_PATH_Debug=dist/Debug/MinGW-Windows/package/libXBMC-dll.dll.tar
+CND_PACKAGE_NAME_Debug=libplugin.module.bmw-infotainment.dll.tar
+CND_PACKAGE_PATH_Debug=dist/Debug/MinGW-Windows/package/libplugin.module.bmw-infotainment.dll.tar
 # Release configuration
 CND_PLATFORM_Release=MinGW-Windows
 CND_ARTIFACT_DIR_Release=dist/Release/MinGW-Windows
-CND_ARTIFACT_NAME_Release=libXBMC-dll.dll
-CND_ARTIFACT_PATH_Release=dist/Release/MinGW-Windows/libXBMC-dll.dll
+CND_ARTIFACT_NAME_Release=libplugin.module.bmw-infotainment.dll
+CND_ARTIFACT_PATH_Release=dist/Release/MinGW-Windows/libplugin.module.bmw-infotainment.dll
 CND_PACKAGE_DIR_Release=dist/Release/MinGW-Windows/package
-CND_PACKAGE_NAME_Release=libXBMC-dll.dll.tar
-CND_PACKAGE_PATH_Release=dist/Release/MinGW-Windows/package/libXBMC-dll.dll.tar
+CND_PACKAGE_NAME_Release=libplugin.module.bmw-infotainment.dll.tar
+CND_PACKAGE_PATH_Release=dist/Release/MinGW-Windows/package/libplugin.module.bmw-infotainment.dll.tar
 #
 # include compiler specific variables
 #

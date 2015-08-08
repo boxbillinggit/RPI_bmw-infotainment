@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=XBMC-dll
+PROJECTNAME=plugin.module.bmw-infotainment
 
 # Active Configuration
 DEFAULTCONF=Debug
