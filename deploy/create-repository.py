@@ -1,22 +1,43 @@
-import hashlib
 import xml.etree.ElementTree as ET
-import sys, os
 from xml.dom import minidom
+import hashlib, sys, os
 
 # path to deploy, trough sftp
-SFTP_PATH="public-repository/kodi"
-ADDON_DIR="plugin.service.bmw-infotainment"
-WINRAR="C:/Program Files/WinRAR/Rar.exe"
+SFTP_ROOT="public-repository/kodi/release"
+SFTP_HOST="deploy@ubuntu"
+
+# set paths according to system
+if sys.platform == "win32":
+	ROOT_PATH="C:/Users/Lars/Documents/GitHub/bmw-infotainment"
+	SFTP_CMD="psftp"
+	ZIP_CMD="winrar a -afzip -IBCK -ep1"
+else:
+	ROOT_PATH=""
+	SFTP_CMD="sftp"
+	ZIP_CMD="zip -qr"
+
+#UNIX_BUILD_ROOT="~/build/"
+#WIN_BUILD_ROOT="C:/Users/Lars/build"
+
+REPOSITORY="tmp-repository"
+
+# Windows configurations: Need to have path on WIN:
+# set PATH=C:\Program Files\Putty;%PATH%
+# set PATH=C:\Program Files\WinRAR;%PATH%
+#ADDON_DIR="plugin.service.bmw-infotainment"
+
+#WIN_SFTP="psftp"	# ref: http://the.earth.li/~sgtatham/putty/0.65/htmldoc/Chapter6.html#psftp
 
 # this script must be run from folder "deploy"
-RELATIVE_PATH="../XBMC plugin"
+#RELATIVE_PATH="../XBMC plugin"
 
-PATH=os.path.realpath("%s/%s" % (RELATIVE_PATH, ADDON_DIR))
+#PATH=os.path.realpath("%s/%s" % (RELATIVE_PATH, ADDON_DIR))
 
 
-# change dir to execute in base path! (it's a mess with relative pathes else.)
-#if "deploy" in os.getcwd():
-#	os.chdir("../")
+# TODO
+def find_plugins(path):
+	return ["plugin/plugin.service.bmw-infotainment"]
+
 
 def prettify_xml(elem):
 	"""
@@ -29,88 +50,99 @@ def prettify_xml(elem):
 	return reparsed.toprettyxml(indent="\t")
 
 
-def generate_master_xml():
+def generate_master_xml(paths):
 
-	asd = ET.Element("addons")
+	data = []
 
 	# create tree with root element
 	out = ET.ElementTree(ET.Element("addons"))
 
 	root = out.getroot()
 
-	# read plugin's addon
-	tree = ET.parse(os.path.join(PATH, "addon.xml"))
+	# iterate over plugin path's
+	for path in paths:
 
-	addon_xml = tree.getroot()
+		# read plugin's addon
+		tree = ET.parse(os.path.join(path, "addon.xml"))
 
-	# append addon structure
-	root.append(addon_xml)
+		addon_xml = tree.getroot()
+
+		data.append({"ver": addon_xml.get('version'), "id": addon_xml.get('id')})
+
+		# append addon structure
+		root.append(addon_xml)
 
 	# write out
-	open("addons.xml", "wb" ).write( prettify_xml(root))
+	output = prettify_xml(root)
 
-	# write out
-	#out.write('addons.xml', encoding="UTF-8", xml_declaration=True )
+	# create file
+	open("%s/addons.xml" % REPOSITORY, "wb" ).write( output )
 
-	return addon_xml.get('version'), addon_xml.get('id')
-
-
-def generate_xml_md5():
-	
 	# create checksum
-	md5 = hashlib.md5( open( "addons.xml", "r" ).read().encode( "utf-8" ) ).hexdigest()
+	md5 = hashlib.md5(output).hexdigest()
 
-	# write file
-	open( "addons.xml.md5" , "wb" ).write(md5)
+	# create file
+	open( "%s/addons.xml.md5" % REPOSITORY, "wb" ).write(md5)
+
+	# return id -and version
+	return data
 
 
 def move_builds():
 	pass
 
 
-def generate_repository(ver, addon_name):
+def deploy_repository(relative_path, plugin_ver, plugin_id):
 
-	archive_name = "%s-%s" % (addon_name, ver)
+	# Create archive filename
+	archive_name = "%s-%s" % (plugin_id, plugin_ver)
 
+	# Create archive
+	zip_cmd = "%s %s/%s.zip %s" % (ZIP_CMD, REPOSITORY, archive_name, relative_path)
+	os.system(zip_cmd)
+
+	# Linux:
+	# 	tar_cmd = "cd \"%s\"\n"% RELATIVE_PATH + \
+	# 	"zip -qr ../deploy/%s/%s.zip %s\n" % (addon_name, archive_name, ADDON_DIR)
+	#
+
+	# Create sftp batch-comand file for moving files to repository. (dir must exist on remote!)
+	sftp_cmd = 	"put %s/addons.xml %s/addons.xml\n" % (REPOSITORY, SFTP_ROOT) + \
+				"put %s/addons.xml.md5 %s/addons.xml.md5\n" % (REPOSITORY, SFTP_ROOT) + \
+				"put %s/%s.zip %s/%s/%s.zip\n" % (REPOSITORY, archive_name, SFTP_ROOT, plugin_id, archive_name) + \
+				"put %s/changelog.txt %s/%s/changelog-%s.txt\n" % (relative_path, SFTP_ROOT, plugin_id, plugin_ver) + \
+				"put %s/icon.png %s/%s//icon.png\n" % (relative_path, SFTP_ROOT, plugin_id) + \
+				"put %s/fanart.jpg %s/%s/fanart.jpg\n" % (relative_path, SFTP_ROOT, plugin_id) + \
+				"quit\n"
+
+	# create file.
+	open("%s/sftp.batch" % REPOSITORY, "w" ).write(sftp_cmd)
+
+	# deploy through SFTP
+	os.system("%s -b %s/sftp.batch %s" % (SFTP_CMD, REPOSITORY, SFTP_HOST))
+
+if __name__ == "__main__":
+
+	# set working path to root (need to work with relative paths, eg for SFTP)
+	os.chdir(ROOT_PATH)
+
+	# create temporary repository folder
 	try:
-		# create folder
-		os.mkdir(addon_name)
+		os.mkdir(REPOSITORY)
 	except OSError as err:
 		print(err.message)
 
-	# copy files
-	os.system("cp \"%s/changelog.txt\" \"%s/icon.png\" \"%s/fanart.jpg\" %s" % (PATH, PATH, PATH, addon_name))
+	# get available plugins
+	plugin_paths = find_plugins(ROOT_PATH)
 
-	# rename changelog with version-ending
-	os.system("mv %s/changelog.txt %s/changelog-%s.txt" % (addon_name, addon_name, ver))
+	# generate master xml
+	plugin_data = generate_master_xml(plugin_paths)
 
-	# Create sftp batch-comand file for moving files to repository. (dir must exist on remote!)
-	sftp_cmd = "put -r %s %s/latest-release\n" % (addon_name, SFTP_PATH) + \
-				"put addons.xml %s/xml\n" % (SFTP_PATH) + \
-				"put addons.xml.md5 %s/xml\n" % (SFTP_PATH) + \
-				"quit\n"
+	# move builds
+	#move_builds()
 
-	# create file
-	open("sftp.batch", "w" ).write(sftp_cmd)
-
-	if sys.platform == "win32":
-		# finally create the ZIP-archive
-		tar_cmd = "\"%s\" a -w('%s') %s/%s.zip %s" % (WINRAR, RELATIVE_PATH, addon_name, archive_name, ADDON_DIR)
-		print(tar_cmd)
-	else:
-		tar_cmd = "cd \"%s\"\n"% RELATIVE_PATH + \
-		"zip -qr ../deploy/%s/%s.zip %s\n" % (addon_name, archive_name, ADDON_DIR)
-
-	os.system(tar_cmd)
-
-
-if __name__ == "__main__":
-	plugin_ver, plugin_id = generate_master_xml()
-	generate_xml_md5()
-
-	move_builds()
-
-	# prepare files for deploy to repo. (works both on UBUNTU and WIN)
-	generate_repository(plugin_ver, plugin_id)
+	# prepare files and deploy to to repository.
+	for idx, data in enumerate(plugin_data):
+		deploy_repository(plugin_paths[idx], data.get("ver"), data.get("id"))
 
 	# TODO: get latest history from GIT and add to changelog ;)

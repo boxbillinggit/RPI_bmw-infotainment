@@ -33,8 +33,8 @@
 		<source>http://git.one-infiniteloop.com/larsa/bmw-infotainment</source>
 	</extension>
 	<extension point="xbmc.addon.repository" name="BMW-infotainment Repository for automatic updates">
-		<info compressed="true">http://deploy.one-infiniteloop.com/kodi/xml/addons.xml</info>
-		<checksum>http://deploy.one-infiniteloop.com/kodi/xml/addons.xml.md5</checksum>
-		<datadir zip="true">http://deploy.one-infiniteloop.com/kodi/latest-release</datadir>
+		<info compressed="true">http://deploy.one-infiniteloop.com/kodi/release/addons.xml</info>
+		<checksum>http://deploy.one-infiniteloop.com/kodi/release/addons.xml.md5</checksum>
+		<datadir zip="true">http://deploy.one-infiniteloop.com/kodi/release</datadir>
 	</extension>
 </addon>
