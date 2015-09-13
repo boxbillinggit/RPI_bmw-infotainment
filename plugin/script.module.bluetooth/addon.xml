@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon	id="script.module.bluetooth"
+		name="Bluetooth Add-on"
+		version="1.0.0"
+		provider-name="Lars Gunnarsson">
+
+	<requires>
+		<import addon="xbmc.python" version="2.1.0"/>
+	</requires>
+
+	<extension
+			point="xbmc.python.script"
+			library="main.py"
+			debugging="false" />
+
+	<extension point="xbmc.addon.metadata">
+		<platform>linux</platform>
+		<summary lang="en">Bluetooth Add-on</summary>
+		<description lang="en">A Script for controlling Bluetooth adapter and connect to phone</description>
+		<license>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</license>
+		<website>http://one-infiniteloop.com/dev/projects/car-media-player/</website>
+		<email>lars.gunnarsson@one-infiniteloop.com</email>
+		<source>http://git.one-infiniteloop.com/larsa/bmw-infotainment</source>
+		<disclaimer>This plugin requires some modules to be installed before use, see WIKI for how to setup: http://git.one-infiniteloop.com</disclaimer>
+	</extension>
+
+	<!-- Repository for automatic updates. Ref: http://kodi.wiki/view/HOW-TO:Create_a_repository_for_add-ons -->
+	<extension point="xbmc.addon.repository" name="Repository for automatic updates">
+		<info compressed="true">http://deploy.one-infiniteloop.com/kodi/release/addons.xml</info>
+		<checksum>http://deploy.one-infiniteloop.com/kodi/release/addons.xml.md5</checksum>
+		<datadir zip="true">http://deploy.one-infiniteloop.com/kodi/release</datadir>
+	</extension>
+</addon>

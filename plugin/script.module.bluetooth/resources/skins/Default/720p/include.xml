@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<includes>
+
+	<include name="listitem-device">
+		<!--<description>Template for device listitems</description>-->
+		<param name="device-name" default="unknown"/>
+		<param name="device-addr" default="unknown"/>
+		<param name="device-paired" default="unknown"/>
+		<param name="device-trusted" default="unknown"/>
+
+		<definition>
+			<control type="label">
+				<description>Device Name</description>
+				<left>10</left>
+				<top>5</top>
+				<width>520</width>
+				<height>20</height>
+				<label>$PARAM[device-name]</label>
+				<align>left</align>
+				<aligny>center</aligny>
+				<font>font13</font>
+				<textcolor>black</textcolor>
+			</control>
+		</definition>
+
+	</include>
+
+
+</includes>
