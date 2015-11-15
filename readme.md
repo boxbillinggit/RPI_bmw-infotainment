@@ -1,8 +1,12 @@
-## Project overview
+# BMW infotainment
 
-This project covers PCB design, XBMC/KODI plugin development
+For detailed description -and further instructions, please see [Wiki](http://git.one-infiniteloop.com/larsa/bmw-infotainment/wikis/home).
 
-Please see ... for further description of the project.
+### Overview
 
-### EAGLE
-Contains the design of PCB interface board integrated in the Raspberry Pi.
+- `Deploy/` Script for deploying complete package to public repository after a build (continuous-integration)
+- `gateway/` Sourcecode for LIN-bus TCP/IP gateway
+- `plugin/` Main XBMC/KODI-plugin
+ - `plugin.module/` cPython library for supporting *plugin.service.bmw-infotainment*-plugin
+ - `plugin.service.bmw-infotainment` Main script for controlling XBMC/KODI through LIN-bus
+ - `script.module.bluetooth` Handles the bluetooth-interface through DBus
