@@ -1,39 +1,59 @@
-## Contribute!
+# Description
 
-To continue developing client, best practice to keep source within git repo is to create a symbolic link
-in kodi/addons/
+This is the main addon for controlling KODI/XBMC through IBUS *(via TCP/IP-gateway)*.
 
-run cmd.exe (as administrator)
+# Overview
 
-execute: (mklink --help)
-> mklink /D "C:\Program Files\Kodi\addons\script.service.bmw-infotainment" "C:\Users\Lars\Documents\GitHub\bmw-infotainment\XBMC plugin\script.service.bmw-infotainment"
+`service.py` - Service-part of plugin, also the main-part of the addon *(launced from XBMC/KODI during start)* 
 
+`default-handler.py` - Script-part of plugin, handles callbacks from GUI *(buttons, etc)*
 
-# KODI API docs
-
-
-for easy acces to GUI elements in KODI/XBMC, activate debugging in "addon.xml" skin
-
-ref: http://kodi.wiki/view/Addon.xml#Overview
+`bmwaddon.so` - This is the glue between service -and script. The reason this module exists is 
+because there's no other way for the service.py to receive GUI-callbacks. Calling a script launches a 
+separate python-interpreter isolated from service.py.
 
 
+## 1a. Installation - Release
 
-# OpenBM-gateway
-Launch gateway on Raspberry Pi:
-> ./gateway -d /dev/ttyUSB0 -i 0.0.0.0
+See [Wiki](http://git.one-infiniteloop.com/larsa/bmw-infotainment/wikis/home) for 
+installation instructions. Get latest release [here](http://deploy.one-infiniteloop.com/kodi/release/). Automatic updates is enbled
+for receiving latest release after installation! 
 
-if somethong goes wrong on OpenBM-daemon, kill proces by:
-get process ID from "ps aux | grep ./gateway" --> in order [user] [PID] ...
-kill process "kill [Process ID]"
+## 1b. Installation - Development
+
+Below you'll find instructions for how to set-up installation during a development processs.This plugin
+is developed using PyCharm.
+
+#### 1. Preparation - Build cPython addon
+
+- Build `plugin.module` and place artifact *(bmwaddon.so)* in `plugin.service.bmw-infotainment/` path.
+- Create symlink between source and plugin-directory in KODI `ln --symbolic <kodi-pluin-path>/ <path-to-plugin>/`
+
+#### 2. Preparation - Install Python Debugger
+
+- Get WinPDB and install http://winpdb.org/download/ 
+- Create symlink to `rpdb2.py`-file by executing: `ln --symbolic <path-to-debugger>/rpdb2.py <path-to-plugin>/rpdb2.py`
+
+#### 3. Preparation - Activate debug-mode *(optional)*
+- Activate debugging in `addon.xml` of your current skin *(you can see ID's of the GUI elements)*
 
 
-## Requirements / recommendations
-* install PyCharm (Python development environment)
-* install WinPDB (debugger) http://winpdb.org/download/
+#### 4a. Run - Command-line
 
-> mklink "C:\Users\Lars\Documents\GitHub\bmw-infotainment\XBMC plugin\script.service.bmw-infotainment\rpdb2.py" "C:\Program Files\Python\Lib\site-packages\rpdb2.py"
+1. Run `__init__`  in PyCharm for fixing the paths for Python-interpreter accordingly to the project.
+2. Launch service `python service.py` 
 
-## references
-Python addon development: http://kodi.wiki/view/Add-on_development
-aGood reference about threads:  http://chimera.labs.oreilly.com/books/1230000000393/ch12.html
-API docs for Python:  http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
+#### 4b. Run - Through XBMC/KODI
+
+1. Start WinPDB *(if activated in `settings.py`)*
+2. Start XBMC/KODI. 
+3. Press "Play" in WinPDB for allowing XBMC/KODI to proceed.
+
+# References
+Python addon development - http://kodi.wiki/view/Add-on_development
+
+Python threads - http://chimera.labs.oreilly.com/books/1230000000393/ch12.html
+
+API docs for Python - http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
+
+XBMC/KODI addon.xml - http://kodi.wiki/view/Addon.xml#Overview
