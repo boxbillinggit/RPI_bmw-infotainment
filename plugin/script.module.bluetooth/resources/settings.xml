@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!-- 
+	Settings for this  add-on/plugin/script/service???
+	Reference: http://kodi.wiki/view/Add-on_settings 
+-->
+
+<settings>
+
+	<category label="TODO">
+		<setting label="Test" type="text" id="welcome-text" />
+		<setting label="Let me know when the champagne is cooled" type="bool" id="background" default="true"/>
+	</category>
+
+</settings>
+
+
