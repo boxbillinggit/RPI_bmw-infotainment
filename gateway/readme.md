@@ -11,19 +11,7 @@ configurations is explicitly only for Linux-platforms.
 - Install and compile boost-libraries *(for each platform)*
 - Adjust `BOOST_INCLUDEDIR` and `BOOST_LIBRARYDIR` accordingly in `CMakeLists.txt`
 
-### 2a. Build - Manually
-
-```bash
-# Create build path
-mkdir build
-cd build/
-
-# Create makefiles and compile project
-cmake ../
-make
-```
-
-### 2b. Build - From Netbeans
+### 2. Configure Netbeans
 
 Create project in Netbeans: `File -> New project`
 1. Under "Choos Project" select `C/C++ Project with Existing Source`
@@ -32,7 +20,31 @@ Create project in Netbeans: `File -> New project`
 4. Under "Build Actions" specify where the built executable should be placed in `Build Result` *(optional)*
 5. -7. Use Default Settings. Press "Finish" and a build is performed.
 
-### 3. Run
+### 3a. Build - Local host
+
+```bash
+# Create build path
+mkdir build-local
+cd build-local/
+
+# Create makefiles and compile project
+cmake ../
+make
+```
+
+### 3b. Build - Target host (Raspberry Pi)
+
+```bash
+# Create build path
+mkdir build-target
+cd build-target/
+
+# Create makefiles and compile project
+cmake -D CMAKE_TOOLCHAIN_FILE=/usr/local/build-env/rpi/arm-linux-gnueabihf.cmake ../
+make
+```
+
+### 4. Run
 
 ```bash
 # IBUS-interface <USB-interface> below is usually /dev/ttyUSB0
