@@ -8,7 +8,7 @@ build-gateway-arm:
   script:
   - cd gateway
   - bash build-arm-linux-gnueabihf.sh
-  - cd ..
+  - python deploy.py
   only:
   - master
 
@@ -17,15 +17,7 @@ build-gateway-i686:
   script:
   - cd gateway
   - bash build-i686-linux-gnu.sh
-  - cd ..
+  - python deploy.py
   only:
   - master
 
-deploy-gateway-all:
-  stage: deploy
-  script:
-  - cd gateway
-  - python deploy.py
-  - cd ..
-  only:
-  - master
