@@ -1,6 +1,6 @@
 __author__ = 'lars'
 
-import os, subprocess, fnmatch, time
+import os, subprocess, fnmatch
 
 # specify includes to pack in the archive
 PREFIX_BUILD_PATH = "build-*"
@@ -40,8 +40,6 @@ def create_archive(archive):
 
 	bash_cmd = "tar -czf %s %s" % (archive, " ".join(INCLUDES))
 	subprocess.call(bash_cmd, shell=True)
-	time.sleep(1)
-
 
 
 def deploy_archive(archive):
