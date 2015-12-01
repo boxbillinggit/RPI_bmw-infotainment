@@ -1,6 +1,6 @@
 __author__ = 'lars'
 
-import os, subprocess, fnmatch
+import os, subprocess, fnmatch, time
 
 # specify includes to pack in the archive
 PREFIX_BUILD_PATH = "build-*"
@@ -39,7 +39,9 @@ def archive_name():
 def create_archive(archive):
 
 	bash_cmd = "tar -czf %s %s" % (archive, " ".join(INCLUDES))
-	os.system(bash_cmd)
+	subprocess.call(bash_cmd, shell=True)
+	time.sleep(1)
+
 
 
 def deploy_archive(archive):
@@ -51,7 +53,7 @@ def deploy_archive(archive):
 	open("sftp.batch", "w").write(sftp_batch)
 
 	# deploy through SFTP
-	os.system("sftp -b sftp.batch %s" % SFTP_HOST)
+	subprocess.call("sftp -b sftp.batch %s" % SFTP_HOST, shell=True)
 
 
 if __name__ == "__main__":
