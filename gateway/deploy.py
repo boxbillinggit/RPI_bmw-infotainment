@@ -1,32 +1,45 @@
 __author__ = 'lars'
 
-import os, subprocess
+import os, subprocess, fnmatch
 
-# Specify PATH if script is running from another location
-ROOT = os.getcwd()
+# specify includes to pack in the archive
+PREFIX_BUILD_PATH = "build-*"
+INCLUDES = ["html", PREFIX_BUILD_PATH+"/gateway"]
 
-INCLUDES = ["html", "build-*/gateway"]
-
-# path to deploy, trough sftp
+# path on server to put files on
 SFTP_ROOT="public-repository/kodi/build/gateway"
 SFTP_HOST="deploy"
+
+
+# TODO: will only fetching first target (multiple builds are possible within one deploy)
+def _get_build_target():
+
+	for dirname in os.listdir('.'):
+		if fnmatch.fnmatch(dirname, PREFIX_BUILD_PATH) and os.path.isdir(dirname):
+			return dirname
+
+	raise Exception('No build target found')
 
 
 def archive_name():
 
 	try:
 		stdout = subprocess.check_output("git show -s --format=%h", shell=True, stderr=subprocess.STDOUT)
-
 	except:
-		stdout = "unknown-version"
+		stdout = "unknown"
 
-	return "gateway-%s.tar.gz" % stdout.replace("\n", "")
+	try:
+		target = _get_build_target()
+	except:
+		target = "unknown-target"
+
+	return "%s@%s.tar.gz" % (target, stdout.replace("\n", ""))
 
 
 def create_archive(archive):
 
 	bash_cmd = "tar -czf %s %s" % (archive, " ".join(INCLUDES))
-	os.system(bash_cmd)
+	subprocess.call(bash_cmd, shell=True)
 
 
 def deploy_archive(archive):
@@ -38,12 +51,10 @@ def deploy_archive(archive):
 	open("sftp.batch", "w").write(sftp_batch)
 
 	# deploy through SFTP
-	os.system("sftp -b sftp.batch %s" % SFTP_HOST)
+	subprocess.call("sftp -b sftp.batch %s" % SFTP_HOST, shell=True)
 
 
 if __name__ == "__main__":
-
-	os.chdir(ROOT)
 
 	fname = archive_name()
 
