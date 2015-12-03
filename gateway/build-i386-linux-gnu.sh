@@ -6,6 +6,6 @@ BUILD_PATH=build-i386-linux-gnu
 mkdir $BUILD_PATH
 cd $BUILD_PATH
 cmake ../
-make
+make package
 
 
