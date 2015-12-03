@@ -171,17 +171,17 @@ static PyMethodDef BMWAddonMethods[] = {
 /* 
  * Init this library 
  */
-PyMODINIT_FUNC initbmwaddon(void) {
+PyMODINIT_FUNC initlibbmwaddon(void) {
     
     PyObject *m;
     
     // set module's name
-    m = Py_InitModule("bmwaddon", BMWAddonMethods);
+    m = Py_InitModule("libbmwaddon", BMWAddonMethods);
     if (m == NULL)
         return;
 
     // init error class
-    pyBM_Error = PyErr_NewException("bmwaddon.error", NULL, NULL);
+    pyBM_Error = PyErr_NewException("libbmwaddon.error", NULL, NULL);
     Py_INCREF(pyBM_Error);
     PyModule_AddObject(m, "error", pyBM_Error);
     
@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
     Py_Initialize();
     
     // initialize the Python extension module
-    initbmwaddon();
+    initlibbmwaddon();
     
     // return 0
     return (EXIT_SUCCESS);
