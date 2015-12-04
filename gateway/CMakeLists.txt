@@ -41,12 +41,9 @@ endif()
 target_link_libraries(${PROJECT_NAME} dl rt pthread)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 
-# http://www.duskborn.com/running-your-first-job-on-the-raspberry-pi-2-jenkins/
 # http://stackoverflow.com/a/986584
 add_definitions(-D__STDC_LIMIT_MACROS) 
 
-
 # Create .deb-package with cPack
-# >>> make package
 include(CPackConfig.cmake)
 include(CPack)

@@ -1,62 +1,36 @@
 __author__ = 'lars'
 
-import os, subprocess, fnmatch
+import os, glob
 
-# specify includes to pack in the archive
-PREFIX_BUILD_PATH = "build-*"
-INCLUDES = ["html", PREFIX_BUILD_PATH+"/gateway"]
+ROOT = os.getcwd()
 
-# path on server to put files on
-SFTP_ROOT="public-repository/kodi/build/gateway"
+# sftp config
+SFTP_ROOT="public-repository/debs"
 SFTP_HOST="deploy"
 
 
-# TODO: will only fetching first target (multiple builds are possible within one deploy)
-def _get_build_target():
+def find_debian_package():
 
-	for dirname in os.listdir('.'):
-		if fnmatch.fnmatch(dirname, PREFIX_BUILD_PATH) and os.path.isdir(dirname):
-			return dirname
-
-	raise Exception('No build target found')
+	return glob.glob('*/*.deb')
 
 
-def archive_name():
+def deploy_debian_package_release(debpkg):
 
-	try:
-		stdout = subprocess.check_output("git show -s --format=%h", shell=True, stderr=subprocess.STDOUT)
-	except:
-		stdout = "unknown"
+	sftp_cmd = list()
+	sftp_cmd.append("'END'")
 
-	try:
-		target = _get_build_target()
-	except:
-		target = "unknown-target"
+	for pkg in debpkg:
+		sftp_cmd.append("put %s %s/%s" % (pkg, SFTP_ROOT, pkg) )
 
-	return "%s@%s.tar.gz" % (target, stdout.replace("\n", ""))
+	sftp_cmd.append("END")
 
-
-def create_archive(archive):
-
-	bash_cmd = "tar -czf %s %s" % (archive, " ".join(INCLUDES))
-	subprocess.call(bash_cmd, shell=True)
-
-
-def deploy_archive(archive):
-
-	# Create sftp batch-comand file for deploying files to repository. (directory must exist on remote)
-	sftp_batch ="put %s %s/%s\n" % (archive, SFTP_ROOT, archive) + \
-				"quit\n"
-
-	open("sftp.batch", "w").write(sftp_batch)
-
-	# deploy through SFTP
-	subprocess.call("sftp -b sftp.batch %s" % SFTP_HOST, shell=True)
+	# deploy through sftp
+	os.system("sftp %s << %s" % (SFTP_HOST, "\n".join(sftp_cmd) ))
 
 
 if __name__ == "__main__":
 
-	fname = archive_name()
+	os.chdir(ROOT)
+	deploy_debian_package_release(find_debian_package())
 
-	create_archive(fname)
-	deploy_archive(fname)
+	print("Done!")
