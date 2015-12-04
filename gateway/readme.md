@@ -1,6 +1,6 @@
 ## Summary
 
-This is a gateway routing IBUS-messages from the LIN-bus interface to TCP/IP clients 
+This gateway routing IBUS-messages from the LIN-bus interface to TCP/IP clients 
 *(KODI/XBMC, HTTP, etc)*. This is aimed to be built on a Linux-platform using `cmake`, hence 
 configurations is explicitly only for Linux-platforms.
 
@@ -8,8 +8,8 @@ configurations is explicitly only for Linux-platforms.
 
 - Install cmake
 - Install cross-compiler *(for Raspberry Pi)*
-- Install and compile boost-libraries *(for each platform)*
-- Adjust `BOOST_INCLUDEDIR` and `BOOST_LIBRARYDIR` accordingly in `CMakeLists.txt`
+- Install and compile boost-libraries *(for each target)*
+- Adjust `BOOST_LIBRARYDIR` accordingly in `CMakeLists.txt`
 
 ### 2. Configure Netbeans
 
@@ -23,36 +23,24 @@ Create project in Netbeans: `File -> New project`
 ### 3a. Build - Local host
 
 ```bash
-# Create build path
-mkdir build-local
-cd build-local/
-
-# Create makefiles and compile project
-cmake ../
-make
+bash build-i386-linux-gnu.sh
 ```
 
 ### 3b. Build - Target host (Raspberry Pi)
 
 ```bash
-# Create build path
-mkdir build-target
-cd build-target/
-
-# Create makefiles and compile project
-cmake -D CMAKE_TOOLCHAIN_FILE=/usr/local/build-env/rpi/arm-linux-gnueabihf.cmake ../
-make
+bash build-arm-linux-gnueabihf.sh
 ```
 
 ### 4. Run
 
 ```bash
-# IBUS-interface <USB-interface> below is usually /dev/ttyUSB0
-sudo ./gateway -d <USB-interface> -i 0.0.0.0
+# Default <USB-interface> = /dev/ttyUSB0
+sudo ./openbm-gateway --device=<USB-interface> --address=0.0.0.0
 ```
 
 ## Reference
 
-Project is forked from https://github.com/cgart/OpenBM.  
+Project is forked from https://github.com/cgart/OpenBM.
 
 Please see [Wiki](http://git.one-infiniteloop.com/larsa/bmw-infotainment/wikis/home) for how to install cmake and cross-compiler

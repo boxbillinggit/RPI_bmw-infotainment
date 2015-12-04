@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_PATH=build-i686-linux-gnu
+BUILD_PATH=build-all-targets
 
 # ---------------- Build ----------------
 mkdir $BUILD_PATH
