@@ -16,7 +16,7 @@ build-gateway-i686:
   type: build
   script:
   - cd gateway
-  - bash build-i686-linux-gnu.sh
+  - bash build-i386-linux-gnu.sh
   - python deploy.py
   only:
   - master
