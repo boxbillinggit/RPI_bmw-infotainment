@@ -17,13 +17,6 @@ set(SOURCES
 project(${PROJECT_NAME})
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-# install package
-#set(CMAKE_INSTALL_PREFIX /usr)
-install(TARGETS   ${PROJECT_NAME} 	DESTINATION /usr/bin)
-install(DIRECTORY html/ 		DESTINATION "/usr/share/${PROJECT_NAME}/html")
-install(FILES     openbm-gateway.conf	DESTINATION /etc/init)
-
-
 # Boost libraries
 set(BOOST_LIBRARYDIR /usr/local/lib/boost)
 set(Boost_USE_STATIC_LIBS	ON)
@@ -37,13 +30,13 @@ if(Boost_FOUND)
   target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 endif()
 
-# other stuff
+# other stuff (http://stackoverflow.com/a/986584)
+add_definitions(-D__STDC_LIMIT_MACROS) 
 target_link_libraries(${PROJECT_NAME} dl rt pthread)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 
-# http://stackoverflow.com/a/986584
-add_definitions(-D__STDC_LIMIT_MACROS) 
-
-# Create .deb-package with cPack
+# create .deb-package with cPack
+install(TARGETS ${PROJECT_NAME}   DESTINATION /usr/bin)
+install(DIRECTORY html/ 	  DESTINATION /usr/share/${PROJECT_NAME}/html)
+install(FILES openbm-gateway.conf DESTINATION /etc/init)
 include(CPackConfig.cmake)
-include(CPack)
