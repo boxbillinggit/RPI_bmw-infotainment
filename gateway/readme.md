@@ -23,13 +23,13 @@ Create project in Netbeans: `File -> New project`
 ### 3a. Build - Local host
 
 ```bash
-bash build-i386-linux-gnu.sh
+./build-i386-linux-gnu.sh
 ```
 
 ### 3b. Build - Target host (Raspberry Pi)
 
 ```bash
-bash build-arm-linux-gnueabihf.sh
+./build-arm-linux-gnueabihf.sh
 ```
 
 ### 4. Run

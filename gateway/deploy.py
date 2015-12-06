@@ -14,7 +14,7 @@ def find_debian_package():
 	return glob.glob('*/*.deb')
 
 
-def deploy_debian_package_release(debpkg):
+def deploy_debian_package(debpkg):
 
 	sftp_cmd = list()
 	sftp_cmd.append("'END'")
@@ -31,6 +31,6 @@ def deploy_debian_package_release(debpkg):
 if __name__ == "__main__":
 
 	os.chdir(ROOT)
-	deploy_debian_package_release(find_debian_package())
+	deploy_debian_package(find_debian_package())
 
 	print("Done!")
