@@ -56,7 +56,7 @@ do_start()
 	# to handle requests from services started subsequently which depend
 	# on this one.  As a last resort, sleep for some time.
 
-	echo "$NAME: started"
+	#echo "$NAME: started"
 }
 
 #
@@ -85,7 +85,7 @@ do_stop()
 	# Many daemons don't delete their pidfiles when they exit.
 	rm -f $PIDFILE
 
-	[ "$RETVAL" = 0 ] && echo "$NAME: stopped"
+	#[ "$RETVAL" = 0 ] && echo "$NAME: stopped"
 	return "$RETVAL"
 
 }
