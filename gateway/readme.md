@@ -1,6 +1,6 @@
 ## Summary
 
-This gateway routing IBUS-messages from the LIN-bus interface to TCP/IP clients 
+This gateway routes IBUS-messages from the LIN-bus interface to TCP/IP clients 
 *(KODI/XBMC, HTTP, etc)*. This is aimed to be built on a Linux-platform using `cmake`, hence 
 configurations is explicitly only for Linux-platforms.
 
