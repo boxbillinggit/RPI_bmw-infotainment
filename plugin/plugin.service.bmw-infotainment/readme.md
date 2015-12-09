@@ -1,48 +1,53 @@
-## Overview
+## Summary
 
-This is the main addon for controlling KODI/XBMC through IBUS *(via TCP/IP-gateway)*.
+This is the main part addon for controlling KODI/XBMC through IBUS *(via TCP/IP-gateway)*.
 
-- `service.py` - main-part of the addon, launced during start of XBMC/KODI
+- `service.py` - main-part of the addon, launced during start of XBMC/KODI.
 - `default-handler.py` - handles callbacks from GUI by launching this script *(buttons, etc)*
-- `bmwaddon.so` - This is the glue between service -and script. The reason this module exists is 
+- `libguicallback.so` - This is the interface between service -and script. The reason this module exists is 
 because there's no other way for the service.py to receive GUI-callbacks. Calling a script launches a 
-separate python-interpreter isolated from service.py.
+separate python-interpreter isolated from service.py. Hence the need of a cPython-plugin handling callbacks between the separate python-interpreters.
 
 ## Installation - Release
 
-See [Wiki](http://git.one-infiniteloop.com/larsa/bmw-infotainment/wikis/home) for 
-installation instructions. Get latest release [here](http://deploy.one-infiniteloop.com/kodi/release/), automatic updates is enbled
-for receiving latest release after installation! 
+Get latest release [here](http://deploy.one-infiniteloop.com/kodi/release/), see [Wiki](http://git.one-infiniteloop.com/larsa/bmw-infotainment/wikis/home) for installation instructions. Automatic updates is enbled
+ and makes it possible to keep the plugin up-to-date after installation!
 
 ## Installation - Development
 
-Below you'll find instructions for how to set-up installation during a development processs.This plugin
+Below you'll find instructions for how to set-up installation during a development processs. This plugin
 is developed using PyCharm.
 
 #### 1. Build cPython addon
 
-- Build `plugin.module` and place artifact *(bmwaddon.so)* in `plugin.service.bmw-infotainment/` path.
+- Build `guicallback.so` by running build-script in `guicallback/build-<target>.sh`.
 
-#### 2. Install Python Debugger
+#### 2. Install plugin
 
-- Get WinPDB and install http://winpdb.org/download/ 
-- Create symlink to `rpdb2.py`-file by executing: `ln --symbolic <path-to-debugger>/rpdb2.py <path-to-plugin>/rpdb2.py`
+- Create symlink between XBMC/KODI plugin-path and to your development environment `ln -d ~/git/plugin.service.bmw-infotainment ~/.kodi/addons/plugin.service.bmw-infotainment`
 
-#### 3. Activate debug-mode in XBMC/KODI *(optional)*
+#### 3. Install Python Debugger
+
+- Install WinPDB (http://winpdb.org/download/)
+- Create symlink to `rpdb2.py`-file by executing: `ln --symbolic /usr/lib/python2.7/dist-packages/rpdb2.py ~/git/plugin.service.bmw-infotainment/rpdb2.py`
+
+#### 4. Activate debug-mode in XBMC/KODI *(optional)*
 - Activate debugging in `addon.xml` of your current skin *(you can see ID's of the GUI elements)*
 
-#### 4a. Run - in XBMC/KODI
+#### 5a. Run - in XBMC/KODI
 - Create symlink between source and plugin-directory in KODI `ln --symbolic <kodi-pluin-path>/ <path-to-plugin>/`
 - Start WinPDB *(if activated in `settings.py`)*
 - Start XBMC/KODI. 
 - Press "Play" in WinPDB for allowing XBMC/KODI to proceed.
 
-#### 4b. Run - Command-line
+#### 5b. Run - Command-line
+You can run the plugin from command-line *(outside XBMC/KODI)* during development. This makes parts of the functionality available and easy to evaluate without the need to perform a time-consuming restart of XBMC/KODI each time a change is made.
 
 - Run `__init__`  in PyCharm for fixing the paths for Python-interpreter accordingly to the project.
 - Launch service `python service.py` 
 
 ## References
+
 Python addon development - http://kodi.wiki/view/Add-on_development
 
 API docs for Python - http://mirrors.kodi.tv/docs/python-docs/14.x-helix/

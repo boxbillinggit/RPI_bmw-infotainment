@@ -1,15 +1,12 @@
 ## Summary
 
-This gateway routes IBUS-messages from the LIN-bus interface to TCP/IP clients 
-*(KODI/XBMC, HTTP, etc)*. This is aimed to be built on a Linux-platform using `cmake`, hence 
-configurations is explicitly only for Linux-platforms.
+This is the sources of `libguicallback.so`. The library acts like an interface between the service -and  the script. The reason this module exists is because there's no other way for the service.py to receive GUI-callbacks. Calling a script from XBMC/KODI launches a separate python-interpreter - isolated from service.py. Hence the need of a cPython-plugin routing callbacks between the separate python-interpreters.
 
 ### 1. Preparation
 
 - Install cmake
 - Install cross-compiler *(for Raspberry Pi)*
-- Install and compile boost-libraries *(for each target)*
-- Adjust `BOOST_LIBRARYDIR` accordingly in `CMakeLists.txt`
+- Install `python-dev` *(python-headers and libraries)*
 
 ### 2. Configure Netbeans
 
@@ -35,12 +32,9 @@ Create project in Netbeans: `File -> New project`
 ### 4. Run
 
 ```bash
-# Default <USB-interface> = /dev/ttyUSB0
-sudo ./openbm-gateway --device=<USB-interface> --address=0.0.0.0
+# Test library
+python 
+>>> import libguicallback
+>>> dir(libguicallback)
 ```
 
-## Reference
-
-Project is forked from https://github.com/cgart/OpenBM.
-
-Please see [Wiki](http://git.one-infiniteloop.com/larsa/bmw-infotainment/wikis/home) for how to install cmake and cross-compiler
