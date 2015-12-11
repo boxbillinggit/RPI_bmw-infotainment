@@ -3,7 +3,7 @@
 This is the main part addon for controlling KODI/XBMC through IBUS *(via TCP/IP-gateway)*.
 
 - `service.py` - main-part of the addon, launced during start of XBMC/KODI.
-- `default-handler.py` - handles callbacks from GUI by launching this script *(buttons, etc)*
+- `guicallback.py` - handles callbacks from GUI by launching this script *(buttons, etc)*
 - `libguicallback.so` - This is the interface between service -and script. The reason this module exists is 
 because there's no other way for the service.py to receive GUI-callbacks. Calling a script launches a 
 separate python-interpreter isolated from service.py. Hence the need of a cPython-plugin handling callbacks between the separate python-interpreters.

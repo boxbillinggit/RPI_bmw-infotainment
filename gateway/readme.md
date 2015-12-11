@@ -9,7 +9,6 @@ configurations is explicitly only for Linux-platforms.
 - Install cmake
 - Install cross-compiler *(for Raspberry Pi)*
 - Install and compile boost-libraries *(for each target)*
-- Adjust `BOOST_LIBRARYDIR` accordingly in `CMakeLists.txt`
 
 ### 2. Configure Netbeans
 
@@ -23,13 +22,13 @@ Create project in Netbeans: `File -> New project`
 ### 3a. Build - Local host
 
 ```bash
-./build-i386-linux-gnu.sh
+./build-i386.sh
 ```
 
 ### 3b. Build - Target host (Raspberry Pi)
 
 ```bash
-./build-arm-linux-gnueabihf.sh
+./build-armhf.sh
 ```
 
 ### 4. Run
