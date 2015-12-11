@@ -159,7 +159,7 @@ PyObject* helloworld(PyObject *self, PyObject *args) {
 /*
  * Define all methods for the module
  */
-static PyMethodDef BMWAddonMethods[] = {
+static PyMethodDef GUICallbackMethods[] = {
     //{"start",  pybm_start_service, METH_VARARGS, "Starts the service."},
     {"setOnConnect",  pybm_set_callback_onConnect, METH_VARARGS, "Set callback handler for 'Connect' in settings."},
     {"setOnDisconnect",  pybm_set_callback_onDisconnect, METH_VARARGS, "Set callback handler for 'Disconnect' in settings."},
@@ -171,17 +171,17 @@ static PyMethodDef BMWAddonMethods[] = {
 /* 
  * Init this library 
  */
-PyMODINIT_FUNC initlibbmwaddon(void) {
+PyMODINIT_FUNC initlibguicallback(void) {
     
     PyObject *m;
     
     // set module's name
-    m = Py_InitModule("libbmwaddon", BMWAddonMethods);
+    m = Py_InitModule("libguicallback", GUICallbackMethods);
     if (m == NULL)
         return;
 
     // init error class
-    pyBM_Error = PyErr_NewException("libbmwaddon.error", NULL, NULL);
+    pyBM_Error = PyErr_NewException("guicallback.error", NULL, NULL);
     Py_INCREF(pyBM_Error);
     PyModule_AddObject(m, "error", pyBM_Error);
     
@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
     Py_Initialize();
     
     // initialize the Python extension module
-    initlibbmwaddon();
+    initlibguicallback();
     
     // return 0
     return (EXIT_SUCCESS);
