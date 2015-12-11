@@ -7,7 +7,7 @@ build-gateway-armhf:
   type: build
   script:
   - cd gateway
-  - ./build-arm-linux-gnueabihf.sh
+  - ./build-armhf.sh
   - python deploy.py
   only:
   - master
@@ -16,7 +16,7 @@ build-guicallback-armhf:
   type: build
   script:
   - cd plugin
-  - plugin.service.bmw-infotainment/guicallback/build-arm-linux-gnueabihf.sh
+  - plugin.service.bmw-infotainment/guicallback/build-armhf.sh
   - python deploy.py
   only:
   - master
