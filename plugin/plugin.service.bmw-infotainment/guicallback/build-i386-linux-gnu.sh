@@ -1,9 +1,12 @@
 #!/bin/bash
 
-BUILD_PATH=i386-linux-gnu
+ARCHITECTURE=i386
 
-mkdir $BUILD_PATH
-cd $BUILD_PATH
+# navigate to current directory
+cd $( dirname ${BASH_SOURCE[0]} )
+
+mkdir $ARCHITECTURE
+cd $ARCHITECTURE
 cmake ../ &&
 make
 

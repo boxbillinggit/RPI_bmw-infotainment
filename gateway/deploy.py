@@ -1,11 +1,11 @@
 __author__ = 'lars'
 
-import os, glob, ntpath
+import os, glob
 
 ROOT = os.getcwd()
 
 # sftp config
-SFTP_ROOT="public-repository/debs/openbm-gateway"
+SFTP_ROOT="public-repository/debs"
 SFTP_HOST="deploy"
 
 
@@ -20,7 +20,7 @@ def deploy_debian_package(debpkg):
 	sftp_cmd.append("'END'")
 
 	for pkg in debpkg:
-		sftp_cmd.append("put %s %s/%s" % (pkg, SFTP_ROOT, ntpath.basename(pkg)))
+		sftp_cmd.append("put %s %s/%s" % (pkg, SFTP_ROOT, pkg))
 
 	sftp_cmd.append("END")
 

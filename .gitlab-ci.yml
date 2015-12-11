@@ -3,20 +3,20 @@
 # check syntax: http://ci.one-infiniteloop.com/lint
 # doc: http://doc.gitlab.com/ce/ci/yaml/README.html
 
-build-gateway-arm:
+build-gateway-armhf:
   type: build
   script:
   - cd gateway
-  - bash build-arm-linux-gnueabihf.sh
+  - ./build-arm-linux-gnueabihf.sh
   - python deploy.py
   only:
   - master
 
-build-gateway-i686:
+build-guicallback-armhf:
   type: build
   script:
-  - cd gateway
-  - bash build-i386-linux-gnu.sh
+  - cd plugin
+  - plugin.service.bmw-infotainment/guicallback/build-arm-linux-gnueabihf.sh
   - python deploy.py
   only:
   - master

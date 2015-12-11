@@ -1,45 +1,25 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
-import hashlib, sys, os
+import hashlib, os, glob, json
 
-# path to deploy, trough sftp
+
+FNAME_PACKAGE = "package.json"
+
+GIT_CMD = "git log -s --format=medium -n5 --merges"
+config = {"xml": "addons.xml"}
+
+# sftp config
 SFTP_ROOT="public-repository/kodi/release"
-SFTP_HOST="deploy@ubuntu"
-
-# set paths according to system
-if sys.platform == "win32":
-	ROOT_PATH="C:/Users/Lars/Documents/GitHub/bmw-infotainment"
-	SFTP_CMD="psftp"
-	ZIP_CMD="winrar a -afzip -IBCK -ep1"
-else:
-	ROOT_PATH=""
-	SFTP_CMD="sftp"
-	ZIP_CMD="zip -qr"
-
-#UNIX_BUILD_ROOT="~/build/"
-#WIN_BUILD_ROOT="C:/Users/Lars/build"
-
-REPOSITORY="tmp-repository"
-
-# Windows configurations: Need to have path on WIN:
-# set PATH=C:\Program Files\Putty;%PATH%
-# set PATH=C:\Program Files\WinRAR;%PATH%
-#ADDON_DIR="plugin.service.bmw-infotainment"
-
-#WIN_SFTP="psftp"	# ref: http://the.earth.li/~sgtatham/putty/0.65/htmldoc/Chapter6.html#psftp
-
-# this script must be run from folder "deploy"
-#RELATIVE_PATH="../XBMC plugin"
-
-#PATH=os.path.realpath("%s/%s" % (RELATIVE_PATH, ADDON_DIR))
+SFTP_HOST="deploy.lan"
 
 
-# TODO
-def find_plugins(path):
-	return ["plugin/plugin.service.bmw-infotainment"]
+def find_plugins():
+
+	return glob.glob('*/addon.xml')
 
 
-def prettify_xml(elem):
+def _prettify_xml(elem):
+
 	"""
 	Return a pretty-printed XML string for the Element.
 	"""
@@ -50,99 +30,133 @@ def prettify_xml(elem):
 	return reparsed.toprettyxml(indent="\t")
 
 
-def generate_master_xml(paths):
+def generate_master_xml(plugins, flist):
 
-	data = []
+	"""
+	This function generats the master-xml containing all plugins available in the repository.
+	Ref: http://kodi.wiki/view/Add-on_repositories
+	"""
 
-	# create tree with root element
+	plugindata = list()
+
+	# create XML-tree with root element
 	out = ET.ElementTree(ET.Element("addons"))
-
 	root = out.getroot()
 
-	# iterate over plugin path's
-	for path in paths:
+	for plugin in plugins:
 
-		# read plugin's addon
-		tree = ET.parse(os.path.join(path, "addon.xml"))
-
+		# read XML-data from addon
+		tree = ET.parse(plugin)
 		addon_xml = tree.getroot()
 
-		data.append({"ver": addon_xml.get('version'), "id": addon_xml.get('id')})
+		plugindata.append({"path": os.path.dirname(plugin), "ver": addon_xml.get('version'), "id": addon_xml.get('id')})
+
+		if os.path.dirname(plugin) != addon_xml.get('id'):
+			print("WARNING: path is not consistent with id defined in addon.xml (plugin id: %s)" % addon_xml.get('id'))
 
 		# append addon structure
 		root.append(addon_xml)
 
-	# write out
-	output = prettify_xml(root)
+	output = _prettify_xml(root)
 
-	# create file
-	open("%s/addons.xml" % REPOSITORY, "wb" ).write( output )
+	fname = config.get("xml")
 
-	# create checksum
-	md5 = hashlib.md5(output).hexdigest()
+	try:
+		# create files
+		open(fname, "wb").write(output)
+		flist.append({"src": fname, "dst": "%s/%s" % (SFTP_ROOT, fname)})
 
-	# create file
-	open( "%s/addons.xml.md5" % REPOSITORY, "wb" ).write(md5)
+		open("%s.md5" % config.get("xml"), "wb").write(hashlib.md5(output).hexdigest())
+		flist.append({"src": "%s.md5" % fname, "dst": "%s/%s.md5" % (SFTP_ROOT, fname)})
 
-	# return id -and version
-	return data
+	except OSError as err:
+		print err.strerror
+
+	return plugindata
 
 
-def move_builds():
+def create_changelog():
+
+	# TODO: fix this
+	#log = subprocess.check_call(GIT_CMD, shell=True)
+	#print log
 	pass
 
 
-def deploy_repository(relative_path, plugin_ver, plugin_id):
+def _include_files(path):
 
-	# Create archive filename
-	archive_name = "%s-%s" % (plugin_id, plugin_ver)
+	args = list()
 
-	# Create archive
-	zip_cmd = "%s %s/%s.zip %s" % (ZIP_CMD, REPOSITORY, archive_name, relative_path)
-	os.system(zip_cmd)
+	# check if we defined some includes, excludes
+	fname = os.path.join(path, FNAME_PACKAGE)
 
-	# Linux:
-	# 	tar_cmd = "cd \"%s\"\n"% RELATIVE_PATH + \
-	# 	"zip -qr ../deploy/%s/%s.zip %s\n" % (addon_name, archive_name, ADDON_DIR)
-	#
+	if os.path.exists(fname):
 
-	# Create sftp batch-comand file for moving files to repository. (dir must exist on remote!)
-	sftp_cmd = 	"put %s/addons.xml %s/addons.xml\n" % (REPOSITORY, SFTP_ROOT) + \
-				"put %s/addons.xml.md5 %s/addons.xml.md5\n" % (REPOSITORY, SFTP_ROOT) + \
-				"put %s/%s.zip %s/%s/%s.zip\n" % (REPOSITORY, archive_name, SFTP_ROOT, plugin_id, archive_name) + \
-				"put %s/changelog.txt %s/%s/changelog-%s.txt\n" % (relative_path, SFTP_ROOT, plugin_id, plugin_ver) + \
-				"put %s/icon.png %s/%s//icon.png\n" % (relative_path, SFTP_ROOT, plugin_id) + \
-				"put %s/fanart.jpg %s/%s/fanart.jpg\n" % (relative_path, SFTP_ROOT, plugin_id) + \
-				"quit\n"
+		# exclude file itself in archive
+		args.append("-x%s" % fname)
 
-	# create file.
-	open("%s/sftp.batch" % REPOSITORY, "w" ).write(sftp_cmd)
+		files = json.loads(open(fname).read())
 
-	# deploy through SFTP
-	os.system("%s -b %s/sftp.batch %s" % (SFTP_CMD, REPOSITORY, SFTP_HOST))
+		if files.get("include"):
+			[args.append("-i%s/%s" % (path, f)) for f in files.get("include")]
+
+		if files.get("exclude"):
+			[args.append("-x%s/%s" % (path, f)) for f in files.get("exclude")]
+
+	return args
+
+
+def _get_plugin_files(plugin):
+
+	src_path = plugin.get("path")
+	dst_path = os.path.join(SFTP_ROOT, plugin.get("id"))
+
+	return [{"src": "%s/changelog.txt" % src_path, "dst": "%s/changelog-%s.txt" %(dst_path, plugin.get("ver"))},
+			{"src": "%s/icon.png" % src_path, "dst": "%s/icon.png" % dst_path},
+			{"src": "%s/fanart.jpg" % src_path, "dst": "%s/fanart.jpg" % dst_path}]
+
+
+def package_plugin(plugins, flist):
+
+	for plugin in plugins:
+
+		# check if we have files to include/exclude in archive
+		args = _include_files(plugin.get("path"))
+
+		fname = "%s-%s.zip" % (plugin.get("id"), plugin.get("ver"))
+
+		os.system("zip -qr %s %s %s" % (" ".join(args), fname, plugin.get("path")))
+
+		flist.append({"src": fname, "dst": os.path.join(SFTP_ROOT, plugin.get("id"), fname)})
+
+		# other files needed
+		flist.extend(_get_plugin_files(plugin))
+
+
+def deploy(flist):
+
+	sftp_cmd = list()
+	sftp_cmd.append("END")
+
+	for file in flist:
+		sftp_cmd.append("put %s %s" % (file.get("src"), file.get("dst")))
+
+	sftp_cmd.append("END")
+
+	# deploy through sftp
+	os.system("sftp %s << %s" % (SFTP_HOST, "\n".join(sftp_cmd)))
+
 
 if __name__ == "__main__":
 
-	# set working path to root (need to work with relative paths, eg for SFTP)
-	os.chdir(ROOT_PATH)
+	# containing all files to be pushed to repository
+	flist = list()
 
-	# create temporary repository folder
-	try:
-		os.mkdir(REPOSITORY)
-	except OSError as err:
-		print(err.message)
+	plugins = generate_master_xml(find_plugins(), flist=flist)
 
-	# get available plugins
-	plugin_paths = find_plugins(ROOT_PATH)
+	# TODO get latest history from GIT and add to changelog ;)
+	create_changelog()
 
-	# generate master xml
-	plugin_data = generate_master_xml(plugin_paths)
+	package_plugin(plugins, flist=flist)
 
-	# move builds
-	#move_builds()
-
-	# prepare files and deploy to to repository.
-	for idx, data in enumerate(plugin_data):
-		deploy_repository(plugin_paths[idx], data.get("ver"), data.get("id"))
-
-	# TODO: get latest history from GIT and add to changelog ;)
+	deploy(flist=flist)
