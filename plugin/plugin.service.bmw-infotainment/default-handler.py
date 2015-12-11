@@ -19,12 +19,12 @@ __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 
 import sys
-import resources.lib.bmwaddon as bmwaddon
+import resources.lib.libguicallback as guicallback
 
 # action selector based on argument passed from XBMC/KODI GUI
 select_action = {
-	"connect": bmwaddon.onConnect,
-	"disconnect": bmwaddon.onDisconnect
+	"connect": guicallback.onConnect,
+	"disconnect": guicallback.onDisconnect
 }
 
 # script is called with an argument

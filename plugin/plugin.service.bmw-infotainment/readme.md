@@ -24,7 +24,7 @@ is developed using PyCharm.
 
 #### 2. Install plugin
 
-- Create symlink between XBMC/KODI plugin-path and to your development environment `ln -d ~/git/plugin.service.bmw-infotainment ~/.kodi/addons/plugin.service.bmw-infotainment`
+- Create symlink between XBMC/KODI plugin-path and to your development environment `ln --symbolic ~/git/bmw-infotainment/plugin/plugin.service.bmw-infotainment ~/.kodi/addons/plugin.service.bmw-infotainment`
 
 #### 3. Install Python Debugger
 
@@ -35,7 +35,6 @@ is developed using PyCharm.
 - Activate debugging in `addon.xml` of your current skin *(you can see ID's of the GUI elements)*
 
 #### 5a. Run - in XBMC/KODI
-- Create symlink between source and plugin-directory in KODI `ln --symbolic <kodi-pluin-path>/ <path-to-plugin>/`
 - Start WinPDB *(if activated in `settings.py`)*
 - Start XBMC/KODI. 
 - Press "Play" in WinPDB for allowing XBMC/KODI to proceed.
@@ -45,6 +44,11 @@ You can run the plugin from command-line *(outside XBMC/KODI)* during developmen
 
 - Run `__init__`  in PyCharm for fixing the paths for Python-interpreter accordingly to the project.
 - Launch service `python service.py` 
+
+## Paths
+
+- logfiles `~/.kodi/temp`
+- plugin `~/.kodi/addons`
 
 ## References
 

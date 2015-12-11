@@ -18,7 +18,7 @@ DEBUGGER_TIMEOUT = 30
 # logger
 # Note: if we're using XBMC- we pipe console-messages to 'xbmc.log' instead
 
-LOGPATH="logs/"
+LOGPATH="~/.kodi/tmp"
 
 LOG_TO_CONSOLE = True
 LOG_TO_FILE = True
@@ -35,4 +35,4 @@ LOGLEVEL_FILE = logging.DEBUG
 MAX_RECONNECT = 5
 
 # module IBUSHandler
-SIGNAL_DATABASE = "signal-db\\SignalDatabase.xml"
+SIGNAL_DATABASE = "signal-db/SignalDatabase.xml"

@@ -48,7 +48,7 @@ def environment():
 
 now = datetime.datetime.now()
 
-FILENAME="%s%s.events-%s.log" % (settings.LOGPATH, environment(), now.strftime("%Y-%m-%d-%H%M%S"))
+FILENAME="%s.%s.events-%s.log" % (__addonid__, environment(), now.strftime("%Y-%m-%d-%H%M%S"))
 LOGPATH = os.path.join(__addonpath__, FILENAME)
 
 # ref: https://docs.python.org/3/library/logging.html?highlight=logger#logging.Formatter

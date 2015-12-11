@@ -1,4 +1,4 @@
-set( CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/.." )
+set( CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../resources/lib" )
 set( SOURCES 
    main.cpp
 )

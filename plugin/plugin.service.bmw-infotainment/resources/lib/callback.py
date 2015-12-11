@@ -15,11 +15,12 @@ except ImportError as err:
 	import resources.lib.debug.XBMCGUI as xbmcgui
 	import resources.lib.debug.XBMCADDON as xbmcaddon
 
-import bmwaddon
+import libguicallback as guicallback
 
 __author__ = 'Lars'
 __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
+
 
 # create callbacks
 class Callback(object):
@@ -32,5 +33,5 @@ class Callback(object):
 	def init_callbacks(self):
 
 		# set callbacks
-		bmwaddon.setOnConnect(self.service.start)
-		bmwaddon.setOnDisconnect(self.service.stop)
+		guicallback.setOnConnect(self.service.start)
+		guicallback.setOnDisconnect(self.service.stop)
