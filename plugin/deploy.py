@@ -1,12 +1,13 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
-import hashlib, os, glob, json
+import os, hashlib, glob, json, subprocess
 
+# ref: http://git-scm.com/docs/git-log
+CHANGELOG = "git log -s --format=medium -n1 --merges"
+DEPLOY_CFG = "deploy.json"
 
-FNAME_PACKAGE = "package.json"
-
-GIT_CMD = "git log -s --format=medium -n5 --merges"
-config = {"xml": "addons.xml"}
+# mandatory files required in the repository along with the zipped addon
+ADDON_COMPONENTS = ["icon.png",	"fanart.jpg"]
 
 # sftp config
 SFTP_ROOT="public-repository/kodi/release"
@@ -18,6 +19,38 @@ def find_plugins():
 	return glob.glob('*/addon.xml')
 
 
+def add_component(src=list(), dstprefix="", flist=list()):
+
+	for component in src:
+
+		if os.path.exists(component):
+
+			flist.append({"src": component, "dst": os.path.join(dstprefix, component) if dstprefix else component})
+
+		else:
+			print "WARNING - failed to add component \"%s\". file does not exist!" % component
+
+
+def generate_changelog(addonpath, ver):
+
+	"""
+	create a changelog from git commits (and change suffix on changelog to <version>)
+	"""
+
+	heading = "v%s" % ver
+
+	gitlog = subprocess.check_output(CHANGELOG, shell=True)
+
+	# read existing logfile
+	log = open(os.path.join(addonpath, "changelog.txt"), "rb").read()
+
+	# create a new logfile with a version suffix
+	fname = "changelog-%s.txt" % ver
+	open(os.path.join(addonpath, fname), "wb").write("\n".join([heading, gitlog, log]))
+
+	return [os.path.join(addonpath, fname)]
+
+
 def _prettify_xml(elem):
 
 	"""
@@ -25,115 +58,102 @@ def _prettify_xml(elem):
 	"""
 
 	# replace old tabs and new rows with nothing (else the formatting gets weird)
+	# TODO: use only replace()-function once!
 	rough_string = ET.tostring(elem).replace("\t","").replace("\n","")
 	reparsed = minidom.parseString(rough_string)
+
 	return reparsed.toprettyxml(indent="\t")
 
 
-def generate_master_xml(plugins, flist):
+def read_plugin_configuration(plugin):
+
+	# read XML-data from addon
+	tree = ET.parse(plugin)
+	root = tree.getroot()
+
+	if os.path.dirname(plugin) != root.get("id"):
+		print("WARNING - path \"%s\"is not consistent with id \"%s\" (defined in addon.xml)" % (os.path.dirname(plugin), root.get('id')))
+
+	return root
+
+
+def generate_master_xml(xmlroot):
 
 	"""
-	This function generats the master-xml containing all plugins available in the repository.
+	Generate the master-xml as a register for all plugins available in the repository.
 	Ref: http://kodi.wiki/view/Add-on_repositories
 	"""
 
-	plugindata = list()
-
-	# create XML-tree with root element
-	out = ET.ElementTree(ET.Element("addons"))
-	root = out.getroot()
-
-	for plugin in plugins:
-
-		# read XML-data from addon
-		tree = ET.parse(plugin)
-		addon_xml = tree.getroot()
-
-		plugindata.append({"path": os.path.dirname(plugin), "ver": addon_xml.get('version'), "id": addon_xml.get('id')})
-
-		if os.path.dirname(plugin) != addon_xml.get('id'):
-			print("WARNING: path is not consistent with id defined in addon.xml (plugin id: %s)" % addon_xml.get('id'))
-
-		# append addon structure
-		root.append(addon_xml)
-
-	output = _prettify_xml(root)
-
-	fname = config.get("xml")
+	fname = "addons.xml"
+	output = _prettify_xml(xmlroot)
 
 	try:
-		# create files
 		open(fname, "wb").write(output)
-		flist.append({"src": fname, "dst": "%s/%s" % (SFTP_ROOT, fname)})
-
-		open("%s.md5" % config.get("xml"), "wb").write(hashlib.md5(output).hexdigest())
-		flist.append({"src": "%s.md5" % fname, "dst": "%s/%s.md5" % (SFTP_ROOT, fname)})
+		open("%s.md5" % fname, "wb").write(hashlib.md5(output).hexdigest())
 
 	except OSError as err:
 		print err.strerror
 
-	return plugindata
+	return [fname, "%s.md5" % fname]
 
 
-def create_changelog():
+def read_deploy_configuration(path):
 
-	# TODO: fix this
-	#log = subprocess.check_call(GIT_CMD, shell=True)
-	#print log
-	pass
+	"""
+	This function looking for a file (defined in DEPLOY_CFG). if no file is found, the plugin is not ready
+	to deploy. This configuration-file lists components to include/exclude from the zip-archive.
+	"""
 
+	cfg = dict()
 
-def _include_files(path):
-
-	args = list()
-
-	# check if we defined some includes, excludes
-	fname = os.path.join(path, FNAME_PACKAGE)
+	# check if we defined some includes, excludes for deploying
+	fname = os.path.join(path, DEPLOY_CFG)
 
 	if os.path.exists(fname):
 
-		# exclude file itself in archive
-		args.append("-x%s" % fname)
+		cfg = json.loads(open(fname).read())
 
-		files = json.loads(open(fname).read())
+		# exclude file itself from the archive
+		if cfg.get("exclude"):
+			cfg.get("exclude").append(DEPLOY_CFG)
+		else:
+			cfg["exclude"] = [DEPLOY_CFG]
 
-		if files.get("include"):
-			[args.append("-i%s/%s" % (path, f)) for f in files.get("include")]
+	return cfg
 
-		if files.get("exclude"):
-			[args.append("-x%s/%s" % (path, f)) for f in files.get("exclude")]
+
+def generate_args(option, path):
+
+	"""
+	Generate arguments for the system call zip defining files to include -or
+	exclude in archive.
+	"""
+
+	args = list()
+
+	if option.get("include"):
+		[args.append("-i%s" % fname) for fname in option.get("include")]
+
+	if option.get("exclude"):
+		[args.append("-x%s/%s" % (path, fname)) for fname in option.get("exclude")]
 
 	return args
 
 
-def _get_plugin_files(plugin):
+def create_archive(addon, ver, args):
 
-	src_path = plugin.get("path")
-	dst_path = os.path.join(SFTP_ROOT, plugin.get("id"))
+	fname = "%s-%s.zip" % (addon, ver)
 
-	return [{"src": "%s/changelog.txt" % src_path, "dst": "%s/changelog-%s.txt" %(dst_path, plugin.get("ver"))},
-			{"src": "%s/icon.png" % src_path, "dst": "%s/icon.png" % dst_path},
-			{"src": "%s/fanart.jpg" % src_path, "dst": "%s/fanart.jpg" % dst_path}]
+	try:
+		os.system("zip -qr %s %s %s" % (" ".join(args), fname, addon))
 
+	except OSError as err:
+		print err.strerror
 
-def package_plugin(plugins, flist):
-
-	for plugin in plugins:
-
-		# check if we have files to include/exclude in archive
-		args = _include_files(plugin.get("path"))
-
-		fname = "%s-%s.zip" % (plugin.get("id"), plugin.get("ver"))
-
-		os.system("zip -qr %s %s %s" % (" ".join(args), fname, plugin.get("path")))
-
-		flist.append({"src": fname, "dst": os.path.join(SFTP_ROOT, plugin.get("id"), fname)})
-
-		# other files needed
-		flist.extend(_get_plugin_files(plugin))
+	return [fname]
 
 
-def deploy(flist):
+def deploy_files(flist):
 
 	sftp_cmd = list()
 	sftp_cmd.append("END")
@@ -149,14 +169,35 @@ def deploy(flist):
 
 if __name__ == "__main__":
 
-	# containing all files to be pushed to repository
+	# all files pushed to repository
 	flist = list()
 
-	plugins = generate_master_xml(find_plugins(), flist=flist)
+	# create XML-tree with root element (for master-xml)
+	out = ET.ElementTree(ET.Element("addons"))
+	xmlroot = out.getroot()
 
-	# TODO get latest history from GIT and add to changelog ;)
-	create_changelog()
+	for plugin in find_plugins():
 
-	package_plugin(plugins, flist=flist)
+		pluginpath = os.path.dirname(plugin)
 
-	deploy(flist=flist)
+		deploy = read_deploy_configuration(pluginpath)
+
+		if deploy:
+
+			plugin_cfg = read_plugin_configuration(plugin)
+			xmlroot.append(plugin_cfg)
+
+			# create archive of addon
+			archive = create_archive(pluginpath, plugin_cfg.get("version"), generate_args(deploy, pluginpath))
+			add_component(src=archive, dstprefix=os.path.join(SFTP_ROOT, plugin_cfg.get("id")), flist=flist)
+
+			# include other files (icon and fanart)
+			add_component(src=map(lambda fname: os.path.join(pluginpath, fname), ADDON_COMPONENTS), dstprefix=SFTP_ROOT, flist=flist)
+
+			# create changelog
+			add_component(src=generate_changelog(pluginpath, plugin_cfg.get("version")), dstprefix=SFTP_ROOT, flist=flist)
+
+	# generate the master-xml file
+	add_component(src=generate_master_xml(xmlroot), dstprefix=SFTP_ROOT, flist=flist)
+
+	deploy_files(flist)
