@@ -11,7 +11,7 @@ ADDON_COMPONENTS = ["icon.png",	"fanart.jpg"]
 
 # sftp config
 SFTP_ROOT="public-repository/kodi/release"
-SFTP_HOST="deploy.lan"
+SFTP_HOST="deploy"
 
 
 def find_plugins():
