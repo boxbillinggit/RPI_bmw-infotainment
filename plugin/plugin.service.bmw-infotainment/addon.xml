@@ -23,7 +23,7 @@
 		<import addon="xbmc.python" version="2.1.0"/>
 	</requires>
 	<extension point="xbmc.service" start="startup" library="service.py" />
-	<extension point="xbmc.python.script" library="default-handler.py" />
+	<extension point="xbmc.python.script" library="guicallback.py" />
 	<extension point="xbmc.addon.metadata">
 		<platform>all</platform>
 		<summary lang="en">BMW infotainment gateway</summary>
