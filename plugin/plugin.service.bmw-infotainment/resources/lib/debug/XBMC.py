@@ -13,6 +13,10 @@ LOGLEVELS={
 	7: "LOGNONE"
 }
 
+#ref: http://kodi.wiki/view/Special_protocol
+specialpaths = {
+	"special://logpath": "~/.kodi/temp",
+}
 
 # DEBUG - just for testing the 'log.py'-module
 def log(arg, level):
@@ -22,6 +26,9 @@ def log(arg, level):
 def executebuiltin(arg):
 	print("%s - Execute in XBMC/KODI: %s" % (__name__, arg))
 
+
+def translatePath(path):
+	return specialpaths.get(path)
 
 def _exit_main_thread(sig, frame):
 	print("%s - Bye!" % __name__)
