@@ -15,15 +15,12 @@ DEBUGGER_ON = False
 DEBUGGER_TIMEOUT = 30
 
 #
-# logger
-# Note: if we're using XBMC- we pipe console-messages to 'xbmc.log' instead
-
-LOGPATH="~/.kodi/tmp"
+# log settings
+#
 
 LOG_TO_CONSOLE = True
 LOG_TO_FILE = True
 
-# loglevels
 LOGLEVEL_CONSOLE = logging.DEBUG
 LOGLEVEL_FILE = logging.DEBUG
 

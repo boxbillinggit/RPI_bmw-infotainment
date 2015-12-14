@@ -1,5 +1,6 @@
 """
-Debug logger handles both XBMC-lgging -and console logging.
+Debug logger handles both XBMC-lgging -and console logging. If we're
+using XBMC- we pipe console-messages to 'xbmc.log' instead
 
 References:
 Python logging - https://docs.python.org/3/howto/logging.html
@@ -7,7 +8,7 @@ XBMC/KODI logging - http://kodi.wiki/view/Log_file/Advanced#Enable_debugging
 
 Enable DEBUG-log for kodi:
 * enter "settings -> system -> debugging"
-* logfile is found under "%APPDATA%\AppData\Roaming\Kodi"
+* logfile is found under "~/.kodi/temp"
 """
 
 try:
@@ -39,17 +40,10 @@ LOGFATAL 	= 6
 LOGNONE 	= 7
 
 
-def environment():
-	if USING_XBMC:
-		return "xbmc"
-	else:
-		return "console"
-
-
 now = datetime.datetime.now()
 
-FILENAME="%s.%s.events-%s.log" % (__addonid__, environment(), now.strftime("%Y-%m-%d-%H%M%S"))
-LOGPATH = os.path.join(__addonpath__, FILENAME)
+FNAME = "%s.%s.events-%s.log" % (__addonid__, "kodi" if USING_XBMC else "console", now.strftime("%Y-%m-%d-%H%M%S"))
+LOGPATH = os.path.join(xbmc.translatePath("special://logpath"), FNAME)
 
 # ref: https://docs.python.org/3/library/logging.html?highlight=logger#logging.Formatter
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
