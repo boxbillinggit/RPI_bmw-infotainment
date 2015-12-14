@@ -6,9 +6,9 @@ try:
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
 except ImportError as err:
-	import debug.XBMC as xbmc
-	import debug.XBMCGUI as xbmcgui
-	import debug.XBMCADDON as xbmcaddon
+	import debug.xbmc as xbmc
+	import debug.xbmcgui as xbmcgui
+	import debug.xbmcaddon as xbmcaddon
 
 __author__ 		= 'Lars'
 __addon__		= xbmcaddon.Addon()

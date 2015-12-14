@@ -14,9 +14,9 @@ try:
 
 except ImportError as err:
 	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
-	import resources.lib.debug.XBMC as xbmc
-	import resources.lib.debug.XBMCGUI as xbmcgui
-	import resources.lib.debug.XBMCADDON as xbmcaddon
+	import resources.lib.debug.xbmc as xbmc
+	import resources.lib.debug.xbmcgui as xbmcgui
+	import resources.lib.debug.xbmcaddon as xbmcaddon
 
 __author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()

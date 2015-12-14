@@ -16,9 +16,9 @@ try:
 	USING_XBMC = True
 
 except ImportError as err:
-	import debug.XBMC as xbmc
-	import debug.XBMCGUI as xbmcgui
-	import debug.XBMCADDON as xbmcaddon
+	import debug.xbmc as xbmc
+	import debug.xbmcgui as xbmcgui
+	import debug.xbmcaddon as xbmcaddon
 	USING_XBMC = False
 
 __author__ 		= 'Lars'
