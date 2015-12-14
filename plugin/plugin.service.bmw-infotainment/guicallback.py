@@ -2,14 +2,10 @@
 This module act as default handler for XBMC/KODI command "RunScript()"
 """
 
-import resources.lib.log as logger
-log = logger.init_logger(__name__)
-
 try:
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
 except ImportError as err:
-	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
 	import debug.XBMC as xbmc
 	import debug.XBMCGUI as xbmcgui
 	import debug.XBMCADDON as xbmcaddon
@@ -21,8 +17,7 @@ __addonname__	= __addon__.getAddonInfo('name')
 import sys
 import resources.lib.libguicallback as guicallback
 
-# action selector based on argument passed from XBMC/KODI GUI
-select_action = {
+action = {
 	"connect": guicallback.onConnect,
 	"disconnect": guicallback.onDisconnect
 }
@@ -30,15 +25,13 @@ select_action = {
 # script is called with an argument
 if len(sys.argv) > 1:
 
-	# get the argument passed from XBMC/KODI GUI
-	arg = sys.argv[1]
-
-	# get action
-	exec_action = select_action[arg]
+	# get first argument passed from XBMC/KODI GUI and select action
+	callback = action.get(sys.argv[1])
 
 	# execute action
-	exec_action()
+	if callback and hasattr(callback, "__call__"):
+		callback()
 
 else:
-	# Default action: pop settings when launching script without arguments
+	# Default action: pop settings when launching script without any arguments
 	__addon__.openSettings()
