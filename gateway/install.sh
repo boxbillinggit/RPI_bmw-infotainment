@@ -14,3 +14,15 @@ cmake .. -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++
 make && make install
 
 echo "Install Success"
+
+sleep 5
+
+cd ..
+
+echo "Create And Copy Service"
+
+mkdir /etc/ibus/
+
+cp -p config.conf /etc/ibus/config.conf
+
+cp -p ibus.sh /etc/init.d/ibus && chmod +x /etc/init.d/ibus
