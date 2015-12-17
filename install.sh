@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd gateway
+
 mkdir build
 cd build
 
