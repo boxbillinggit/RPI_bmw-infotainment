@@ -7,7 +7,7 @@ echo "Install Dependices"
 
 apt-get install python-dev gcc g++ libboost-program-options-dev libboost-thread-dev libboost-date-time-dev -y
 
-echo "Configure Gateway"
+echo "Configure Plugin"
 
 cmake .. -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++
 
