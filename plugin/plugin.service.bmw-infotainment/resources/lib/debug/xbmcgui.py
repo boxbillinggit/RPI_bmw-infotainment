@@ -1,4 +1,5 @@
-__author__ = 'Lars'
+__author__ = 		'Lars'
+__modulename__ = 	"xbmcgui"
 
 import time
 import events
@@ -16,10 +17,10 @@ class Dialog(object):
 
 		# sleep prevents the prompt to be disturbed from log message
 		time.sleep(0.5)
-		response = event.user_input(src="{}.{}.notification".format(__name__, self.__class__.__name__), args=("\n".join(arg)+" (y/n)"), default="y")
+		response = event.user_input(module=__modulename__, method="%s.yesno" % self.__class__.__name__, args=("\n".join(arg)+" (y/n)"), default="y")
 
 		return False if "n" == response else True
 
 	def notification(self, *arg):
-		event.emit(src="{}.{}.notification".format(__name__, self.__class__.__name__), args=". ".join(arg))
+		event.emit(module=__modulename__, method="%s.notification" % self.__class__.__name__, args=". ".join(arg))
 

@@ -19,11 +19,11 @@ class Debug(object):
 	This overrides the class in 'events.py'.
 	"""
 
-	def emit(self, src="unknown", args=None):
-		print("from testscript - {}: \"{}\"".format(src, args))
+	def emit(self, module="", method="", args=None):
+		print("{}: {} - {}: \"{}\"".format(__name__, module, method, args))
 
-	def user_input(self, src="unknown", args=None, default="unknown"):
-		print "from testscript - %s" % src
+	def user_input(self, module="", method="", args=None, default=""):
+		print "{}: {} - {}".format(__name__, module, method)
 		return raw_input("{}: [{}] >>".format(args, default))
 
 
@@ -36,7 +36,7 @@ service = module_service.service
 event = Debug()
 
 # bind callbacks to XBMC/KODI debug-interface
-# verify binding by calling command-line: testmodule.module_service.xbmc.event.__module__
+# verify binding by calling command-line: testmodule.__name__ == testmodule.module_service.xbmc.event.__module__
 module_service.xbmc.event = event
 module_service.xbmcgui.event = event
 module_service.xbmcaddon.event = event

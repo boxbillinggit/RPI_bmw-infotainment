@@ -1,10 +1,12 @@
-__author__ = 'Lars'
+__author__ = 		'Lars'
+__modulename__ = 	"xbmcaddon"
 
 import os
 import events
 
 # can be overriden from test-script
 event = events.Debug()
+
 
 ADDON_ID = "plugin.service.bmw-infotainment"
 ADDON_PATH = os.path.join(os.path.expanduser("~"), ".kodi/addons", ADDON_ID)
@@ -29,7 +31,7 @@ class Addon(object):
 
 	def getSetting(self, setting):
 
-		buf = event.user_input(src="{}.{}.getSetting".format(__name__, self.__class__.__name__), args=setting, default=settings.get(setting))
+		buf = event.user_input(module=__modulename__, method="%s.getSetting" % self.__class__.__name__, args=setting, default=settings.get(setting))
 
 		if buf:
 			# user wrote something, save setting and return
@@ -41,7 +43,7 @@ class Addon(object):
 	def setSetting(self, setting, status):
 		settings.update({setting: status})
 
-		event.emit(src="{}.{}.setSetting".format(__name__, self.__class__.__name__), args="{}: {}".format(setting, status))
+		event.emit(module=__modulename__, method="%s.setSetting" % self.__class__.__name__, args="{}: {}".format(setting, status))
 
 	def getAddonInfo(self, id):
 		return addon.get(id, "ERROR - not defined in '%s'" % __name__)

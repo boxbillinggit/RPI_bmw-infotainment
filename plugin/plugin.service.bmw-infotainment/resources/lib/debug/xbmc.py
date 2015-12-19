@@ -1,4 +1,5 @@
-__author__ = 'Lars'
+__author__ = 		'Lars'
+__modulename__ = 	"xbmc"
 
 import signal, time
 
@@ -32,7 +33,7 @@ def log(arg, level):
 
 
 def executebuiltin(arg):
-	event.emit(src="%s.executebuiltin" % __name__, args=arg)
+	event.emit(module=__modulename__, method="executebuiltin", args=arg)
 
 
 def translatePath(path):

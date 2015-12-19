@@ -9,9 +9,9 @@ class Debug(object):
 	test-script, this class will be overriden.
 	"""
 
-	def emit(self, src="unknown", args=None):
-		print("{}: \"{}\"".format(src, args))
+	def emit(self, module="", method="", args=None):
+		print("{} - {}: \"{}\"".format(module, method, args))
 
-	def user_input(self, src="unknown", args=None, default="unknown"):
-		print src
+	def user_input(self, module="", method="", args=None, default=""):
+		print "{} - {}".format(module, method)
 		return raw_input("{}: [{}] >>".format(args, default))
