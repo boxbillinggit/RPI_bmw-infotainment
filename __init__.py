@@ -1,9 +1,10 @@
 import sys, os
 
-# add modules to paths (because console's root is "/home/lars/git/bmw-infotainment/")
+# add paths to system path (extending python module search)
 rootpath = os.getcwd()
 
 sys.path.extend([
+	os.path.join(rootpath, "plugin", "plugin.service.bmw-infotainment"),
 	os.path.join(rootpath, "plugin", "script.module.bluetooth"),
 	os.path.join(rootpath, "plugin")
 ])
