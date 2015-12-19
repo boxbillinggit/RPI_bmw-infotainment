@@ -1,6 +1,6 @@
 __author__ = 'Lars'
 
-import signal, sys, time
+import signal, time
 
 LOGLEVELS={
 	0: "LOGDEBUG",
@@ -15,8 +15,17 @@ LOGLEVELS={
 
 #ref: http://kodi.wiki/view/Special_protocol
 specialpaths = {
-	"special://logpath": "~/.kodi/temp",
+	"special://logpath": 	"~/.kodi/temp",
+	"special://home": 		"~/.kodi/",
+	"special://skin": 		"~/.kodi/addons"
 }
+
+
+# special for test-scripts to catch events executed in XBMC/KODI. This will be overriden
+# from test-script. so without test-script just print to console.
+def emit(src="unknown", args=None):
+	print("{}: {}".format(src, args))
+
 
 # DEBUG - just for testing the 'log.py'-module
 def log(arg, level):
@@ -24,37 +33,38 @@ def log(arg, level):
 
 
 def executebuiltin(arg):
-	print("%s - Execute in XBMC/KODI: %s" % (__name__, arg))
+	emit(src="%s.executebuiltin" % __name__, args=arg)
 
 
 def translatePath(path):
 	return specialpaths.get(path)
 
-def _exit_main_thread(sig, frame):
-	print("%s - Bye!" % __name__)
-	sys.exit(0)
+
+def exit_main_thread(sig, frame):
+	Monitor.abort_requested = True
 
 
 def main_thread():
 
-	signal.signal(signal.SIGINT, _exit_main_thread)
+	signal.signal(signal.SIGINT, exit_main_thread)
 
-	while (True):
-		time.sleep(30)
+	while not Monitor.abort_requested:
+		time.sleep(1)
 
 
 # Wrapper when running script from IDE
 class Monitor(object):
 
+	abort_requested = False
+
 	def __init__(self):
 		pass
 
 	def abortRequested(self):
-		return False
+		return Monitor.abort_requested
 
 	def waitForAbort(self):
 
 		main_thread()
 
-		# TODO: will never be executed, no clean shutdown...
 		return True
