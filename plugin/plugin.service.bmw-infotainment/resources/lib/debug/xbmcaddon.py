@@ -1,23 +1,24 @@
 __author__ = 'Lars'
 
 import os
+import events
 
-settings = {"gateway.ip-address": "127.0.0.1", "gateway.port": "4287"}
+# can be overriden from test-script
+event = events.Debug()
 
 ADDON_ID = "plugin.service.bmw-infotainment"
 ADDON_PATH = os.path.join(os.path.expanduser("~"), ".kodi/addons", ADDON_ID)
+
+settings = {
+	"gateway.ip-address": "127.0.0.1",
+	"gateway.port": "4287"
+}
 
 addon = {
 	"name": 	"XBMC BMW addon",
 	"id": 		ADDON_ID,
 	"path": 	ADDON_PATH
 }
-
-
-# special for test-scripts to catch events executed in XBMC/KODI. This will be overriden
-# from test-script. so without test-script just print to console.
-def emit(src="unknown", args=None):
-	print("{}: \"{}\"".format(src, args))
 
 
 class Addon(object):
@@ -28,7 +29,7 @@ class Addon(object):
 
 	def getSetting(self, setting):
 
-		buf = raw_input("'%s' [%s] >> " % (setting, settings.get(setting)))
+		buf = event.user_input(src="{}.{}.getSetting".format(__name__, self.__class__.__name__), args=setting, default=settings.get(setting))
 
 		if buf:
 			# user wrote something, save setting and return
@@ -40,10 +41,10 @@ class Addon(object):
 	def setSetting(self, setting, status):
 		settings.update({setting: status})
 
-		emit(src="{}.{}.setSetting".format(__name__, self.__class__.__name__), args="{}: {}".format(setting, status))
+		event.emit(src="{}.{}.setSetting".format(__name__, self.__class__.__name__), args="{}: {}".format(setting, status))
 
 	def getAddonInfo(self, id):
-		return addon.get(id, "not defined")
+		return addon.get(id, "ERROR - not defined in '%s'" % __name__)
 
 	def openSettings(self):
 		pass

@@ -35,7 +35,7 @@ def resize_header(data):
 #PING 		= resize_header([0xAA, 0xAA])
 CONNECT 	= resize_header([0x68, 0x69])	# ASCII: 'hi'
 #CONNECT 	= resize_header("hi")	# ASCII: 'hi'
-#DISCONNECT 	= resize_header([])
+DISCONNECT 	= resize_header([])
 #REROUTE 	= [0x63, 0x74, 0x00, 0x00, 0xC0, 0x10]		# ASCII: 'ct' + [port]
 REROUTE = [0x63, 0x74]
 
@@ -128,7 +128,7 @@ class GatewayClientHandler(SocketServer.BaseRequestHandler):
 			except socket.timeout:
 				break
 
-			if not data or data == TERMINAL_END:
+			if not data or data == TERMINAL_END or bytearray(data) == bytearray(DISCONNECT):
 				break
 
 			print "DEBUG - {} received: {}".format(cur_thread.name, to_hexstr(bytearray(data)))
@@ -250,6 +250,10 @@ class Gateway(object):
 
 	def send(self):
 		# TODO: send to all clients connected
+		pass
+
+	def shutdown(self):
+		# TODO: graceful shutdown by sending disconnect to clients.
 		pass
 
 

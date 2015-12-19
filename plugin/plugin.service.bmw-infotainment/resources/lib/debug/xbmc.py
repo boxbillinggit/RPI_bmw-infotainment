@@ -2,7 +2,12 @@ __author__ = 'Lars'
 
 import signal, time
 
-LOGLEVELS={
+import events
+
+# can be overriden from test-script
+event = events.Debug()
+
+LOGLEVELS = {
 	0: "LOGDEBUG",
 	1: "LOGINFO",
 	2: "LOGNOTICE",
@@ -13,18 +18,12 @@ LOGLEVELS={
 	7: "LOGNONE"
 }
 
-#ref: http://kodi.wiki/view/Special_protocol
+# ref: http://kodi.wiki/view/Special_protocol
 specialpaths = {
 	"special://logpath": 	"~/.kodi/temp",
 	"special://home": 		"~/.kodi/",
 	"special://skin": 		"~/.kodi/addons"
 }
-
-
-# special for test-scripts to catch events executed in XBMC/KODI. This will be overriden
-# from test-script. so without test-script just print to console.
-def emit(src="unknown", args=None):
-	print("{}: {}".format(src, args))
 
 
 # DEBUG - just for testing the 'log.py'-module
@@ -33,7 +32,7 @@ def log(arg, level):
 
 
 def executebuiltin(arg):
-	emit(src="%s.executebuiltin" % __name__, args=arg)
+	event.emit(src="%s.executebuiltin" % __name__, args=arg)
 
 
 def translatePath(path):
