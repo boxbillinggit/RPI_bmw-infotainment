@@ -1,1 +1,1 @@
-{"exclude": ["__init__.py", "guicallback/*", "tests/*"]}
+{"exclude": ["__init__.py", "guicallback/*", "tests/*", "*test_*"]}
