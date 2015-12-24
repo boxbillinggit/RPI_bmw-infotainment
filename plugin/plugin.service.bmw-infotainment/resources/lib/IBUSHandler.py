@@ -2,6 +2,15 @@
 This module map events against IBUS-message
 """
 
+# TODO rename module to "EventHandler"
+import threading
+import Queue
+from BMButtons import Button
+import kodi
+import time
+from TCPIPSocket import to_hexstr
+import signaldb as signal
+
 import log as log_module
 log = log_module.init_logger(__name__)
 
@@ -9,7 +18,6 @@ try:
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
 
 except ImportError as err:
-	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
 	import debug.xbmc as xbmc
 	import debug.xbmcgui as xbmcgui
 	import debug.xbmcaddon as xbmcaddon
@@ -22,117 +30,153 @@ __addonid__		= __addon__.getAddonInfo('id')
 __addonpath__	= __addon__.getAddonInfo('path')
 
 
-from BMButtons import Button
-from TCPIPSocket import to_hexstr
-import signaldb
 
-#
-# static methods
-#
+def match_found(bus_sig, event_sig):
+
+	"""
+	Return True if a match between received signal and an event is found.
+
+	"None" means match all (don't evaluate), but data must exist and be equal!
+	"""
+
+	src, dst, data = event_sig
+	bus_src, bus_dst, bus_data = bus_sig
+
+	return not (
+		(src and bus_src != src) or
+		(dst and bus_dst != dst) or
+		(bus_data != data)
+	)
+
+# TODO: where to instantiate?
+queue = Queue.Queue()
 
 
+class EventHandler(threading.Thread):
+
+	"""
+	This class runs in a separate worker thread and processes queued signal events.
+
+	Event constructor. This class initialize all default events mapped against signal.
+	it is also possible to dynamically update, add -or remove events at runtime.
+	"""
+
+	POLL = 0.2
+
+	def __init__(self):
+		super(EventHandler, self).__init__()
+		self.queue = queue
+		self.schedule = []
+		self.event = []
+
+		self.init_events()
+
+	def bind_event(self, sig=None, event=None):
+
+		"""
+		Add events with an index to tuple?: (<INDEX>, <SIGNAL>*, <EVENT>)
+
+		*<SIGNAL>=(src, dst, data)
+		"""
+
+		# TODO: add index also?
+		self.event.extend(zip(sig, event))
+
+	def unbind_event(self, index):
+		pass
+
+	def init_events(self):
+		"""
+		Bind events: awful right now..
+
+		"""
+
+		right_knob = Button(queue=self.queue, hold=kodi.action("back"), release=kodi.action("enter"))
+		self.bind_event(
+			sig=signal.create_from_tuple(zip(["IBUS_DEV_BMBT"]*5, [None]*5, map(lambda nspace: "right-knob.{}".format(nspace), ["push", "hold", "release", "turn-left", "turn-right"]))),
+			event=[right_knob.set_state_push, right_knob.set_state_hold, right_knob.set_state_release, kodi.action("up"), kodi.action("down")]
+		)
+
+		left = Button(queue=self.queue, hold=kodi.action("Left"), release=kodi.action("Left"))
+		self.bind_event(
+			sig=signal.create_from_tuple(zip(["IBUS_DEV_BMBT"]*3, [None]*3, map(lambda nspace: "left.{}".format(nspace), ["push", "hold", "release"]))),
+			event=[left.set_state_push, left.set_state_hold, left.set_state_release]
+		)
+
+		right = Button(queue=self.queue, hold=kodi.action("Right"), release=kodi.action("Right"))
+		self.bind_event(
+			sig=signal.create_from_tuple(zip(["IBUS_DEV_BMBT"]*3, [None]*3, map(lambda nspace: "right.{}".format(nspace), ["push", "hold", "release"]))),
+			event=[right.set_state_push, right.set_state_hold, right.set_state_release]
+		)
+
+	def check_schedule(self):
+
+		"""
+		Check time schedule if any tasks needs to be executed
+		"""
+
+		for task in self.schedule:
+
+			event, event_time = task
+
+			if (event_time is None) or (time.time() >= event_time):
+
+				try:
+					event()
+				except TypeError as error:
+					log.error("{} - {}".format(self.__class__.__name__, error))
+
+				self.schedule.remove(task)
+				# log.debug("{} - events to schedule {}".format(self.__class__.__name__, len(self.schedule)))
+
+	def run(self):
+
+		"""
+		thread's activity - handle events from queue. If we have an scheduled event, get() is polled
+		periodically, else we block until new object is available on queue.
+		"""
+
+		while True:
+			timeout = (EventHandler.POLL if len(self.schedule) else None)
+
+			self.check_schedule()
+
+			try:
+				task = self.queue.get(timeout=timeout)
+			except Queue.Empty:
+				continue
+
+			self.schedule.append(task)
+			self.queue.task_done()
 
 
 class Filter(object):
 
 	"""
-	This is the base class. This class handles -and route all IBUS-messages to it's events
+	This is the main class -and routes all BUS-messages to a matching event (if defined)
 	"""
 
 	def __init__(self):
 
-		# init event class
-		self.event = Events()
+		self.events = EventHandler()
+		self.events.setDaemon(True)
+		self.events.start()
 
-		# init button states and it's actions
-		self.button = Button()
+	def handle_event(self, bus_sig):
 
-		# init Signal-class (convert names to bytes)
-		self.signal = signaldb.Signals()
+		"""
+		Received bus signal from TCP/IP socket. Compare if we have matching events.
+		If event is found, put on event queue scheduled to execute now -and stop searching.
 
-		# init all events
-		self.init_events()
+		Signal is 3-tuple: (src, dst, data).
+		events.put_on_queue(<event-method>, <scheduled-time>)
+		"""
 
-	def init_events(self):
+		src, dst, data = bus_sig
 
-		# create namespaces for buttons: self.button.right_knob.push() -> this will trigger state 'push'.
-		self.button.create(button="right_knob", states={"hold": self.event.execute("back"), "release": self.event.execute("enter")})
-		self.button.create(button="right", states={"push": self.event.execute("right"), "hold": self.event.execute("right")})
-		self.button.create(button="left", states={"push": self.event.execute("left"), "hold": self.event.execute("left")})
+		for event_sig, event in self.events.event:
 
-		# bind events to listeners
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.push"}), event=self.button.right_knob.push)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.hold"}), event=self.button.right_knob.hold)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.release"}), event=self.button.right_knob.release)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-left"}), event=self.event.execute("Up"))
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right-knob.turn-right" }), event=self.event.execute("Down"))
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "left.push"}), event=self.button.left.push)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "left.hold"}), event=self.button.left.hold)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "left.release"}), event=self.button.left.release)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right.push"}), event=self.button.right.push)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right.hold"}), event=self.button.right.hold)
-		self.event.bind(signal=self.signal.create({"src": "IBUS_DEV_BMBT", "data": "right.release"}), event=self.button.right.release)
-
-
-	# TODO: make static method?
-	def find_event(self, src, dst, data):
-
-		# DEBUG
-		log.debug("%s - receiving signal data: [%s]" % (self.__class__.__name__, to_hexstr(data)))
-
-		# find a matching event
-		for index, item in enumerate(self.event.map):
-
-			# proceed if source is correct (don't evaluate empty items)
-			if item.has_key('src') and item.get('src') != src:
-				continue
-
-			# proceed if destination is correct (don't evaluate empty items)
-			if item.has_key('dst') and item.get('dst') != dst:
-				continue
-
-			# proceed if data is correct (don't evaluate empty items)
-			if item.has_key('data') and item.get('data') != data:
-				continue
-
-			log.info("%s - found a event for received signal '%s'" % (self.__class__.__name__, item.get('description')))
-
-			# We've found a match, stop looking and execute current action.
-			execute_action = self.event.action[index]
-
-			# execute action
-			execute_action()
-
-			# stop searching.
-			break
-
-
-class Events(object):
-
-	"""
-	This class implements all actions triggered by a IBUS-message
-
-	Reference:
-	http://kodi.wiki/view/keymap
-	http://kodi.wiki/view/List_of_Built_In_Functions
-	http://kodi.wiki/view/Action_IDs
-	"""
-
-	def __init__(self):
-		self.map = list()
-		self.action = list()
-
-	def bind(self, signal, event):
-
-		if len(self.map) == len(self.action):
-			self.map.append(signal)
-			self.action.append(event)
-		else:
-			log.error("%s - could not bind event for '%s'. due to unequal length" % (self.__class__.__name__, event.get('data')))
-
-	# TODO: make static? rename to 'create()'
-	def execute(self, arg):
-
-		# return a function.
-		return lambda: xbmc.executebuiltin("Action(%s)" % arg)
-
+			if match_found(bus_sig, event_sig):
+				self.events.queue.put((event, None))
+				log.debug("{} - match for signal {}".format(self.__class__.__name__, to_hexstr(src+dst+data)))
+				break

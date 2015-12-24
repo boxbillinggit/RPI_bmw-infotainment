@@ -1,170 +1,142 @@
 """
-Create states for boardmonitor-buttons
+This module contains a constructor class for creating buttons
+requiring a state-machine.
 """
 
-import log as logger
-log = logger.init_logger(__name__)
-
-try:
-	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
-
-except ImportError as err:
-	log.warning("%s - using 'debug.XBMC'-modules instead" % err.message)
-	import debug.xbmc as xbmc
-	import debug.xbmcgui as xbmcgui
-	import debug.xbmcaddon as xbmcaddon
-
-__author__ = 'Lars'
-__monitor__ 	= xbmc.Monitor()
-__addon__		= xbmcaddon.Addon()
-__addonname__	= __addon__.getAddonInfo('name')
-__addonid__		= __addon__.getAddonInfo('id')
+#TODO: rename module to "StateButton"
 
 import time
-from threading import Thread
+import threading, Queue
 
-# define timing in seconds [s] for state "hold"
-STATE_HOLD_TIME = 1
-STATE_HOLD_TIME_INIT = 2
-STATE_HOLD_TIME_ABORT = 5
+import log as log_module
+log = log_module.init_logger(__name__)
 
-
-# Base class. Constructor for all buttons -and its states
-class Button(object):
-
-	def __init__(self):
-		pass
-
-	def create(self, button, states):
-
-		# create button, and map against states
-		setattr(self, button, States(states))
-
-	# called when a button isn't found in namespace
-	# TODO: better handling. (if calling 'not_existing_button.hold()'
-	# def __getattr__(self, namespace):
-	#
-	#	log.error("%s - No button found for '%s'" % (self.__class__.__name__, namespace))
+__author__ = 'Lars'
 
 
-# Construction class. Create states for each button
-class States(object):
+# http://www.laurentluce.com/posts/python-threads-synchronization-locks-rlocks-semaphores-conditions-events-and-queues/
+# http://stackoverflow.com/questions/9190169/threading-and-information-passing-how-to
+
+# one thread for handling state HOLD (periodically executing action while holding)
+
+#Ref:
+#http://stackoverflow.com/questions/16044452/sharing-data-between-threads-in-python
+#https://pymotw.com/2/threading/
+
+
+class State(object):
 
 	"""
-	States generated for buttons:
+	Object containing current state, new object for each Button.
+	"""
+
+	# define timings for state HOLD - unit in [seconds]
+	HOLD_INIT = 2.0
+	HOLD_PERIODIC = 0.5
+	HOLD_ABORT = 5.0
+
+	# define enumerated states
+	STATE = ["PUSH", "HOLD", "RELEASE"]
+	PUSH, HOLD, RELEASE = range(len(STATE))
+
+	def __init__(self):
+		self.state = State.RELEASE
+
+
+class Button(object):
+
+	"""
+	Pre-defined states for object Button:
 		* push
 		* hold
 		* release
 	"""
 
-	def __init__(self, action):
+	def __init__(self, queue=None, push=None, hold=None, release=None):
 
-		# init variables
-		self.action = action
+		# actions
+		self.push = push
+		self.hold = hold
+		self.release = release
+
+		state = State()
+
+		# initial conditions
 		self.timestamp = time.time()
+		self.state = state.state
+		self.queue = queue
 
-		# init with the state 'release'
-		self.state = "release"
-		self.previous_state = None
+	def still_holding(self):
 
-	# check if we're holding button pressed long enough...
-	def _still_holding(self):
+		"""
+		Check if we're holding button long enough -and limit the max time for execute
+		action in state 'HOLD'
+		"""
 
-		t = time.time() - self.timestamp
+		# return State.HOLD_INIT < (time.time() - self.timestamp) < State.HOLD_ABORT
+		return (time.time() - self.timestamp) < State.HOLD_ABORT
 
-		return t < STATE_HOLD_TIME_ABORT and self.state != "release"
+	def schedule_check_state_hold(self, timeout=State.HOLD_INIT):
+		print "schedule_check_state_hold() "
+		# TODO: must prevent that previous scheduled events don't get executed.
+		self.queue.put((self.check_state_hold, timeout+time.time()))
 
-	# periodic execution during state 'hold'
-	def _check_state_hold(self):
+	def check_state_hold(self):
 
-		log.debug("%s - init the while loop for state 'hold'" % (self.__class__.__name__))
+		"""
+		This is called from event-thread and evaluates if we are about to
+		change state from 'PUSH' to 'HOLD'. Execute action periodically (max time-
+		limited) by re-schedule event while current state is 'HOLD'
 
-		# loop until we're in state 'release' or max time has occurred.
-		while self._still_holding():
+		most of the buttons is broadcasting state 'HOLD' once after 1s -  hence
+		different initial sleep times below to not interfering with this event.
+		"""
 
-			# if we're have a message on the bus, we don't want to interfere with this event
-			if self.previous_state == "hold":
-				time.sleep(STATE_HOLD_TIME)
-			else:
-				time.sleep(STATE_HOLD_TIME_INIT)
+		# log.debug("{} - check_state_hold() - still holding? (current state  '{}')'".format(self.__class__.__name__, State.STATE[self.state]))
 
-			# execute action
+		if self.state != State.RELEASE and self.still_holding():
+			self.schedule_check_state_hold(timeout=State.HOLD_PERIODIC)
+			self.set_state_hold()
+
+	def set_state_push(self):
+
+		"""
+		Current state is 'PUSH'
+
+		Execute action if defined, and if previous state was 'RELEASE'. we start to
+		evaluate if we're pushing long enough to enter state 'HOLD' (but only
+		if we have an action for state 'HOLD').
+		"""
+
+		if self.push and self.state == State.RELEASE:
+			self.push()
+
+		if self.hold and self.state == State.RELEASE:
+			self.timestamp = time.time()
+			self.schedule_check_state_hold()
+
+		self.state = State.PUSH
+
+	def set_state_hold(self):
+
+		"""
+		Current state is 'HOLD' - execute action if defined and only if previous state was
+		push or hold (not RELEASE).
+		"""
+
+		if self.hold and self.state != State.RELEASE:
 			self.hold()
 
-		log.debug("%s - exits the while loop for state 'hold'" % (self.__class__.__name__))
+		self.state = State.HOLD
 
-	# start the timer when holding button (to evaluate if holding)
-	def _start_timer(self):
+	def set_state_release(self):
 
-		# create and start a timer thread.
-		t = Thread(name='ButtonStateHold', target=self._check_state_hold)
-		t.daemon = True
-		t.start()
+		"""
+		Current state is 'RELEASE' - execute action only if previous state
+		was 'PUSH' (and if action is defined).
+		"""
 
-		log.debug("%s - start loop in thread for 'hold'" % (self.__class__.__name__))
+		if self.release and self.state == State.PUSH:
+			self.release()
 
-	# action for state 'push'.
-	def push(self):
-
-		self.state = "push"
-		self.timestamp = time.time()
-
-		log.debug("%s - triggered state '%s'" % (self.__class__.__name__, self.state))
-
-		# check that action for state 'hold' is not empty, else don't bother start timer.
-		# must be triggered only if previous state was 'release' (none is the init previous state)
-		if self.action.get('hold') and self.previous_state == ("release" or None):
-
-			self._start_timer()
-
-		# execute action for 'push'...
-		action = self.action.get('push')
-
-		# ...if it is a function
-		if hasattr(action, '__call__'):
-			action()
-		else:
-			log.debug("%s - state '%s' has no action" % (self.__class__.__name__, self.state))
-
-		self.previous_state = self.state
-
-	# action for state 'hold'. (some buttons has a message on the bus for this state already)
-	def hold(self):
-
-		self.state = "hold"
-
-		log.debug("%s - triggered state '%s'" % (self.__class__.__name__, self.state))
-
-		# execute action for 'hold'...
-		action = self.action.get('hold')
-
-		# ...if it is a function
-		if hasattr(action, '__call__'):
-			action()
-		else:
-			log.debug("%s - state '%s' has no action" % (self.__class__.__name__, self.state))
-
-		self.previous_state = self.state
-
-	# action for state 'release'
-	def release(self):
-
-		# update current state
-		self.state = "release"
-
-		log.debug("%s - triggered state '%s'" % (self.__class__.__name__, self.state))
-
-		# If previous state was 'hold' or 'release' we won't execute action 'release'.
-		if self.previous_state == ("hold" or "release"):
-			return
-
-		# execute action for 'release'...
-		action = self.action.get("release")
-
-		# ...if it is a function
-		if hasattr(action, '__call__'):
-			action()
-		else:
-			log.debug("%s - state '%s' has no action" % (self.__class__.__name__, self.state))
-
-		self.previous_state = self.state
+		self.state = State.RELEASE

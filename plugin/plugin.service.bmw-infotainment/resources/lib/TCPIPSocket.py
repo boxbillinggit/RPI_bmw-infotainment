@@ -29,9 +29,9 @@ from threading import Thread
 MAX_RECVBUFFER = 512
 
 
-# print a well formed HEX-string from a 'bytearray'
-def to_hexstr(bytearray):
-	return " ".join(map(lambda byte: "%X" % byte, bytearray))
+# print a well formed HEX-string from a 'bytearray' or list
+def to_hexstr(bytes):
+	return " ".join(map(lambda byte: "%X" % byte, (bytes if type(bytes) == bytearray else bytearray(bytes))))
 
 
 class TCPIPSocketAsyncore(asyncore.dispatcher):
