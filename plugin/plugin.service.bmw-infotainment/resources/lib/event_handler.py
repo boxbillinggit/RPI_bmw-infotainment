@@ -8,11 +8,18 @@ import Queue
 import time
 
 # import local modules
+try:
+	import xbmc
+except ImportError as err:
+	import debug.xbmc as xbmc
+
 from TCPIPSocket import to_hexstr
 from events import Events
 import log as log_module
 log = log_module.init_logger(__name__)
 
+__author__ 		= 'Lars'
+__monitor__ 	= xbmc.Monitor()
 
 def match_found(bus_sig, event_sig):
 
@@ -42,7 +49,9 @@ class EventHandler(threading.Thread):
 
 	# task enumerated
 	EVENT, TIME = range(2)
-	POLL = 0.2
+
+	POLL_IDLE = 1.0
+	POLL_TASK = 0.2
 
 	def __init__(self):
 		super(EventHandler, self).__init__()
@@ -92,11 +101,11 @@ class EventHandler(threading.Thread):
 		until new tasks is available on queue.
 		"""
 
-		while True:
+		while not __monitor__.abortRequested():
 
 			self.check_schedule()
 
-			timeout = EventHandler.POLL if len(self.schedule) else None
+			timeout = EventHandler.POLL_TASK if len(self.schedule) else EventHandler.POLL_IDLE
 
 			try:
 				task = self.queue.get(timeout=timeout)
