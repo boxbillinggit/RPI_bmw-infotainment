@@ -57,10 +57,10 @@ def get_event(ident):
 	"""
 	return the event object for further operations in this module.
 
-	defined as <BYTE> within the <ACTION>-tag (formerly <CATEGORY>-tag)
+	defined as <BYTE> within the <ACTION>-tag
 	"""
 
-	obj = root.findall("./MESSAGE/DATA/CATEGORY/byte[@id='{}']/..".format(ident))
+	obj = root.findall("./MESSAGE/DATA/ACTION/byte[@id='{}']/..".format(ident))
 	return check_length(obj, ident=ident)
 
 
@@ -69,10 +69,10 @@ def operation(event):
 	"""
 	return byte for operation - which is the first byte of the DATA-chunk
 
-	defined within <OPERATIONS>-tag
+	defined within <OPERATION>-tag
 	"""
 
-	obj = root.findall("./MESSAGE/DATA/OPERATIONS/byte[@id='{}']".format(event.get('ref')))
+	obj = root.findall("./MESSAGE/DATA/OPERATION/byte[@id='{}']".format(event.get('ref')))
 	return check_length(obj, ident=event.get('ref')).get('val')
 
 
@@ -81,10 +81,9 @@ def action(event, ident):
 	"""
 	Return bytes for action - which is the second part of the DATA-chunk
 
-	defined within <ACTION>-tag (formerly <CATEGORY>-tag)
+	defined within <ACTION>-tag
 	"""
 
-	# TODO: rename <CATEGORY>-tag to <ACTION> in xml-database
 	obj = event.findall("byte[@id='{}']".format(ident))
 	return check_length(obj, ident=ident).get('val')
 
@@ -94,10 +93,10 @@ def device(ident):
 	"""
 	Return bytes for SRC and DST.
 
-	defined within <DEVICES>-tag
+	defined within <DEVICE>-tag
 	"""
 
-	obj = root.findall("./MESSAGE/DEVICES/byte[@id='{}']".format(ident))
+	obj = root.findall("./MESSAGE/DEVICE/byte[@id='{}']".format(ident))
 	return convert_to_bytes(check_length(obj, ident=ident).get('val'))
 
 
