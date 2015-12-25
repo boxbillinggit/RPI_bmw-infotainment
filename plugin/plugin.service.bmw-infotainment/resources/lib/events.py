@@ -35,7 +35,7 @@ def init_buttons(factory=None, index=None):
 	button = factory
 	SRC, DST = ("IBUS_DEV_BMBT", None)
 
-	right_knob = button.new(hold=kodi.action("back"), release=kodi.action("enter"))
+	right_knob = button.new(hold=kodi.action("back"), release=kodi.action("Select"))
 	events.append((index(), signaldb.create((SRC, DST, "right-knob.push")), right_knob.set_state_push))
 	events.append((index(), signaldb.create((SRC, DST, "right-knob.hold")), right_knob.set_state_hold))
 	events.append((index(), signaldb.create((SRC, DST, "right-knob.release")), right_knob.set_state_release))
