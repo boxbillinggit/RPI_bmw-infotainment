@@ -79,15 +79,15 @@ class TestSignaldb(TestCase):
 	Test XML lookup.
 	"""
 
-	def test_nothing_defined(self):
+	def test_none_defined(self):
 
 		"""
-		if nothing is passed to signal-constructor we will raise an "ArgError".
+		if "None" is passed to signal-constructor we will raise an "ArgError".
 		"""
 
-		# signaldb.create()
+		# signaldb.find((None, None, None))
 
-		self.assertRaises(signaldb.ArgError, lambda: signaldb.create())
+		self.assertRaises(ValueError, lambda: signaldb.find((None, None, None)))
 
 	def test_no_data_defined(self):
 
@@ -95,9 +95,9 @@ class TestSignaldb(TestCase):
 		if no EVENT is passed to signal-constructor we will raise an "ArgError".
 		"""
 
-		# signaldb.create(src="IBUS_DEV", dst="IBUS_DEV")
+		# signaldb.find(("IBUS_DEV", "IBUS_DEV", None))
 
-		self.assertRaises(signaldb.ArgError, lambda: signaldb.create(src="IBUS_DEV", dst="IBUS_DEV"))
+		self.assertRaises(ValueError, lambda: signaldb.find(("IBUS_DEV", "IBUS_DEV", None)))
 
 	def test_only_event_defined(self):
 
@@ -105,7 +105,7 @@ class TestSignaldb(TestCase):
 		Normal state - if only EVENT is passed to signal-constructor we will get a constructed signal back.
 		"""
 
-		src, dst, data = signaldb.create(event="button.push")
+		src, dst, data = signaldb.find((None, None, "button.push"))
 		self.assertIsNone(src)
 		self.assertIsNone(dst)
 		self.assertIsNotNone(data)
@@ -116,7 +116,7 @@ class TestSignaldb(TestCase):
 		Normal state - we expecting to get a constructed signal back.
 		"""
 
-		src, dst, data = signaldb.create(src="IBUS_DEV", dst="IBUS_DEV", event="button.push")
+		src, dst, data = signaldb.find(("IBUS_DEV", "IBUS_DEV", "button.push"))
 		self.assertIsNotNone(src)
 		self.assertIsNotNone(dst)
 		self.assertIsNotNone(data)
@@ -127,9 +127,9 @@ class TestSignaldb(TestCase):
 		raise "DBError" if not device defined
 		"""
 
-		# signaldb.create(src="IBUS_DEV_UNKNOWN", dst="IBUS_DEV", event="button.push")
+		# signaldb.find(("IBUS_DEV_UNKNOWN", "IBUS_DEV", "button.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.create(src="IBUS_DEV_UNKNOWN", dst="IBUS_DEV", event="button.push"))
+		self.assertRaises(signaldb.DBError, lambda: signaldb.find(("IBUS_DEV_UNKNOWN", "IBUS_DEV", "button.push")))
 
 	def test_multiple_device_codes_defined(self):
 
@@ -137,10 +137,9 @@ class TestSignaldb(TestCase):
 		raise "DBError" if devices with same references defined
 		"""
 
-		# signaldb.create(event="button-multiple-refereed.push")
+		# signaldb.find((None, None, "button-multiple-refereed.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.create(event="button-multiple-refereed.push"))
-
+		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "button-multiple-refereed.push")))
 
 	def test_unknown_event(self):
 
@@ -148,19 +147,18 @@ class TestSignaldb(TestCase):
 		raise "DBError" if not event defined
 		"""
 
-		# signaldb.create(event="unknown-button.push")
+		# signaldb.find((None, None, "unknown-event.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.create(event="unknown-button.push"))
+		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "unknown-event.push")))
 
 	def test_multiple_events_defined(self):
 		"""
 		raise "DBError" if multiple events defined
 		"""
 
-		# signaldb.create(event="button-multiple-defined.push")
+		# signaldb.find((None, None, "button-multiple-defined.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.create(event="button-multiple-defined.push"))
-
+		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "button-multiple-defined.push")))
 
 	def test_unknown_operation_ref(self):
 
@@ -168,16 +166,17 @@ class TestSignaldb(TestCase):
 		raise "DBError" if no reference to operation byte found
 		"""
 
-		# signaldb.create(event="button-unknown-operation-ref.push")
+		# signaldb.find((None, None, "button-unknown-operation-ref.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.create(event="button-unknown-operation-ref.push"))
+		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "button-unknown-operation-ref.push")))
 
 	def test_multiple_operation_refs_found(self):
 		"""
 		raise "DBError" if multiple references to operation byte found
 		"""
 
-		# signaldb.create(event="button-multiple-refereed.push")
+		# signaldb.find((None, None, "button-multiple-refereed.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.create(event="button-multiple-refereed.push"))
+		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "button-multiple-refereed.push")))
 
+# TODO: test missing attributes in database (id, etc)

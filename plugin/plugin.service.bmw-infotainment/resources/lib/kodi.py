@@ -1,13 +1,11 @@
 """
-This module handles all events against XBMC/KODI.
+This module is a constructor, returning a function for events against XBMC/KODI.
 
 Reference:
 http://kodi.wiki/view/List_of_Built_In_Functions
 http://kodi.wiki/view/keymap#Actions
 http://kodi.wiki/view/Action_IDs
 """
-
-__author__ = 'lars'
 
 import log as log_module
 log = log_module.init_logger(__name__)

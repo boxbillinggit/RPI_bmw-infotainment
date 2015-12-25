@@ -3,7 +3,7 @@ Contain all settings for the script
 """
 
 __author__ = 'Lars'
-
+import os
 import logging
 
 #
@@ -32,4 +32,4 @@ LOGLEVEL_FILE = logging.DEBUG
 MAX_RECONNECT = 5
 
 # module IBUSHandler
-SIGNAL_DATABASE = "signal-db/SignalDatabase.xml"
+SIGNAL_DATABASE = os.path.join("resources", "data", "signal-db", "SignalDatabase.xml")

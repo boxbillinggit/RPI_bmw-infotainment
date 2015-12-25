@@ -1,27 +1,17 @@
 """
-This module contains a constructor class for creating buttons
-requiring a state-machine.
+This module contains a class used as template for constructing buttons
+with a state-machine.
 """
 
-#TODO: rename module to "StateButton"
+# TODO: rename module to "buttons"
 
 import time
-import threading, Queue
 
+# import local modules
 import log as log_module
 log = log_module.init_logger(__name__)
 
 __author__ = 'Lars'
-
-
-# http://www.laurentluce.com/posts/python-threads-synchronization-locks-rlocks-semaphores-conditions-events-and-queues/
-# http://stackoverflow.com/questions/9190169/threading-and-information-passing-how-to
-
-# one thread for handling state HOLD (periodically executing action while holding)
-
-#Ref:
-#http://stackoverflow.com/questions/16044452/sharing-data-between-threads-in-python
-#https://pymotw.com/2/threading/
 
 
 class State(object):
@@ -47,12 +37,15 @@ class Button(object):
 
 	"""
 	Pre-defined states for object Button:
-		* push
-		* hold
-		* release
+		* PUSH
+		* HOLD
+		* RELEASE
+
+	This class should only be used as template and must be instantiated from a
+	subclass, since "schedule_check_state_hold" must be implemented accordingly.
 	"""
 
-	def __init__(self, queue=None, push=None, hold=None, release=None):
+	def __init__(self, push=None, hold=None, release=None):
 
 		# actions
 		self.push = push
@@ -64,32 +57,28 @@ class Button(object):
 		# initial conditions
 		self.timestamp = time.time()
 		self.state = state.state
-		self.queue = queue
 
 	def still_holding(self):
-
-		"""
-		Check if we're holding button long enough -and limit the max time for execute
-		action in state 'HOLD'
-		"""
-
-		# return State.HOLD_INIT < (time.time() - self.timestamp) < State.HOLD_ABORT
 		return (time.time() - self.timestamp) < State.HOLD_ABORT
 
-	def schedule_check_state_hold(self, timeout=State.HOLD_INIT):
-		print "schedule_check_state_hold() "
-		# TODO: must prevent that previous scheduled events don't get executed.
-		self.queue.put((self.check_state_hold, timeout+time.time()))
+	def schedule_check_state_hold(self, timeout=None):
+		"""
+		Overridden in constructor's subclass. This function handles
+		event scheduling for evaluating if we should make transition
+		to state 'HOLD'..
+		"""
+		pass
 
 	def check_state_hold(self):
 
 		"""
 		This is called from event-thread and evaluates if we are about to
-		change state from 'PUSH' to 'HOLD'. Execute action periodically (max time-
-		limited) by re-schedule event while current state is 'HOLD'
+		change state from 'PUSH' to 'HOLD', but also execute action for HOLD
+		periodically (max time-limited) by re-schedule this function while
+		current state is 'HOLD'
 
-		most of the buttons is broadcasting state 'HOLD' once after 1s -  hence
-		different initial sleep times below to not interfering with this event.
+		Most of the buttons is broadcasting state 'HOLD' once after 1s -  hence
+		different initial sleep times to avoid interfering with this event.
 		"""
 
 		# log.debug("{} - check_state_hold() - still holding? (current state  '{}')'".format(self.__class__.__name__, State.STATE[self.state]))
@@ -103,9 +92,9 @@ class Button(object):
 		"""
 		Current state is 'PUSH'
 
-		Execute action if defined, and if previous state was 'RELEASE'. we start to
-		evaluate if we're pushing long enough to enter state 'HOLD' (but only
-		if we have an action for state 'HOLD').
+		Execute action if defined. If previous state was 'RELEASE'. we start to
+		evaluate if we're pushing long enough for changing state to 'HOLD' (but
+		only if we have an action for state 'HOLD').
 		"""
 
 		if self.push and self.state == State.RELEASE:
@@ -120,8 +109,8 @@ class Button(object):
 	def set_state_hold(self):
 
 		"""
-		Current state is 'HOLD' - execute action if defined and only if previous state was
-		push or hold (not RELEASE).
+		Current state is 'HOLD' - execute action only if previous state was
+		'PUSH' or 'HOLD' (not RELEASE), and if an action is defined.
 		"""
 
 		if self.hold and self.state != State.RELEASE:
@@ -133,7 +122,7 @@ class Button(object):
 
 		"""
 		Current state is 'RELEASE' - execute action only if previous state
-		was 'PUSH' (and if action is defined).
+		was 'PUSH' (and if an action is defined).
 		"""
 
 		if self.release and self.state == State.PUSH:

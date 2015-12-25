@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ElementTree
 import os
 import settings
 
+# import local modules
 import log as log_module
 log = log_module.init_logger(__name__)
 
@@ -36,13 +37,6 @@ HEX_BASE = 16		# hex has base-16
 class DBError(Exception):
 	"""
 	Exception raised if we can't create a signal caused by database references
-	"""
-	pass
-
-
-class ArgError(Exception):
-	"""
-	Exception raised if we can't create a signal caused by not enough arguments
 	"""
 	pass
 
@@ -110,7 +104,7 @@ def device(ident):
 def data(ident):
 
 	"""
-	Return bytes for DATA chunk (from operation + action)
+	Return bytes for DATA-chunk (from operation + action)
 	"""
 
 	event = get_event(ident)
@@ -124,16 +118,19 @@ def data(ident):
 	)
 
 
-def create(src=None, dst=None, event=None):
+def find(item):
 
 	"""
-	Main function for creating signals from reference-name
-	and return signal represented in a 3-tuple (SRC, DST, DATA)
+	Find signal from name.
+
+	Return signal in bytes, represented in a 3-tuple (SRC, DST, DATA)
 	"""
 
-	# must not be empty, and data must exist. TODO: raise custom error?
+	src, dst, event = item
+
+	# must not be empty, and data must exist.
 	if not (event or (src and dst and event)):
-		raise ArgError("Not enough arguments provided.")
+		raise ValueError("Not enough arguments provided")
 
 	return tuple([
 		device(src) if src else None,
@@ -142,20 +139,13 @@ def create(src=None, dst=None, event=None):
 	])
 
 
-def create_from_tuple(desc):
+def create(item):
 
 	"""
-	Create a batch of signals from a list of 3-tuples as input.
-
-	example: [("IBUS_MSG_BMBT_BUTTON", None, "next.push"), ...]
+	Main function for creating signals from reference-name. Catches exceptions.
 	"""
 
-	signals = []
-
-	for src, dst, event in desc:
-		try:
-			signals.append(create(src=src, dst=dst, event=event))
-		except DBError as error:
-			log.error(error)
-
-	return signals
+	try:
+		return find(item)
+	except DBError as error:
+		log.error(error)

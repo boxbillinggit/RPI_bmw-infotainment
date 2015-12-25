@@ -211,30 +211,4 @@ class TestButton(TestCase):
 		self.assertEqual(self.button.state, State.RELEASE)
 		self.assertIsNone(self.event.action)
 
-	# def test_from_push_to_holding(self):
-	#
-	# 	"""
-	# 	Check transition from INIT to PUSH -> HOLD (holding button long enough)
-	#
-	# 	execute action for HOLD
-	# 	"""
-	#
-	# 	self.button.set_state_push()
-	# 	time.sleep(greater_than(State.TIME_STATE_HOLD_INIT))
-	# 	self.assertEqual(self.button.state, State.HOLD)
-	# 	self.assertEqual(self.event.action, State.HOLD)
-	#
-	# def test_from_push_to_not_holding(self):
-	#
-	# 	"""
-	# 	Check transition from INIT to PUSH (NOT holding button long enough)
-	#
-	# 	execute action for HOLD
-	# 	"""
-	#
-	# 	self.button.set_state_push()
-	# 	time.sleep(lower_than(State.TIME_STATE_HOLD_INIT))
-	# 	self.assertEqual(self.button.state, State.PUSH)
-	# 	self.assertIsNone(self.event.action)
-
-# TODO: check max-time, etc.. and repeatedly push-release-push-release will occasionally create a lot of timers
+# TODO: test states without functions bound to each state

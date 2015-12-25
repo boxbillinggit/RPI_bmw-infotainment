@@ -1,3 +1,4 @@
+import datetime
 __author__ = 'lars'
 
 
@@ -10,7 +11,8 @@ class Debug(object):
 	"""
 
 	def emit(self, module="", method="", args=None):
-		print("{} - {}: \"{}\"".format(module, method, args))
+		now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")
+		print("{} - {} - {}: \"{}\"".format(now, module, method, args))
 
 	def user_input(self, module="", method="", args=None, default=""):
 		print "{} - {}".format(module, method)

@@ -210,7 +210,7 @@ class TCPIPHandler(object):
 			return len(rx_buf)
 
 		# find event
-		self.ibus_handler.handle_event((self.src, self.dst, rx_buf[:data_chunk_len]))
+		self.ibus_handler.handle_signal((self.src, self.dst, rx_buf[:data_chunk_len]))
 
 		# clear flag
 		self.header_received = False
