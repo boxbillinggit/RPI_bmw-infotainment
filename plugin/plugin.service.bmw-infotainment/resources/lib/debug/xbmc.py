@@ -1,12 +1,14 @@
+import signal
+import time
+import os.path as path
+
+# import local modules
+import events
+event = events.Debug()
+
 __author__ = 		'Lars'
 __modulename__ = 	"xbmc"
 
-import signal, time
-
-import events
-
-# can be overriden from test-script
-event = events.Debug()
 
 LOGLEVELS = {
 	0: "LOGDEBUG",
@@ -19,11 +21,12 @@ LOGLEVELS = {
 	7: "LOGNONE"
 }
 
-# ref: http://kodi.wiki/view/Special_protocol
+
+PREFIX = path.expanduser("~")
 specialpaths = {
-	"special://logpath": 	"~/.kodi/temp",
-	"special://home": 		"~/.kodi/",
-	"special://skin": 		"~/.kodi/addons"
+	"special://logpath": 	path.join(PREFIX, ".kodi", "temp"),
+	"special://home": 		path.join(PREFIX, ".kodi"),
+	"special://skin": 		path.join(PREFIX, ".kodi","addons")
 }
 
 
@@ -37,6 +40,11 @@ def executebuiltin(arg):
 
 
 def translatePath(path):
+
+	"""
+	ref: http://kodi.wiki/view/Special_protocol
+	"""
+
 	return specialpaths.get(path)
 
 

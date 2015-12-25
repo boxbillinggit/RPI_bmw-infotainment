@@ -40,10 +40,10 @@ LOGFATAL 	= 6
 LOGNONE 	= 7
 
 
-now = datetime.datetime.now()
+FNAME_UNIQUE = "{}-{}.log".format(__addonid__, datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"))
+FNAME = "{}.log".format(__addonid__)
 
-FNAME = "%s.%s.events-%s.log" % (__addonid__, "kodi" if USING_XBMC else "console", now.strftime("%Y-%m-%d-%H%M%S"))
-LOGPATH = os.path.join(xbmc.translatePath("special://logpath"), FNAME)
+LOGPATH = os.path.join(xbmc.translatePath("special://logpath"), FNAME_UNIQUE if settings.LOG_FILENAME_UNIQUE else FNAME)
 
 # ref: https://docs.python.org/3/library/logging.html?highlight=logger#logging.Formatter
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -73,7 +73,7 @@ class Handles(object):
 
 	def init_file_handle(self):
 
-		fh = logging.FileHandler(LOGPATH)
+		fh = logging.FileHandler(LOGPATH, mode="w")
 		fh.setLevel(settings.LOGLEVEL_FILE)
 		fh.setFormatter(self.formatter)
 		self.fh = fh
