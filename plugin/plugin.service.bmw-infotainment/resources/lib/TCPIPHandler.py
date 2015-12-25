@@ -26,7 +26,7 @@ from threading import Thread
 
 # import the script's libraries
 from TCPIPSocket import TCPIPSocketAsyncore, to_hexstr
-from IBUSHandler import Filter
+from event_handler import Filter
 import settings
 
 
