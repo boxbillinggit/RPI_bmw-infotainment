@@ -15,12 +15,17 @@ log = log_module.init_logger(__name__)
 __author__ = 'lars'
 
 
-def inc(index):
-	index += 1
-	return index
+class Index(object):
+
+	def __init__(self):
+		self.index = 0
+
+	def inc(self):
+		self.index += 1
+		return self.index
 
 
-def init_buttons(factory=None, index=0):
+def init_buttons(factory=None, index=None):
 
 	"""
 	Initialize all events for buttons.
@@ -31,21 +36,21 @@ def init_buttons(factory=None, index=0):
 	SRC, DST = ("IBUS_DEV_BMBT", None)
 
 	right_knob = button.new(hold=kodi.action("back"), release=kodi.action("enter"))
-	events.append((inc(index), signaldb.create((SRC, DST, "right-knob.push")), right_knob.set_state_push))
-	events.append((inc(index), signaldb.create((SRC, DST, "right-knob.hold")), right_knob.set_state_hold))
-	events.append((inc(index), signaldb.create((SRC, DST, "right-knob.release")), right_knob.set_state_release))
-	events.append((inc(index), signaldb.create((SRC, DST, "right-knob.turn-left")), kodi.action("up")))
-	events.append((inc(index), signaldb.create((SRC, DST, "right-knob.turn-right")), kodi.action("down")))
+	events.append((index(), signaldb.create((SRC, DST, "right-knob.push")), right_knob.set_state_push))
+	events.append((index(), signaldb.create((SRC, DST, "right-knob.hold")), right_knob.set_state_hold))
+	events.append((index(), signaldb.create((SRC, DST, "right-knob.release")), right_knob.set_state_release))
+	events.append((index(), signaldb.create((SRC, DST, "right-knob.turn-left")), kodi.action("up")))
+	events.append((index(), signaldb.create((SRC, DST, "right-knob.turn-right")), kodi.action("down")))
 
 	left = button.new(hold=kodi.action("Left"), release=kodi.action("Left"))
-	events.append((inc(index), signaldb.create((SRC, DST, "left.push")), left.set_state_push))
-	events.append((inc(index), signaldb.create((SRC, DST, "left.hold")), left.set_state_hold))
-	events.append((inc(index), signaldb.create((SRC, DST, "left.release")), left.set_state_release))
+	events.append((index(), signaldb.create((SRC, DST, "left.push")), left.set_state_push))
+	events.append((index(), signaldb.create((SRC, DST, "left.hold")), left.set_state_hold))
+	events.append((index(), signaldb.create((SRC, DST, "left.release")), left.set_state_release))
 
 	right = button.new(hold=kodi.action("Right"), release=kodi.action("Right"))
-	events.append((inc(index), signaldb.create((SRC, DST, "right.push")), right.set_state_push))
-	events.append((inc(index), signaldb.create((SRC, DST, "right.hold")), right.set_state_hold))
-	events.append((inc(index), signaldb.create((SRC, DST, "right.release")), right.set_state_release))
+	events.append((index(), signaldb.create((SRC, DST, "right.push")), right.set_state_push))
+	events.append((index(), signaldb.create((SRC, DST, "right.hold")), right.set_state_hold))
+	events.append((index(), signaldb.create((SRC, DST, "right.release")), right.set_state_release))
 
 	return events
 
@@ -90,10 +95,10 @@ class Events(object):
 
 		self.list = []
 		self.queue = queue
-		self.index = 0
+		self.index = Index()
 
 		# add events
-		self.list.extend(init_buttons(factory=ButtonFactory(self.schedule), index=self.index))
+		self.list.extend(init_buttons(factory=ButtonFactory(self.schedule), index=self.index.inc))
 
 	def schedule(self, task):
 		self.queue.put(task)
@@ -106,7 +111,7 @@ class Events(object):
 		Append a 3-tuple: (<INDEX>, <SIGNAL>=(src, dst, data), <EVENT>)
 		"""
 
-		self.list.append((inc(self.index), signal, event))
+		self.list.append((self.index.inc(), signal, event))
 
 	def unbind_event(self, index):
 
