@@ -1,6 +1,6 @@
 import time
 from unittest import TestCase
-from BMButtons import State, Button
+from buttons import State, Button
 __author__ = 'lars'
 
 TIME_MARGIN = 0.2

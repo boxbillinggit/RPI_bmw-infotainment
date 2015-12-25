@@ -7,7 +7,7 @@ import time
 # import local modules
 import kodi
 import signaldb
-from BMButtons import Button, State
+from buttons import Button, State
 
 import log as log_module
 log = log_module.init_logger(__name__)
