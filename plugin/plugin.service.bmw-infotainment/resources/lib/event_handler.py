@@ -1,18 +1,17 @@
 """
-This module map events against IBUS-message
+This module handle events for received BUS-messages
 """
-# TODO rename module to "EventHandler" or "ibushandler" ?
 
 import threading
 import Queue
 import time
 
-# import local modules
 try:
 	import xbmc
 except ImportError as err:
 	import debug.xbmc as xbmc
 
+# import local modules
 from TCPIPSocket import to_hexstr
 from events import Events
 import log as log_module
@@ -20,6 +19,7 @@ log = log_module.init_logger(__name__)
 
 __author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()
+
 
 def match_found(bus_sig, event_sig):
 
@@ -97,8 +97,9 @@ class EventHandler(threading.Thread):
 
 		"""
 		Thread's main activity - consume tasks from queue. If task remains scheduled
-		in future we poll periodically. Else if schedule-list is empty we block
-		until new tasks is available on queue.
+		in future we poll periodically. If schedule-list is empty we also poll
+		but with a longer interval . We must poll periodically even with no tasks in
+		schedule since the blocking get() won't let us terminate the thread.
 		"""
 
 		while not __monitor__.abortRequested():

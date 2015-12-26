@@ -1,5 +1,6 @@
 """
-Handle initialization of all events, and also adding, or removing events.
+Handle initialization of all events, also implements methods for adding
+and removing events at runtime.
 """
 
 import time
@@ -16,6 +17,10 @@ __author__ = 'lars'
 
 
 class Index(object):
+
+	"""
+	Unique index for each event added on event-stack.
+	"""
 
 	def __init__(self):
 		self.index = 0

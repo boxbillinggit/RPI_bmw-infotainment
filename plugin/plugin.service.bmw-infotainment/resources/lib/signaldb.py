@@ -36,7 +36,8 @@ HEX_BASE = 16		# hex has base-16
 
 class DBError(Exception):
 	"""
-	Exception raised if we can't create a signal caused by database references
+	Exception raised if we can't create a signal caused by incorrect references
+	in database.
 	"""
 	pass
 
@@ -55,7 +56,7 @@ def check_length(obj, ident=""):
 def get_event(ident):
 
 	"""
-	return the event object for further operations in this module.
+	Return the event object for further operations in this module.
 
 	defined as <BYTE> within the <ACTION>-tag
 	"""
@@ -67,7 +68,7 @@ def get_event(ident):
 def operation(event):
 
 	"""
-	return byte for operation - which is the first byte of the DATA-chunk
+	Return byte for operation - which is the first byte of the DATA-chunk
 
 	defined within <OPERATION>-tag
 	"""

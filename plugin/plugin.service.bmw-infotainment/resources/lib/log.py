@@ -1,15 +1,20 @@
 """
-Debug logger handles both XBMC-lgging -and console logging. If we're
-using XBMC- we pipe console-messages to 'xbmc.log' instead
+This logger module handles both logging to file and console. If we are running
+service from XBMC/KODI (normal case) we forward console log-messages to KODI/XBMC
+log-module. If we running service command-line the console is used as output.
+
+Enable DEBUG-log for XBMC/KODI:
+	* Navigate to "settings -> system -> debugging"
+	* Logfile is found under "~/.kodi/temp"
 
 References:
-Python logging - https://docs.python.org/3/howto/logging.html
-XBMC/KODI logging - http://kodi.wiki/view/Log_file/Advanced#Enable_debugging
-
-Enable DEBUG-log for kodi:
-* enter "settings -> system -> debugging"
-* logfile is found under "~/.kodi/temp"
+https://docs.python.org/3/howto/logging.html
+http://kodi.wiki/view/Log_file/Advanced#Enable_debugging
 """
+
+import logging
+import os
+import datetime
 
 try:
 	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
@@ -21,13 +26,14 @@ except ImportError as err:
 	import debug.xbmcaddon as xbmcaddon
 	USING_XBMC = False
 
+# import local modules
+import settings
+
 __author__ 		= 'Lars'
 __addon__		= xbmcaddon.Addon()
 __addonid__		= __addon__.getAddonInfo('id')
 __addonpath__	= __addon__.getAddonInfo('path')
 
-import settings, logging
-import os, datetime
 
 # XBMC/KODI Debug levels
 LOGDEBUG 	= 0
@@ -45,15 +51,15 @@ FNAME = "{}.log".format(__addonid__)
 
 LOGPATH = os.path.join(xbmc.translatePath("special://logpath"), FNAME_UNIQUE if settings.LOG_FILENAME_UNIQUE else FNAME)
 
-# ref: https://docs.python.org/3/library/logging.html?highlight=logger#logging.Formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-
-class Handles(object):
+class LogHandler(object):
 
 	"""
-	Setup handles for console -and file
+	Setup handlers for console -and file
 	"""
+
+	# ref: https://docs.python.org/3/library/logging.html?highlight=logger#logging.Formatter
+	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 	def __init__(self, formatter):
 
@@ -61,7 +67,6 @@ class Handles(object):
 		self.ch = None
 		self.formatter = formatter
 
-		# init handles
 		if settings.LOG_TO_FILE:
 			self.init_file_handle()
 
@@ -96,7 +101,7 @@ class Handles(object):
 class XBMCLogger(logging.Handler):
 
 	"""
-	No monitor when running XBMC/KODI - pipe messages to XBMC-log
+	No monitor when running XBMC/KODI - forward messages to XBMC/KODI-log
 	instead.
 	"""
 
@@ -110,38 +115,38 @@ class XBMCLogger(logging.Handler):
 			"CRITICAL": LOGFATAL
 			}
 
-		# init base class
 		logging.Handler.__init__(self)
 
 	def emit(self, record):
 
-		# format log mesage
 		msg = "%s: %s" % (__addonid__, record.msg)
 
 		# map XBMC-loglevel against built-in loglevels (default level is 'LOGINFO')
 		level = self.xbmc_loglevel.get(record.levelname, LOGINFO)
 
-		# log to XBMC
 		xbmc.log(msg, level)
 
 
-# init handles
-handles = Handles(formatter)
+log_handler = LogHandler(LogHandler.formatter)
 
 
 def init_logger(name, log_level=None):
 
-	# instantiate module's logger
-	log = logging.getLogger(name)
+	"""
+	Main function for creating a new logger module.
+	"""
 
-	# no loglevel was passed, set to lowest level (capture all)
+	# instantiate a new logger
+	logger = logging.getLogger(name)
+
+	# no log-level was provided, set to lowest level (capture all)
 	if not log_level:
-		log.setLevel(min(settings.LOGLEVEL_CONSOLE, settings.LOGLEVEL_FILE))
+		logger.setLevel(min(settings.LOGLEVEL_CONSOLE, settings.LOGLEVEL_FILE))
 
-	if handles.ch:
-		log.addHandler(handles.ch)
+	if log_handler.ch:
+		logger.addHandler(log_handler.ch)
 
-	if handles.fh:
-		log.addHandler(handles.fh)
+	if log_handler.fh:
+		logger.addHandler(log_handler.fh)
 
-	return log
+	return logger

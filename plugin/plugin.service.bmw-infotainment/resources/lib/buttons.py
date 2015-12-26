@@ -3,8 +3,6 @@ This module contains a class used as template for constructing buttons
 with a state-machine.
 """
 
-# TODO: rename module to "buttons"
-
 import time
 
 # import local modules
@@ -41,8 +39,8 @@ class Button(object):
 		* HOLD
 		* RELEASE
 
-	This class should only be used as template and must be instantiated from a
-	subclass, since "schedule_check_state_hold" must be implemented accordingly.
+	This class should only be used as template and is preferably instantiated from
+	a subclass, since "schedule_check_state_hold" must be implemented accordingly.
 	"""
 
 	def __init__(self, push=None, hold=None, release=None):
