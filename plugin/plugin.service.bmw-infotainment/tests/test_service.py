@@ -1,63 +1,82 @@
+"""
+This module is used to test service.py from command-line.
+
+Start:
+>> import tests.test_service as testmodule
+>> testmodule.gateway.start()
+>> testmodule.service.start()
+
+Send:
+>> testmodule.send(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "right-knob.release"))
+
+Stop:
+>> testmodule.service.stop()
+>> testmodule.gateway.stop()
+"""
+
+import datetime
+
+# import local modules
+import service as module_service
+import tests.gateway as module_gateway
+import resources.lib.signaldb as signaldb
+
 __author__ = 'lars'
 
-import os, sys
 
-# fix path resolution for module import
-rootpath = os.path.normpath(os.path.join(os.getcwd(), "../"))
-sys.path.append(rootpath)
-
-import service as module_service
-import gateway as module_gateway
-
-
-# the interface against XBMC/KODI
-class Debug(object):
+class Events(object):
 
 	"""
+	The emulated interface against XBMC/KODI
+
 	Special class for handling events in XBMC/KODI during debugging. Events and user-inputs
 	will now be controlled by the test script - instead of using the console as interface.
 	This overrides the class in 'events.py'.
 	"""
 
 	def emit(self, module="", method="", args=None):
-		print("{}: {} - {}: \"{}\"".format(__name__, module, method, args))
+		now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")
+		print("{} - {} - {}: \"{}\"".format(now, module, method, args))
 
 	def user_input(self, module="", method="", args=None, default=""):
 		print "{}: {} - {}".format(__name__, module, method)
-		return raw_input("{}: [{}] >>".format(args, default))
+		print ">> %s (answering default)" % default
+		return default
 
 
-# shortcuts
-# NOTE - this will start the gateway when importing.
-gateway = module_gateway.Gateway()
-service = module_service.service
-
-# XBMC/KODI event interface
-event = Debug()
-
-# bind callbacks to XBMC/KODI debug-interface
-# verify binding by calling command-line: testmodule.__name__ == testmodule.module_service.xbmc.event.__module__
+# rebind callbacks from XBMC/KODI.
+# testmodule.__name__ == testmodule.module_service.xbmc.event.__module__
+event = Events()
 module_service.xbmc.event = event
 module_service.xbmcgui.event = event
 module_service.xbmcaddon.event = event
 
-
-# start plugin from command-line:
-#
-# import tests.test_service as testmodule
-# testmodule.service.start()
-#
+# shortcuts
+gateway = module_gateway.Gateway()
+service = module_service.TCPIPHandler()
 
 
-def start():
+def send(msg):
 
-	# start service
-	service.start()
+	"""
+	Send message from description.
 
-	if module_service.__monitor__.waitForAbort():
-		service.stop()
+	example: send(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "right-knob.release"))
+	"""
+
+	module_gateway.broadcast(signaldb.find(msg))
+
+
+def send_raw(msg):
+
+	"""
+	Send raw message in bytes.
+
+	example: send_raw(([src], [dst], [data]))
+	"""
+
+	module_gateway.broadcast(bytearray(msg))
 
 
 if __name__ == "__main__":
-
-	start()
+	pass
