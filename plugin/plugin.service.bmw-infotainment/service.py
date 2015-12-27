@@ -24,8 +24,8 @@ __addon__		= xbmcaddon.Addon()
 __addonname__	= __addon__.getAddonInfo('name')
 __addonid__		= __addon__.getAddonInfo('id')
 
-# load all libraries
 import resources.lib.settings as settings
+from resources.lib.event_handler import EventHandler
 from resources.lib.TCPIPHandler import TCPIPHandler
 from resources.lib.callback import Callback
 
@@ -39,17 +39,21 @@ if settings.DEBUGGER_ON:
 	import rpdb2
 	rpdb2.start_embedded_debugger('pw', timeout=settings.DEBUGGER_TIMEOUT)
 
-# init the main service class
+events = EventHandler()
+events.daemon = True
+
 service = TCPIPHandler()
 
 # init callbacks from GUI. pass service methods for constructing callbacks.
 callback = Callback(service)
 
-# Launch the service
+
 if __name__ == "__main__":
 
 	# set callbacks
 	callback.init_callbacks()
+
+	events.start()
 
 	# init and start the TCP/IP service thread...
 	service.start()

@@ -130,6 +130,15 @@ class XBMCLogger(logging.Handler):
 log_handler = LogHandler(LogHandler.formatter)
 
 
+def hexstring(data):
+
+	"""
+	Print a well formed HEX-string from type "bytearray"
+	"""
+
+	return " ".join(map(lambda byte: "%X" % byte, data)) if data else ""
+
+
 def init_logger(name, log_level=None):
 
 	"""

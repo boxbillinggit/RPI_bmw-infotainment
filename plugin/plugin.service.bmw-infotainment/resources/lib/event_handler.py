@@ -1,5 +1,5 @@
 """
-This module handle events for received BUS-messages
+This module handle events in a separate thread.
 """
 
 import threading
@@ -12,31 +12,11 @@ except ImportError as err:
 	import debug.xbmc as xbmc
 
 # import local modules
-from TCPIPSocket import to_hexstr
-from events import Events
 import log as log_module
 log = log_module.init_logger(__name__)
 
 __author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()
-
-
-def match_found(bus_sig, event_sig):
-
-	"""
-	Return "True" if a match between received signal and an event is found.
-
-	"None" means match all (don't evaluate), but data must exist and be equal!
-	"""
-
-	src, dst, data = event_sig
-	bus_src, bus_dst, bus_data = bus_sig
-
-	return not (
-		(src and bus_src != src) or
-		(dst and bus_dst != dst) or
-		(bus_data != data)
-	)
 
 
 class EventHandler(threading.Thread):
@@ -53,9 +33,9 @@ class EventHandler(threading.Thread):
 	POLL_IDLE = 1.0
 	POLL_TASK = 0.2
 
-	def __init__(self):
+	def __init__(self, queue=None):
 		super(EventHandler, self).__init__()
-		self.queue = EventHandler.Queue
+		self.queue = queue or EventHandler.Queue
 		self.schedule = []
 
 	def check_schedule(self):
@@ -115,37 +95,3 @@ class EventHandler(threading.Thread):
 
 			self.reschedule(task)
 			self.queue.task_done()
-
-
-class Filter(object):
-
-	"""
-	Main class for this module. Filter BUS-messages to a matching event (if defined)
-	"""
-
-	def __init__(self):
-
-		self.event_handler = EventHandler()
-		self.event_handler.daemon = True
-		self.event_handler.start()
-
-		self.events = Events(EventHandler.Queue)
-
-	def handle_signal(self, bus_sig):
-
-		"""
-		Handles bus signals received from TCP/IP socket. Compare if we have a matching
-		event. If match found, put task on event queue (None=scheduled to execute now)
-		and stop searching.
-
-		Signal is 3-tuple: (src, dst, data)
-		"""
-
-		src, dst, data = bus_sig
-
-		for index, event_sig, event in self.events.list:
-
-			if match_found(bus_sig, event_sig):
-				self.event_handler.queue.put((event, None))
-				log.debug("{} - match for signal {}".format(self.__class__.__name__, to_hexstr(src+dst+data)))
-				break
