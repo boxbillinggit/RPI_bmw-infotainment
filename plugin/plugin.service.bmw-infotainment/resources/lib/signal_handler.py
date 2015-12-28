@@ -2,7 +2,7 @@
 This module handles received BUS-signals.
 """
 
-from events import Events
+from signal_events import Events
 from event_handler import EventHandler
 import log as log_module
 log = log_module.init_logger(__name__)
