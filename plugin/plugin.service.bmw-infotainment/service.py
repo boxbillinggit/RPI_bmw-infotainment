@@ -40,7 +40,6 @@ if settings.DEBUGGER_ON:
 	rpdb2.start_embedded_debugger('pw', timeout=settings.DEBUGGER_TIMEOUT)
 
 events = EventHandler()
-events.daemon = True
 
 service = TCPIPHandler()
 

@@ -35,6 +35,7 @@ class EventHandler(threading.Thread):
 
 	def __init__(self, queue=None):
 		super(EventHandler, self).__init__()
+		self.daemon = True
 		self.queue = queue or EventHandler.Queue
 		self.schedule = []
 
