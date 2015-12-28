@@ -27,7 +27,7 @@ __addonid__		= __addon__.getAddonInfo('id')
 import resources.lib.settings as settings
 from resources.lib.event_handler import EventHandler
 from resources.lib.TCPIPHandler import TCPIPHandler
-from resources.lib.callback import Callback
+from resources.lib.gui_events import Callback
 
 # start debug session with "WinPDB" console - if switch is turned on in "settings.py".
 if settings.DEBUGGER_ON:
