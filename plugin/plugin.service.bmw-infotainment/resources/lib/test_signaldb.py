@@ -17,48 +17,48 @@ class SignalDB(object):
 		<IBUS>
 			<MESSAGE>
 
-				<DEVICES>
+				<DEVICE>
 					<byte val="0x00" id="IBUS_DEV">Device description</byte>
 					<byte val="0x02" id="IBUS_DEV_MULTIPLE">Double references</byte>
 					<byte val="0x03" id="IBUS_DEV_MULTIPLE">Double references</byte>
-				</DEVICES>
+				</DEVICE>
 
 				<DATA>
-					<OPERATIONS>
+					<OPERATION>
 						<byte val="0x02" id="IBUS_MSG_OPERATION">Operation description</byte>
 						<byte val="0x02" id="IBUS_MSG_OPERATION_MULTIPLE">Double references</byte>
 						<byte val="0x03" id="IBUS_MSG_OPERATION_MULTIPLE">Double references</byte>
-					</OPERATIONS>
+					</OPERATION>
 
-					<CATEGORY ref="IBUS_MSG_OPERATION">
+					<ACTION ref="IBUS_MSG_OPERATION">
 						<byte val="0x04" id="button.push"/>
 						<byte val="0x05" id="button.hold"/>
 						<byte val="0x06" id="button.release"/>
-					</CATEGORY>
+					</ACTION>
 
-					<CATEGORY ref="IBUS_MSG_NO_OPERATION_REF">
+					<ACTION ref="IBUS_MSG_NO_OPERATION_REF">
 						<byte val="0x07" id="button-unknown-operation-ref.push"/>
 						<byte val="0x08" id="button-unknown-operation-ref.hold"/>
 						<byte val="0x09" id="button-unknown-operation-ref.release"/>
-					</CATEGORY>
+					</ACTION>
 
-					<CATEGORY ref="IBUS_MSG_OPERATION_MULTIPLE">
+					<ACTION ref="IBUS_MSG_OPERATION_MULTIPLE">
 						<byte val="0x04" id="button-multiple-refereed.push"/>
 						<byte val="0x05" id="button-multiple-refereed.hold"/>
 						<byte val="0x06" id="button-multiple-refereed.release"/>
-					</CATEGORY>
+					</ACTION>
 
-					<CATEGORY ref="IBUS_MSG_OPERATION">
+					<ACTION ref="IBUS_MSG_OPERATION">
 						<byte val="0x04" id="button-multiple-defined.push"/>
 						<byte val="0x05" id="button-multiple-defined.hold"/>
 						<byte val="0x06" id="button-multiple-defined.release"/>
-					</CATEGORY>
+					</ACTION>
 
-					<CATEGORY ref="IBUS_MSG_OPERATION">
+					<ACTION ref="IBUS_MSG_OPERATION">
 						<byte val="0x04" id="button-multiple-defined.push"/>
 						<byte val="0x05" id="button-multiple-defined.hold"/>
 						<byte val="0x06" id="button-multiple-defined.release"/>
-					</CATEGORY>
+					</ACTION>
 
 				</DATA>
 			</MESSAGE>
@@ -87,7 +87,7 @@ class TestSignaldb(TestCase):
 
 		# signaldb.find((None, None, None))
 
-		self.assertRaises(ValueError, lambda: signaldb.find((None, None, None)))
+		self.assertRaises(ValueError, signaldb.find, (None, None, None))
 
 	def test_no_data_defined(self):
 
@@ -97,7 +97,7 @@ class TestSignaldb(TestCase):
 
 		# signaldb.find(("IBUS_DEV", "IBUS_DEV", None))
 
-		self.assertRaises(ValueError, lambda: signaldb.find(("IBUS_DEV", "IBUS_DEV", None)))
+		self.assertRaises(ValueError, signaldb.find, ("IBUS_DEV", "IBUS_DEV", None))
 
 	def test_only_event_defined(self):
 
@@ -129,7 +129,7 @@ class TestSignaldb(TestCase):
 
 		# signaldb.find(("IBUS_DEV_UNKNOWN", "IBUS_DEV", "button.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.find(("IBUS_DEV_UNKNOWN", "IBUS_DEV", "button.push")))
+		self.assertRaises(signaldb.DBError, signaldb.find, ("IBUS_DEV_UNKNOWN", "IBUS_DEV", "button.push"))
 
 	def test_multiple_device_codes_defined(self):
 
@@ -139,7 +139,7 @@ class TestSignaldb(TestCase):
 
 		# signaldb.find((None, None, "button-multiple-refereed.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "button-multiple-refereed.push")))
+		self.assertRaises(signaldb.DBError, signaldb.find, (None, None, "button-multiple-refereed.push"))
 
 	def test_unknown_event(self):
 
@@ -149,7 +149,7 @@ class TestSignaldb(TestCase):
 
 		# signaldb.find((None, None, "unknown-event.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "unknown-event.push")))
+		self.assertRaises(signaldb.DBError, signaldb.find, (None, None, "unknown-event.push"))
 
 	def test_multiple_events_defined(self):
 		"""
@@ -158,7 +158,7 @@ class TestSignaldb(TestCase):
 
 		# signaldb.find((None, None, "button-multiple-defined.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "button-multiple-defined.push")))
+		self.assertRaises(signaldb.DBError, signaldb.find, (None, None, "button-multiple-defined.push"))
 
 	def test_unknown_operation_ref(self):
 
@@ -168,7 +168,7 @@ class TestSignaldb(TestCase):
 
 		# signaldb.find((None, None, "button-unknown-operation-ref.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "button-unknown-operation-ref.push")))
+		self.assertRaises(signaldb.DBError, signaldb.find, (None, None, "button-unknown-operation-ref.push"))
 
 	def test_multiple_operation_refs_found(self):
 		"""
@@ -177,6 +177,6 @@ class TestSignaldb(TestCase):
 
 		# signaldb.find((None, None, "button-multiple-refereed.push"))
 
-		self.assertRaises(signaldb.DBError, lambda: signaldb.find((None, None, "button-multiple-refereed.push")))
+		self.assertRaises(signaldb.DBError, signaldb.find, (None, None, "button-multiple-refereed.push"))
 
 # TODO: test missing attributes in database (id, etc)
