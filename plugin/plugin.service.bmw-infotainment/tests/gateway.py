@@ -23,6 +23,8 @@ TERMINAL_END = "\r\n"
 client_servers = {}
 client_socks = []
 
+# echo the sent signals back to client...
+ECHO = True
 
 def resize_header(data):
 	"""
@@ -156,7 +158,9 @@ class GatewayClientHandler(SocketServer.BaseRequestHandler):
 
 			# TODO respond to ping messages, or implement a method to override..
 			print "DEBUG - {} - received: {}".format(current_thread(), hexstring(bytearray(data)))
-			# self.request.sendall("echo\n")
+
+			if ECHO:
+				self.request.sendall(data)
 
 	def finish(self):
 		"""
@@ -173,8 +177,9 @@ class GatewayClientServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 	def __init__(self, server_address, RequestHandlerClass):
 
-		self.shutdown_requested = False
 		SocketServer.TCPServer.__init__(self, server_address, RequestHandlerClass)
+		self.shutdown_requested = False
+		self.timeout = ALIVE_TIMEOUT
 
 	def handle_timeout(self):
 
