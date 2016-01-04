@@ -26,25 +26,22 @@ __addonid__		= __addon__.getAddonInfo('id')
 
 import resources.lib.settings as settings
 from resources.lib.event_handler import EventHandler
-from resources.lib.TCPIPHandler import TCPIPHandler
+from resources.lib.tcp_handler import TCPIPHandler
 from resources.lib.gui_events import Callback
 
-# start debug session with "WinPDB" console - if switch is turned on in "settings.py".
 if settings.DEBUGGER_ON:
 
-	# notify user that debugging is on
 	dialog = xbmcgui.Dialog()
-	dialog.notification("Python debugger on","Waiting for WinPDB (%ss)..." % settings.DEBUGGER_TIMEOUT)
+	dialog.notification(__addonid__,"Python debugger on, waiting for connection ({}s)...").format(settings.DEBUGGER_TIMEOUT)
 
 	import rpdb2
 	rpdb2.start_embedded_debugger('pw', timeout=settings.DEBUGGER_TIMEOUT)
 
 events = EventHandler()
-
-service = TCPIPHandler()
+tcp_service = TCPIPHandler()
 
 # init callbacks from GUI. pass service methods for constructing callbacks.
-callback = Callback(service)
+callback = Callback(tcp_service)
 
 
 if __name__ == "__main__":
@@ -55,13 +52,13 @@ if __name__ == "__main__":
 	events.start()
 
 	# init and start the TCP/IP service thread...
-	service.start()
+	tcp_service.start()
 
 	# ...and wait for XBMC/KODI to exit!
 	if __monitor__.waitForAbort():
 
 		# perform necessary shutdowns (stop threads, and more...)
-		log.info("Service add-on exits.")
+		log.info("Bye!")
 
 		# Close socket gracefully (XBMC/KODI waits for thread to finish before it closes down)
-		service.stop()
+		tcp_service.request_stop()

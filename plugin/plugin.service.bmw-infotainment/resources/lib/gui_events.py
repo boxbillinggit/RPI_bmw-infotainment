@@ -20,5 +20,5 @@ class Callback(object):
 
 	def init_callbacks(self):
 
-		guicallback.setOnConnect(self.service.start)
-		guicallback.setOnDisconnect(self.service.stop)
+		guicallback.setOnConnect(self.service.request_start)
+		guicallback.setOnDisconnect(self.service.request_stop)
