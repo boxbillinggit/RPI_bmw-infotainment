@@ -59,7 +59,7 @@ class LogHandler(object):
 	"""
 
 	# ref: https://docs.python.org/3/library/logging.html?highlight=logger#logging.Formatter
-	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+	formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 
 	def __init__(self, formatter):
 
