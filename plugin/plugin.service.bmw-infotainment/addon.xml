@@ -6,7 +6,7 @@
 
 <!--
     Add-on definitions.
-    reference: http://kodi.wiki/view/Add-on_settings (root http://kodi.wiki/view/Add-on_development)
+    reference: http://kodi.wiki/view/Addon.xml
 
     This plugin is both a service (automatic start up) -and a script (callable)
 	
@@ -15,8 +15,6 @@
 
 	Script usually appears as "launch" button under settings (in our case it's called internally). 
 	"Settings -> Addons -> enabled add-ons -> ... -> Raspberry Pi BMW Infotainment.
-	
-	Repository for automatic updates. Ref: http://kodi.wiki/view/HOW-TO:Create_a_repository_for_add-ons
 -->
 
 	<requires>
@@ -25,9 +23,14 @@
 	<extension point="xbmc.service" start="startup" library="service.py" />
 	<extension point="xbmc.python.script" library="guicallback.py" />
 	<extension point="xbmc.addon.metadata">
-		<platform>all</platform>
-		<summary lang="en">BMW infotainment gateway</summary>
-		<description lang="en">A Script for controlling Raspberry Pi with original BMW infotainment</description>
+		<platform>linux</platform>
+		<summary lang="en">BMW infotainment</summary>
+		<description lang="en">
+			This add-on makes it possible to control KODI from your original BMW-infotainment boardmonitor buttons (and also controlling your BMW from KODI).
+		</description>
+		<disclaimer>
+			One component of this plugin is built in C++ and currently built and distributed for target "armhf" (Raspberry Pi). Except for this component the plugin shall work on other linux-platforms as well!
+		</disclaimer>
 		<website>http://one-infiniteloop.com/dev/projects/car-media-player/</website>
 		<email>lars.gunnarsson@one-infiniteloop.com</email>
 		<source>http://git.one-infiniteloop.com/larsa/bmw-infotainment</source>
