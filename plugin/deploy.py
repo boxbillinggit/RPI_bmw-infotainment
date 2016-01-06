@@ -2,8 +2,6 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import os, hashlib, glob, json, subprocess
 
-# ref: http://git-scm.com/docs/git-log
-CHANGELOG = "git log -s --format=medium -n1 --merges"
 DEPLOY_CFG = "deploy.json"
 
 # mandatory files required in the repository along with the zipped addon
@@ -34,21 +32,14 @@ def add_component(src=list(), dstprefix="", flist=list()):
 def generate_changelog(addonpath, ver):
 
 	"""
-	create a changelog from git commits (and change suffix on changelog to <version>)
+	Create a changelog with current version-suffix
 	"""
 
-	heading = "v%s" % ver
+	fname = os.path.join(addonpath, "changelog-%s.txt" % ver)
 
-	gitlog = subprocess.check_output(CHANGELOG, shell=True)
+	os.rename(os.path.join(addonpath, "changelog.txt"), fname)
 
-	# read existing logfile
-	log = open(os.path.join(addonpath, "changelog.txt"), "rb").read()
-
-	# create a new logfile with a version suffix
-	fname = "changelog-%s.txt" % ver
-	open(os.path.join(addonpath, fname), "wb").write("\n".join([heading, gitlog, log]))
-
-	return [os.path.join(addonpath, fname)]
+	return [fname]
 
 
 def _prettify_xml(elem):

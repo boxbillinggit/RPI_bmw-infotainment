@@ -1,2 +1,7 @@
+v1.0.0
+- Fist stable release!
+  Basic controls (left, right, enter, back) for controlling XBMC/KODI
+  through LIN-bus (BMW IBUS) is now implemented!
+
 v0.0.1
 - Initial development version.
