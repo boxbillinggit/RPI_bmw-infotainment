@@ -1,5 +1,5 @@
 """
-Implements the TCP-socket. Events are inherited from Events-class
+Implements the TCP-socket transport layer.
 """
 
 import socket
@@ -8,9 +8,8 @@ import threading
 try:
 	import xbmc
 except ImportError:
-	import resources.lib.debug.xbmc as xbmc
+	import debug.xbmc as xbmc
 
-import tcp_events
 import log as log_module
 log = log_module.init_logger(__name__)
 
@@ -18,20 +17,19 @@ __author__		= 'lars'
 __monitor__ 	= xbmc.Monitor()
 
 
-class ThreadedSocket(threading.Thread, tcp_events.Events):
+class ThreadedSocket(threading.Thread):
 
 	"""
 	TCP/IP-socket running in a separate thread.
 	"""
 
-	TIMEOUT = 10
 	MAX_RECV = 1024
 
 	def __init__(self):
 		super(ThreadedSocket, self).__init__()
-		tcp_events.Events.__init__(self)
 		self.daemon = True
 		self.sockfd = None
+		self.host = None
 
 	def run(self):
 
@@ -56,11 +54,10 @@ class ThreadedSocket(threading.Thread, tcp_events.Events):
 		self.state_connecting()
 
 		try:
-			# sockfd = socket.create_connection(self.host, ThreadedSocket.TIMEOUT)
 			sockfd = socket.create_connection(self.host)
 
 		except (socket.error, socket.timeout) as error:
-			log.debug("{} - failed to connect: {}".format(self.__class__.__name__, error))
+			log.error("{} - failed to connect: {}".format(self.__class__.__name__, error))
 			return
 
 		self.sockfd = sockfd
@@ -98,14 +95,30 @@ class ThreadedSocket(threading.Thread, tcp_events.Events):
 			return
 
 		try:
-			self.sockfd.sendall(bytearray(data))
+			self.sockfd.sendall(data)
 		except socket.error as error:
-			log.debug("{} - failed to send data on socket: {}".format(self.__class__.__name__, error))
+			log.error("{} - failed to send data on socket: {}".format(self.__class__.__name__, error))
+
+	def state_connecting(self):
+		""" Overridden in subclass """
+		pass
+
+	def state_connected(self):
+		""" Overridden in subclass """
+		pass
+
+	def handle_init(self):
+		""" Overridden in subclass """
+		pass
 
 	def receive(self, data):
-		"""
-		called when data is received on TCP/IP-socket.
-
-		Overridden in subclass.
-		"""
+		""" Overridden in subclass """
 		pass
+
+	def state_disconnected(self):
+		""" Overridden in subclass """
+		pass
+
+	def handle_reconnect(self):
+		""" Overridden in subclass """
+		return False

@@ -4,44 +4,47 @@ This is the current main TCP-interface to use.
 
 import gateway_protocol
 import signal_handler
-import tcp_socket
+import tcp_events
 
 __author__ = 'lars'
 
+Request = tcp_events.Request
 
-class TCPIPHandler(tcp_socket.ThreadedSocket):
+
+class TCPIPHandler(tcp_events.Events):
 
 	"""
-	Main interface for all TCP/IP-handling. Support handling for sending and receiving
-	signals, also stopping and starting TCP/IP-service.
+	Main interface for all TCP/IP-handling.
 	"""
 
 	def __init__(self):
 		super(TCPIPHandler, self).__init__()
 		self.filter = signal_handler.Filter()
 
-	def start_service(self):
+	def request_start(self):
 
 		"""
-		Use this method for starting the service.
+		User calls this method for connecting.
 		"""
 
-		self.request_start()
+		self.request = Request.RUNNING
+		self.start_service()
 
-	def stop_service(self):
+	def request_stop(self):
 
 		"""
-		Use this method for stopping the service.
+		User calls this method for disconnecting (also system shutdown).
 		"""
 
-		self.request_stop()
+		self.request = Request.STOPPED
+		self.stop_service()
 
 	def send(self, signal):
 
 		"""
-		Method to use for sending data to TCP/IP-socket.
+		Interface against other modules to send data through TCP/IP-socket.
 
-		signal is 3-tuple: ([src], [dst], [data])
+		"signal" is 3-tuple: ([src], [dst], [data])
 		"""
 
 		self.sendall(gateway_protocol.create_frame(signal))
@@ -49,11 +52,12 @@ class TCPIPHandler(tcp_socket.ThreadedSocket):
 	def receive(self, data):
 
 		"""
-		Callback from ThreadedSocket. Handles the raw bytes received from the socket.
-		Passes through data from the bus to signal-handler and abstracts the overlay
-		TCP/IP-protocol away.
+		Interface against other modules to receive data from TCP/IP-socket (callback
+		from ThreadedSocket). Handles the raw bytes received from the socket and
+		abstracts the overlaying TCP/IP-protocol away allowing only signals passing
+		through to the signal "filter".
 
-		signal is 3-tuple: ([src], [dst], [data])
+		"signal" is 3-tuple: ([src], [dst], [data])
 		"""
 
 		signals = self.handle_data(bytearray(data))

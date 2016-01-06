@@ -11,7 +11,7 @@ import log as log_module
 log = log_module.init_logger(__name__)
 
 try:
-	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
+	import xbmc, xbmcgui, xbmcaddon
 
 except ImportError as err:
 	import debug.xbmc as xbmc
@@ -26,23 +26,31 @@ __addonid__		= __addon__.getAddonInfo('id')
 
 def action(arg):
 
-	# construct a method by returning a function.
+	"""
+	Factory for creating an action on XBMC/KODI.
+	"""
+
 	return lambda: xbmc.executebuiltin("Action(%s)" % arg)
 
 
-# TODO: have this here?
+def notification(msg):
+	dialog = xbmcgui.Dialog()
+	dialog.notification(__addonid__, msg)
+
+
 class TCPIPSettings(object):
 
 	"""
-	Interface against XBMC/KODI.
+	Class containing the Interface against XBMC/KODI TCP/IP plugin settings.
 	"""
 
 	STATUS = "gateway.status"
-	HOST = "gateway.ip-address"
+	ADDRESS = "gateway.ip-address"
 	PORT = "gateway.port"
 
 	def __init__(self):
-		pass
+		self.address = None
+		self.port = None
 
 	def set_status(self, ident, status):
 		__addon__.setSetting(ident, status)
@@ -52,17 +60,9 @@ class TCPIPSettings(object):
 		return addon.getSetting(ident)
 
 	def get_host(self):
-		addon = xbmcaddon.Addon()
-		return addon.getSetting(TCPIPSettings.HOST), int(addon.getSetting(TCPIPSettings.PORT))
 
-	def get_address(self):
 		addon = xbmcaddon.Addon()
-		return addon.getSetting(TCPIPSettings.HOST)
+		self.address = addon.getSetting(TCPIPSettings.ADDRESS)
+		self.port = int(addon.getSetting(TCPIPSettings.PORT))
 
-	def get_port(self):
-		addon = xbmcaddon.Addon()
-		return int(addon.getSetting(TCPIPSettings.PORT))
-
-	def notify_disconnected(self, msg):
-		dialog = xbmcgui.Dialog()
-		dialog.notification(__addonid__, msg)
+		return self.address, self.port
