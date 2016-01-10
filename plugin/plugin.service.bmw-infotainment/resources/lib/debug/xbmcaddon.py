@@ -9,7 +9,7 @@ event = events.Debug()
 
 
 ADDON_ID = "plugin.service.bmw-infotainment"
-ADDON_PATH = os.path.join(os.path.expanduser("~"), ".kodi/addons", ADDON_ID)
+ADDON_PATH = os.getcwd()
 
 settings = {
 	"gateway.ip-address": "127.0.0.1",
