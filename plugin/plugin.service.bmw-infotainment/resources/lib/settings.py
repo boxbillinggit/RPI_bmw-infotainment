@@ -1,36 +1,45 @@
 """
-Contain all settings for the script
+All settings for this plugin
 """
 
-__author__ = 'Lars'
 import os
 import logging
 
-#
-# WinPDB (windows python debugger)
-#
+__author__ = 'Lars'
 
-# if we're attempting to use WinPDB as debugger (we need to open the debugger before XBMC/KODI proceeds..)
-DEBUGGER_ON = False
-DEBUGGER_TIMEOUT = 30
 
-#
-# log settings
-#
+class WinPDB(object):
 
-LOG_TO_CONSOLE = True
-LOG_TO_FILE = True
-LOG_FILENAME_UNIQUE = False
+	""" Use Python Debugger with KODI """
 
-LOGLEVEL_CONSOLE = logging.INFO
-LOGLEVEL_FILE = logging.DEBUG
+	ACTIVE = False
+	TIMEOUT = 30
 
-#
-# TCP/IP connection config
-#
 
-# limit number of max connections (if something fatal goes wrong).
-MAX_RECONNECT = 5
+class Logging(object):
 
-# module IBUSHandler
-SIGNAL_DATABASE = os.path.join("resources", "data", "signal-db", "SignalDatabase.xml")
+	""" Settings for logger (console -and file-handler) """
+
+	TO_CONSOLE 		= True
+	TO_FILE 		= True
+	UNIQUE_FILENAME = False
+
+	LOGLEVEL_CONSOLE = logging.DEBUG
+	LOGLEVEL_FILE 	 = logging.DEBUG
+
+
+class TCPIP(object):
+
+	""" Settings for TCP/IP-layer """
+
+	TIME_INTERVAL_PING 	= 3
+	TIME_RECONNECT 		= 15
+	ALIVE_TIMEOUT 		= 10
+	MAX_ATTEMPTS 		= 5
+
+
+class SignalDB(object):
+
+	""" XML signal-db """
+
+	PATH = os.path.join("resources", "data", "signal-db", "SignalDatabase.xml")

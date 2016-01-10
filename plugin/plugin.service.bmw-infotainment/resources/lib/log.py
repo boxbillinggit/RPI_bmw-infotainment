@@ -17,7 +17,7 @@ import os
 import datetime
 
 try:
-	import xbmc, xbmcplugin, xbmcgui, xbmcaddon
+	import xbmc, xbmcgui, xbmcaddon
 	USING_XBMC = True
 
 except ImportError as err:
@@ -49,7 +49,7 @@ LOGNONE 	= 7
 FNAME_UNIQUE = "{}-{}.log".format(__addonid__, datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"))
 FNAME = "{}.log".format(__addonid__)
 
-LOGPATH = os.path.join(xbmc.translatePath("special://logpath"), FNAME_UNIQUE if settings.LOG_FILENAME_UNIQUE else FNAME)
+LOGPATH = os.path.join(xbmc.translatePath("special://logpath"), FNAME_UNIQUE if settings.Logging.UNIQUE_FILENAME else FNAME)
 
 
 class LogHandler(object):
@@ -67,19 +67,19 @@ class LogHandler(object):
 		self.ch = None
 		self.formatter = formatter
 
-		if settings.LOG_TO_FILE:
+		if settings.Logging.TO_FILE:
 			self.init_file_handle()
 
 		# KODI/XBMC has no console - use 'xbmc.log' instead
-		if settings.LOG_TO_CONSOLE and USING_XBMC:
+		if settings.Logging.TO_CONSOLE and USING_XBMC:
 			self.init_console_xbmc()
-		elif settings.LOGLEVEL_CONSOLE and not USING_XBMC:
+		elif settings.Logging.LOGLEVEL_CONSOLE and not USING_XBMC:
 			self.init_console_stdout()
 
 	def init_file_handle(self):
 
 		fh = logging.FileHandler(LOGPATH, mode="w")
-		fh.setLevel(settings.LOGLEVEL_FILE)
+		fh.setLevel(settings.Logging.LOGLEVEL_FILE)
 		fh.setFormatter(self.formatter)
 		self.fh = fh
 
@@ -87,13 +87,13 @@ class LogHandler(object):
 
 		# add special XBMC handler
 		ch = XBMCLogger()
-		ch.setLevel(settings.LOGLEVEL_CONSOLE)
+		ch.setLevel(settings.Logging.LOGLEVEL_CONSOLE)
 		self.ch = ch
 
 	def init_console_stdout(self):
 
 		ch = logging.StreamHandler()
-		ch.setLevel(settings.LOGLEVEL_CONSOLE)
+		ch.setLevel(settings.Logging.LOGLEVEL_CONSOLE)
 		ch.setFormatter(self.formatter)
 		self.ch = ch
 
@@ -150,7 +150,7 @@ def init_logger(name, log_level=None):
 
 	# no log-level was provided, set to lowest level (capture all)
 	if not log_level:
-		logger.setLevel(min(settings.LOGLEVEL_CONSOLE, settings.LOGLEVEL_FILE))
+		logger.setLevel(min(settings.Logging.LOGLEVEL_CONSOLE, settings.Logging.LOGLEVEL_FILE))
 
 	if log_handler.ch:
 		logger.addHandler(log_handler.ch)

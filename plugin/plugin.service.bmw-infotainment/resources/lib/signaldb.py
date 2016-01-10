@@ -28,7 +28,7 @@ __addonpath__	= __addon__.getAddonInfo('path')
 
 
 # read XML-database
-tree = ElementTree.parse(os.path.join(__addonpath__, settings.SIGNAL_DATABASE))
+tree = ElementTree.parse(os.path.join(__addonpath__, settings.SignalDB.PATH))
 root = tree.getroot()
 
 HEX_BASE = 16		# hex has base-16

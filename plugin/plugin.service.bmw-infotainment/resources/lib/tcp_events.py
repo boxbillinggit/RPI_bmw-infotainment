@@ -2,6 +2,7 @@ import time
 import threading
 
 import kodi
+import settings
 import gateway_protocol
 import tcp_socket
 import event_handler
@@ -14,17 +15,11 @@ except ImportError:
 
 log = log_module.init_logger(__name__)
 Protocol = gateway_protocol.Protocol
-TCPIPSettings = kodi.TCPIPSettings
 tcp_settings = kodi.TCPIPSettings()
 
 
 __author__		= 'lars'
 __monitor__ 	= xbmc.Monitor()
-
-TIME_INTERVAL_PING = 3
-TIME_RECONNECT = 15
-ALIVE_TIMEOUT = 10
-MAX_ATTEMPTS = 5
 
 
 def state(string):
@@ -32,11 +27,11 @@ def state(string):
 
 
 def next_check():
-	return time.time() + TIME_INTERVAL_PING
+	return time.time() + settings.TCPIP.TIME_INTERVAL_PING
 
 
 def next_reconnect():
-	return time.time() + TIME_RECONNECT
+	return time.time() + settings.TCPIP.TIME_RECONNECT
 
 
 class States(object):
@@ -92,7 +87,7 @@ class Request(object):
 class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 
 	"""
-	Base class for handling all events regarding the TCP/IP-layer via a
+	Base class for handling all events for the TCP/IP-layer with help from a
 	state-machine.
 	"""
 
@@ -144,7 +139,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 		self.attempts = 0
 
 	def reconnect(self):
-		return self.request is Request.RUNNING and (self.attempts < MAX_ATTEMPTS)
+		return self.request is Request.RUNNING and (self.attempts < settings.TCPIP.MAX_ATTEMPTS)
 
 	def alive_timeout(self):
 		self.sendall(Protocol.DISCONNECT)
@@ -162,7 +157,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 		self.sendall(Protocol.PING)
 		self.queue.put((self.check_still_alive, next_check()))
 
-		if (time.time() - self.timestamp) >= ALIVE_TIMEOUT:
+		if (time.time() - self.timestamp) >= settings.TCPIP.ALIVE_TIMEOUT:
 			self.alive_timeout()
 
 	def handle_init(self):
@@ -200,7 +195,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 		if self.reconnect() and self.set_state_to("RECONNECTING"):
 			self.attempts += 1
 			self.queue.put((self.start_service, next_reconnect()))
-			kodi.notification("Connection lost - reconnecting... ({} of {})".format(self.attempts, MAX_ATTEMPTS))
+			kodi.notification("Connection lost - reconnecting... ({} of {})".format(self.attempts, settings.TCPIP.MAX_ATTEMPTS))
 
 		# blocking wait (polling loop, else XBMC/KODI locks during system shutdown)
 		while not (self.event.wait(timeout=Events.POLL) or __monitor__.abortRequested()):
@@ -212,16 +207,16 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 
 		# notify at the very beginning of the connection.
 		if self.state_is("INIT"):
-			tcp_settings.set_status(TCPIPSettings.STATUS, "Connecting...")
+			tcp_settings.set_status(kodi.TCPIPSettings.STATUS, "Connecting...")
 
 		self.set_state_to("CONNECTING")
 
 	def state_connected(self):
 
 		if self.set_state_to("CONNECTED"):
-			tcp_settings.set_status(TCPIPSettings.STATUS, "Connected")
+			tcp_settings.set_status(kodi.TCPIPSettings.STATUS, "Connected")
 
 	def state_disconnected(self):
 
 		if self.set_state_to("DISCONNECTED"):
-			tcp_settings.set_status(TCPIPSettings.STATUS, "Disconnected")
+			tcp_settings.set_status(kodi.TCPIPSettings.STATUS, "Disconnected")

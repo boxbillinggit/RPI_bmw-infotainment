@@ -30,13 +30,13 @@ __addonname__	= __addon__.getAddonInfo('name')
 __addonid__		= __addon__.getAddonInfo('id')
 
 
-if settings.DEBUGGER_ON:
+if settings.WinPDB.ACTIVE:
 
 	dialog = xbmcgui.Dialog()
-	dialog.notification(__addonid__,"Debugger on, waiting for connection ({}s)...").format(settings.DEBUGGER_TIMEOUT)
+	dialog.notification(__addonid__, "Debugger on, waiting for connection ({}s)...").format(settings.WinPDB.TIMEOUT)
 
 	import rpdb2
-	rpdb2.start_embedded_debugger('pw', timeout=settings.DEBUGGER_TIMEOUT)
+	rpdb2.start_embedded_debugger('pw', timeout=settings.WinPDB.TIMEOUT)
 
 event_handler = EventHandler()
 tcp_service = TCPIPHandler()
