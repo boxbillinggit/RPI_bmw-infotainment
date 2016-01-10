@@ -48,10 +48,33 @@ class States(object):
 	state = ["INIT", "REROUTING", "CONNECTING", "CONNECTED", "DISCONNECTED", "RECONNECTING"]
 
 	def __init__(self):
-		self.current_state = state("INIT")
+		self.state = state("INIT")
+		self.transitions = \
+			{"from": ("INIT",),         "to": ("REROUTING", "DISCONNECTED")}, \
+			{"from": ("REROUTING",),    "to": ("CONNECTING",)}, \
+			{"from": ("CONNECTING",),   "to": ("CONNECTED", "DISCONNECTED")}, \
+			{"from": ("CONNECTED",),    "to": ("DISCONNECTED",)}, \
+			{"from": ("DISCONNECTED",), "to": ("RECONNECTING", "INIT")}, \
+			{"from": ("RECONNECTING",), "to": ("INIT",)}
 
-	def set_state(self, requested_state):
-		pass
+	def state_is(self, current_state):
+		return self.state is States.state.index(current_state)
+
+	def set_state_to(self, new_state):
+
+		"""
+		Minimalistic state-machine. Returns "True" if transition is allowed,
+		and also update current state.
+		"""
+
+		for transition in self.transitions:
+
+			if States.state[self.state] in transition.get("from") and new_state in transition.get("to"):
+				# log.debug("State {} -> {}".format(States.state[self.state], new_state))
+				self.state = state(new_state)
+				return True
+
+		return False
 
 
 class Request(object):
@@ -66,7 +89,7 @@ class Request(object):
 		self.current_request = Request.RUNNING
 
 
-class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket):
+class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 
 	"""
 	Base class for handling all events regarding the TCP/IP-layer via a
@@ -78,6 +101,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket):
 	POLL = 1
 
 	def __init__(self, event=None, queue=None):
+		States.__init__(self)
 		gateway_protocol.Protocol.__init__(self)
 		tcp_socket.ThreadedSocket.__init__(self)
 
@@ -88,14 +112,8 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket):
 		self.timestamp = time.time()
 		self.attempts = 0
 
-		states = States()
-		self.state = states.current_state
-
 		request = Request()
 		self.request = request.current_request
-
-	def state_is(self, trg_state):
-		return self.state is States.state.index(trg_state)
 
 	def start_service(self):
 
@@ -106,8 +124,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket):
 		if self.request is Request.STOPPED:
 			return
 
-		if self.state_is("DISCONNECTED") or self.state_is("RECONNECTING"):
-			self.state = state("INIT")
+		if self.set_state_to("INIT"):
 			self.host = tcp_settings.get_host()
 			self.timestamp = time.time()
 			self.event.set()
@@ -122,20 +139,16 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket):
 		if self.state_is("CONNECTED"):
 			self.sendall(Protocol.DISCONNECT)
 
-	def handle_init(self):
+	def reset_attempts(self):
+		""" Called only when user requests to connect """
+		self.attempts = 0
 
-		"""
-		This is called just after a successful connection.
-		"""
-
-		if self.state_is("INIT"):
-			self.sendall(Protocol.CONNECT)
-		else:
-			self.queue.put((self.check_still_alive, next_check()))
+	def reconnect(self):
+		return self.request is Request.RUNNING and (self.attempts < MAX_ATTEMPTS)
 
 	def alive_timeout(self):
-		log.error("{} - Alive timeout!".format(self.__class__.__name__))
 		self.sendall(Protocol.DISCONNECT)
+		log.error("{} - Alive timeout, request to disconnect!".format(self.__class__.__name__))
 
 	def check_still_alive(self):
 
@@ -143,12 +156,23 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket):
 		Scheduled to get called periodically (if still connected). Send ping to gateway.
 		"""
 
-		if self.state_is("CONNECTED"):
-			self.sendall(Protocol.PING)
-			self.queue.put((self.check_still_alive, next_check()))
+		if not self.state_is("CONNECTED"):
+			return
 
-			if (time.time() - self.timestamp) >= ALIVE_TIMEOUT:
-				self.alive_timeout()
+		self.sendall(Protocol.PING)
+		self.queue.put((self.check_still_alive, next_check()))
+
+		if (time.time() - self.timestamp) >= ALIVE_TIMEOUT:
+			self.alive_timeout()
+
+	def handle_init(self):
+
+		"""	This is called just after a successful connection """
+
+		if self.state_is("INIT"):
+			self.sendall(Protocol.CONNECT)
+		else:
+			self.queue.put((self.check_still_alive, next_check()))
 
 	def handle_ping(self):
 
@@ -160,8 +184,8 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket):
 
 		"""	Received a rerouting-request from gateway """
 
-		self.state = state("REROUTING")
 		self.host = (tcp_settings.address, port)
+		self.set_state_to("REROUTING")
 
 	def handle_reconnect(self):
 
@@ -173,8 +197,10 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket):
 		if self.state_is("REROUTING"):
 			return
 
-		if self.state_is("RECONNECTING"):
+		if self.reconnect() and self.set_state_to("RECONNECTING"):
+			self.attempts += 1
 			self.queue.put((self.start_service, next_reconnect()))
+			kodi.notification("Connection lost - reconnecting... ({} of {})".format(self.attempts, MAX_ATTEMPTS))
 
 		# blocking wait (polling loop, else XBMC/KODI locks during system shutdown)
 		while not (self.event.wait(timeout=Events.POLL) or __monitor__.abortRequested()):
@@ -184,30 +210,18 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket):
 
 	def state_connecting(self):
 
+		# notify at the very beginning of the connection.
 		if self.state_is("INIT"):
 			tcp_settings.set_status(TCPIPSettings.STATUS, "Connecting...")
-		elif self.state_is("REROUTING"):
-			self.state = state("CONNECTING")
+
+		self.set_state_to("CONNECTING")
 
 	def state_connected(self):
 
-		if self.state_is("INIT"):
-			return
-
-		self.state = state("CONNECTED")
-		tcp_settings.set_status(TCPIPSettings.STATUS, "Connected")
+		if self.set_state_to("CONNECTED"):
+			tcp_settings.set_status(TCPIPSettings.STATUS, "Connected")
 
 	def state_disconnected(self):
 
-		if self.state_is("REROUTING"):
-			return
-
-		if self.request is Request.RUNNING and (self.attempts < MAX_ATTEMPTS):
-			self.attempts += 1
-			self.state = state("RECONNECTING")
-			kodi.notification("Disconnected. Reconnecting... (no. {})".format(self.attempts))
-		else:
-			self.attempts = 0
-			self.state = state("DISCONNECTED")
-
-		tcp_settings.set_status(TCPIPSettings.STATUS, "Disconnected")
+		if self.set_state_to("DISCONNECTED"):
+			tcp_settings.set_status(TCPIPSettings.STATUS, "Disconnected")

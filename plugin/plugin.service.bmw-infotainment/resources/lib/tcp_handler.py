@@ -28,6 +28,7 @@ class TCPIPHandler(tcp_events.Events):
 		"""
 
 		self.request = Request.RUNNING
+		self.reset_attempts()
 		self.start_service()
 
 	def request_stop(self):
