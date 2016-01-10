@@ -6,6 +6,7 @@ https://docs.python.org/2/library/socketserver.html
 import socket
 import threading
 import SocketServer
+import time
 
 __author__ = 'lars'
 
@@ -25,6 +26,8 @@ client_socks = []
 
 # echo the sent signals back to client...
 ECHO = True
+FAIL_TO_REROUTE = False
+
 
 def resize_header(data):
 	"""
@@ -58,6 +61,9 @@ def create_server(port):
 	more thread for each request. Exit the server when the main-
 	thread terminates since this thread is daemonic.
 	"""
+
+	if FAIL_TO_REROUTE:
+		return True
 
 	try:
 		server = GatewayClientServer((HOST, port), GatewayClientHandler)
@@ -156,7 +162,6 @@ class GatewayClientHandler(SocketServer.BaseRequestHandler):
 			if not data or data == TERMINAL_END or bytearray(data) == bytearray(DISCONNECT):
 				break
 
-			# TODO respond to ping messages, or implement a method to override..
 			print "DEBUG - {} - received: {}".format(current_thread(), hexstring(bytearray(data)))
 
 			if ECHO:
@@ -272,10 +277,6 @@ class Gateway(object):
 
 	def __init__(self):
 		self.server = None
-		# self.start()
-
-	def __del__(self):
-		self.stop()
 
 	def start(self):
 
@@ -309,16 +310,24 @@ class Gateway(object):
 		disconnect()
 
 
-def broadcast(msg):
+def broadcast(messages, wait=0.5):
 
 	"""
 	Broadcast a message to all clients connected.
 
-	"msg" is 3-tuple: ([src], [dst], [data])
+	"msg" is list of 3-tuple: [([src], [dst], [data]), ...]
 	"""
 
 	for sockfd in client_socks:
-		sockfd.send(create_frame(msg))
+
+		for msg in messages:
+			data = create_frame(msg)
+			sockfd.send(data)
+
+			print "DEBUG - {} - sending: {}".format(threading.currentThread().name, hexstring(data))
+
+			if wait:
+				time.sleep(wait)
 
 
 def broadcast_raw(msg):
