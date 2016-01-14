@@ -2,30 +2,49 @@
 This module handles received BUS-signals.
 """
 
+import re
+
 from signal_events import Events
-from event_handler import EventHandler
+from event_handler import Scheduler
 import log as log_module
 log = log_module.init_logger(__name__)
 
 __author__ = 'lars'
 
 
+def check_if_data_matches(string, pattern):
+
+	"""
+	Find exact match for DATA by evaluating with regular expression.
+	"""
+
+	res = re.match("{}$".format(pattern), string)
+
+	return res.groups() if res else None
+
+
 def match_found(bus_sig, event_sig):
 
 	"""
-	Return "True" if a match between received signal and an event is found.
+	Return tuple (empty or filled) if a match between received signal and an event is found,
+	else return "None"
 
-	"None" means match all (don't evaluate), but data must exist and be equal!
+	"None" in SRC or DST means match all (don't evaluate), but data must always exist and be
+	equal!
 	"""
 
 	src, dst, data = event_sig
 	bus_src, bus_dst, bus_data = bus_sig
 
-	return not (
-		(src and bus_src != src) or
-		(dst and bus_dst != dst) or
-		(bus_data != data)
+	if not data:
+		raise AttributeError("Data must not be empty or None")
+
+	devices_matches = (
+		(not src or bus_src == src) and
+		(not dst or bus_dst == dst)
 	)
+
+	return None if not devices_matches else check_if_data_matches(bus_data, data)
 
 
 class Filter(object):
@@ -34,26 +53,27 @@ class Filter(object):
 	Main class for this module. Filter BUS-messages to a matching event (if defined)
 	"""
 
-	def __init__(self, queue=None):
+	def __init__(self):
 
-		self.queue = queue or EventHandler.Queue
-		self.events = Events(self.queue)
+		self.scheduler = Scheduler()
+		self.events = Events(self.scheduler)
 
 	def handle_signal(self, bus_sig):
 
 		"""
-		Handles bus signals received from TCP/IP socket. Compare if we have a matching
-		event. If match found, put task on event queue (None=scheduled to execute now)
-		and stop searching.
+		Handles bus signals received from TCP/IP socket. Check if we have a matching
+		event. If match found, put task on event queue and stop searching.
+
+		Forward data from regexp as *args (if that data exists).
 
 		Signal is 3-tuple: (src, dst, data)
 		"""
 
-		src, dst, data = bus_sig
-
 		for index, event_sig, event in self.events.list:
 
-			if match_found(bus_sig, event_sig):
-				self.queue.put((event, None))
-				log.debug("{} - match for signal {}".format(self.__class__.__name__, log_module.hexstring(src+dst+data)))
+			match = match_found(bus_sig, event_sig)
+
+			if match is not None:
+				self.scheduler.add(event, *match)
+				log.debug("{} - match for signal: {}".format(self.__class__.__name__, " ".join(bus_sig).replace("0x", "")))
 				break

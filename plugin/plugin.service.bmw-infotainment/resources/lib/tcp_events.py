@@ -95,13 +95,13 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 	Event = threading.Event()
 	POLL = 1
 
-	def __init__(self, event=None, queue=None):
+	def __init__(self, event=None):
 		States.__init__(self)
 		gateway_protocol.Protocol.__init__(self)
 		tcp_socket.ThreadedSocket.__init__(self)
 
 		self.event = event or Events.Event
-		self.queue = queue or event_handler.EventHandler.Queue
+		self.scheduler = event_handler.Scheduler()
 
 		self.host = tcp_settings.get_host()
 		self.timestamp = time.time()
@@ -155,7 +155,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 			return
 
 		self.sendall(Protocol.PING)
-		self.queue.put((self.check_still_alive, next_check()))
+		self.scheduler.add(self.check_still_alive, timestamp=next_check())
 
 		if (time.time() - self.timestamp) >= settings.TCPIP.ALIVE_TIMEOUT:
 			self.alive_timeout()
@@ -167,7 +167,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 		if self.state_is("INIT"):
 			self.sendall(Protocol.CONNECT)
 		else:
-			self.queue.put((self.check_still_alive, next_check()))
+			self.scheduler.add(self.check_still_alive, timestamp=next_check())
 
 	def handle_ping(self):
 
@@ -194,7 +194,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 
 		if self.reconnect() and self.set_state_to("RECONNECTING"):
 			self.attempts += 1
-			self.queue.put((self.start_service, next_reconnect()))
+			self.scheduler.add(self.start_service, timestamp=next_reconnect())
 			kodi.notification("Connection lost - reconnecting... ({} of {})".format(self.attempts, settings.TCPIP.MAX_ATTEMPTS))
 
 		# blocking wait (polling loop, else XBMC/KODI locks during system shutdown)

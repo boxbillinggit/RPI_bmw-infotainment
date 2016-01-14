@@ -7,6 +7,7 @@ http://kodi.wiki/view/keymap#Actions
 http://kodi.wiki/view/Action_IDs
 """
 
+import time
 import log as log_module
 log = log_module.init_logger(__name__)
 
@@ -24,13 +25,32 @@ __addon__		= xbmcaddon.Addon()
 __addonid__		= __addon__.getAddonInfo('id')
 
 
-def action(arg):
+def action(event):
 
 	"""
-	Factory for creating an action on XBMC/KODI.
+	Factory function returning a executable action in XBMC/KODI. When scrolling
+	we must handle different speeds, hence *args is forwarded to method
 	"""
 
-	return lambda: xbmc.executebuiltin("Action(%s)" % arg)
+	return lambda *args: _action(event, *args)
+
+
+def _action(event, *args):
+
+	"""
+	Execute an action on XBMC/KODI.
+	"""
+
+	WAIT = 0.1
+
+	repeat = int(args[0]) if args else 1
+
+	for n in range(repeat):
+
+		if n > 0:
+			time.sleep(WAIT)
+
+		xbmc.executebuiltin("Action(%s)" % event)
 
 
 def notification(msg):

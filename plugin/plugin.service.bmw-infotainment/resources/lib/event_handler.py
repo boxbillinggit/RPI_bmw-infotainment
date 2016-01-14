@@ -11,12 +11,30 @@ try:
 except ImportError as err:
 	import debug.xbmc as xbmc
 
-# import local modules
 import log as log_module
 log = log_module.init_logger(__name__)
 
 __author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()
+
+# item on queue enumerated
+METHOD, TIMESTAMP, ARGS, KWARGS = range(4)
+
+
+class Scheduler(object):
+
+	"""
+	Interface for adding, removing -or rescheduling items in schedule.
+	"""
+
+	def __init__(self, queue=None):
+		self.queue = queue or EventHandler.Queue
+
+	def add(self, event, *args, **kwargs):
+		self.queue.put((event, args, kwargs))
+
+	def remove(self):
+		pass
 
 
 class EventHandler(threading.Thread):
@@ -26,9 +44,6 @@ class EventHandler(threading.Thread):
 	"""
 
 	Queue = Queue.Queue()
-
-	# task enumerated
-	EVENT, TIME = range(2)
 
 	POLL_IDLE = 1.0
 	POLL_TASK = 0.2
@@ -47,32 +62,42 @@ class EventHandler(threading.Thread):
 
 		for task in self.schedule:
 
-			event, event_time = task
+			timestamp = task[TIMESTAMP]
 
-			if (event_time is None) or (time.time() >= event_time):
+			if (timestamp is None) or (time.time() >= timestamp):
+
+				method, args, kwargs = task[METHOD], task[ARGS], task[KWARGS]
 
 				try:
-					event()
+					method(*args, **kwargs)
 				except TypeError as error:
 					log.error("{} - {}".format(self.__class__.__name__, error))
 
 				self.schedule.remove(task)
 				# log.debug("{} - events to schedule {}".format(self.__class__.__name__, len(self.schedule)))
 
-	def reschedule(self, task):
+	def reschedule(self, method):
 
 		"""
-		Append new task to schedule, or re-schedule task with a new time (events
-		is allowed to be scheduled only once).
+		remove task for rescheduling with a new time (event is allowed to be scheduled only once).
 		"""
 
-		for sched_task in self.schedule:
+		for task in self.schedule:
 
-			if task[EventHandler.EVENT] == sched_task[EventHandler.EVENT]:
+			if method == task[METHOD]:
 				# log.debug("{} - rescheduling task".format(self.__class__.__name__))
-				self.schedule.remove(sched_task)
+				self.schedule.remove(task)
 
-		self.schedule.append(task)
+	def schedule_task(self, method, *args, **kwargs):
+
+		"""
+		Append new task to schedule, re-schedule task with a new time if requested (default True).
+		"""
+
+		if kwargs.pop("reschedule", True):
+			self.reschedule(method)
+
+		self.schedule.append((method, kwargs.pop("timestamp", None), args, kwargs))
 
 	def run(self):
 
@@ -90,9 +115,9 @@ class EventHandler(threading.Thread):
 			timeout = EventHandler.POLL_TASK if len(self.schedule) else EventHandler.POLL_IDLE
 
 			try:
-				task = self.queue.get(timeout=timeout)
+				method, args, kwargs = self.queue.get(timeout=timeout)
 			except Queue.Empty:
 				continue
 
-			self.reschedule(task)
+			self.schedule_task(method, *args, **kwargs)
 			self.queue.task_done()

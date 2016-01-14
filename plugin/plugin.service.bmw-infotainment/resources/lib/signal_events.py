@@ -86,7 +86,7 @@ class NewButton(Button):
 
 	def schedule_check_state_hold(self, timeout=State.HOLD_INIT):
 		# log.debug("{} -schedule_check_state_hold() ".format(self.__class__.__name__))
-		self.scheduler((self.check_state_hold, timeout+time.time()))
+		self.scheduler.add(self.check_state_hold, timestamp=timeout+time.time())
 
 
 class Events(object):
@@ -96,17 +96,14 @@ class Events(object):
 	to dynamically update, add -or remove events at runtime.
 	"""
 
-	def __init__(self, queue):
+	def __init__(self, scheduler):
 
 		self.list = []
-		self.queue = queue
+		self.scheduler = scheduler
 		self.index = Index()
 
 		# add events
-		self.list.extend(init_buttons(factory=ButtonFactory(self.schedule), index=self.index.inc))
-
-	def schedule(self, task):
-		self.queue.put(task)
+		self.list.extend(init_buttons(factory=ButtonFactory(self.scheduler), index=self.index.inc))
 
 	def bind_event(self, signal=None, event=None):
 

@@ -7,6 +7,8 @@ code. Module returns a signal represented in a bytearray, using the signal-db.xm
 Reference doc:
 https://docs.python.org/2/library/xml.etree.elementtree.html
 """
+# TODO: rename attribute "ref" to "operation" in XML-database.
+# TODO: rename "check_length" to "get_obj"
 
 import xml.etree.ElementTree as ElementTree
 import os
@@ -31,8 +33,6 @@ __addonpath__	= __addon__.getAddonInfo('path')
 tree = ElementTree.parse(os.path.join(__addonpath__, settings.SignalDB.PATH))
 root = tree.getroot()
 
-HEX_BASE = 16		# hex has base-16
-
 
 class DBError(Exception):
 	"""
@@ -42,8 +42,14 @@ class DBError(Exception):
 	pass
 
 
-def convert_to_bytes(string):
-	return map(lambda byte: int(byte, HEX_BASE), string.split(" ")) if string else []
+def uniform(string):
+
+	"""
+	When using regular expressions we must use lower cases, etc. Compare what's
+	returned from hex(int)
+	"""
+
+	return string.replace("0x0", "0x").lower()
 
 
 def check_length(obj, ident=""):
@@ -98,7 +104,7 @@ def device(ident):
 	"""
 
 	obj = root.findall("./MESSAGE/DEVICE/byte[@id='{}']".format(ident))
-	return convert_to_bytes(check_length(obj, ident=ident).get('val'))
+	return check_length(obj, ident=ident).get('val')
 
 
 def data(ident):
@@ -109,12 +115,9 @@ def data(ident):
 
 	event = get_event(ident)
 
-	if event is None:
-		return None
-
-	return (
-		convert_to_bytes(operation(event)) +
-		convert_to_bytes(action(event, ident))
+	return None if event is None else (
+		operation(event) + " " +
+		action(event, ident)
 	)
 
 
@@ -123,7 +126,7 @@ def find(item):
 	"""
 	Find signal from name.
 
-	Return signal in bytes, represented in a 3-tuple (SRC, DST, DATA)
+	Return signal in type string, represented in a 3-tuple (SRC, DST, DATA)
 	"""
 
 	src, dst, event = item
@@ -133,9 +136,9 @@ def find(item):
 		raise ValueError("Not enough arguments provided")
 
 	return tuple([
-		device(src) if src else None,
-		device(dst) if dst else None,
-		data(event) if event else None
+		uniform(device(src)) if src else None,
+		uniform(device(dst)) if dst else None,
+		uniform(data(event))
 	])
 
 

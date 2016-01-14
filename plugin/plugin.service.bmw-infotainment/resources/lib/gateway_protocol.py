@@ -2,6 +2,8 @@
 This module handles the overlay TCP/IP-protocol for communicating with gateway.
 """
 
+# TODO: avoid data conversions, use bytearray or string here in this module???
+
 import log as log_module
 
 log = log_module.init_logger(__name__)
@@ -11,6 +13,15 @@ HEADER_SIZE = 8
 SRC = 0
 DST = 1
 LEN = 2
+
+
+def hexstring(bytes):
+
+	"""
+	Convert bytes to a hexstring.
+	"""
+
+	return " ".join(map(lambda byte: hex(byte), bytes))
 
 
 def create_header(content):
@@ -45,12 +56,10 @@ def create_signal(data):
 	"""
 	Create 3-tuple signal from TCP/IP-frame. Frame must have length as expected
 
-	([src], [dst], [data])
+	("src", "dst", "data")
 	"""
 
-	src, dst, data = data[SRC], data[DST], (data[HEADER_SIZE:])
-
-	return [src], [dst], list(data)
+	return hex(data[SRC]), hex(data[DST]), hexstring(data[HEADER_SIZE:])
 
 
 def is_length_valid(data):
