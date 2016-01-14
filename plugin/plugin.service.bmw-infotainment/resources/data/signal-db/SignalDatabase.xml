@@ -9,7 +9,6 @@
 	iBus Core Repository - http://en4cer.co.uk/bmw-carputers/forum/viewtopic.php?p=139&sid=dcb37de01ede7b2b449cb76dc2deb9c1
 
 	TODO: fix an image-reference attribute for each tag.
-	TODO: rename attribute "ref" to "operation"
 -->
 
 
@@ -115,14 +114,14 @@
 			</OPERATION>
 
 			<!-- ignition key buttons (bit-mapped but states won't occur simultaneously)  -->
-			<ACTION type="?" ref="IBUS_MSG_REMOTE_KEY">
+			<ACTION type="?" operation="IBUS_MSG_REMOTE_KEY">
 				<byte val="0x00" id="ign-key.acc"/>
 				<byte val="0x01" id="ign-key.on"/>
 				<byte val="0x02" id="ign-key.starter"/>
 			</ACTION>
 
 			<!-- remote key buttons -->
-			<ACTION type="button" ref="IBUS_MSG_REMOTE_KEY">
+			<ACTION type="button" operation="IBUS_MSG_REMOTE_KEY">
 				<byte val="0x02" id="remote-key.release"/>			
 				<byte val="0x12" id="remote-key.lock"/>
 				<byte val="0x22" id="remote-key.unlock"/>
@@ -130,7 +129,7 @@
 			</ACTION>
 			
 			<!-- Volume control for steering wheel buttons (and left turn knob on board monitor) -->	
-			<ACTION type="button" ref="IBUS_MSG_VOLUME_CTRL">
+			<ACTION type="button" operation="IBUS_MSG_VOLUME_CTRL">
 				 <byte val="0x11" id="volume-up.push"/>
 				 <byte val="0x31" id="volume-up.release"/>
 				 <byte val="0x10" id="volume-down.push"/>
@@ -138,7 +137,7 @@
 			</ACTION>
 			
 			<!-- Steering wheel buttons -->
-			<ACTION type="button" ref="IBUS_MSG_MFL_BUTTON">
+			<ACTION type="button" operation="IBUS_MSG_MFL_BUTTON">
 				<byte val="0x01" id="next.push"/>
 				<byte val="0x21" id="next.release"/>
 				<byte val="0x08" id="previous.push"/>
@@ -150,7 +149,7 @@
 			</ACTION>
 
 			<!-- Board monitor buttons -->	
-			<ACTION type="button" ref="IBUS_MSG_BMBT_BUTTON">
+			<ACTION type="button" operation="IBUS_MSG_BMBT_BUTTON">
 			
 				<!-- Buttons, left side -->			
 				<byte val="0x11" id="one.push"/>
@@ -236,7 +235,7 @@
 			</ACTION>
 
 			<!-- INFO-SELECT button (has a special identifier) -->
-			<ACTION type="button" ref="IBUS_MSG_BMBT_INFO">
+			<ACTION type="button" operation="IBUS_MSG_BMBT_INFO">
 		
 				<byte val="0x00 0x38" id="info.push"/>
 				<byte val="0x00 0x78" id="info.hold"/>
@@ -249,7 +248,7 @@
 
 			<!-- right knob button (has different speeds: 1-9, hence using regular expressions) -->
 
-			<ACTION type="button" ref="IBUS_MSG_BMBT_RIGHT_KNOB">
+			<ACTION type="button" operation="IBUS_MSG_BMBT_RIGHT_KNOB">
 				<byte val="0x0([1-9])" id="right-knob.turn-right"/>
 				<byte val="0x8([1-9])" id="right-knob.turn-left"/>
 			</ACTION>

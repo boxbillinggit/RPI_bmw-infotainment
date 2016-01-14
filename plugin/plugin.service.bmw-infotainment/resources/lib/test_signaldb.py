@@ -30,31 +30,31 @@ class SignalDB(object):
 						<byte val="0x03" id="IBUS_MSG_OPERATION_MULTIPLE">Double references</byte>
 					</OPERATION>
 
-					<ACTION ref="IBUS_MSG_OPERATION">
+					<ACTION operation="IBUS_MSG_OPERATION">
 						<byte val="0x04" id="button.push"/>
 						<byte val="0x05" id="button.hold"/>
 						<byte val="0x06" id="button.release"/>
 					</ACTION>
 
-					<ACTION ref="IBUS_MSG_NO_OPERATION_REF">
+					<ACTION operation="IBUS_MSG_NO_OPERATION_REF">
 						<byte val="0x07" id="button-unknown-operation-ref.push"/>
 						<byte val="0x08" id="button-unknown-operation-ref.hold"/>
 						<byte val="0x09" id="button-unknown-operation-ref.release"/>
 					</ACTION>
 
-					<ACTION ref="IBUS_MSG_OPERATION_MULTIPLE">
+					<ACTION operation="IBUS_MSG_OPERATION_MULTIPLE">
 						<byte val="0x04" id="button-multiple-refereed.push"/>
 						<byte val="0x05" id="button-multiple-refereed.hold"/>
 						<byte val="0x06" id="button-multiple-refereed.release"/>
 					</ACTION>
 
-					<ACTION ref="IBUS_MSG_OPERATION">
+					<ACTION operation="IBUS_MSG_OPERATION">
 						<byte val="0x04" id="button-multiple-defined.push"/>
 						<byte val="0x05" id="button-multiple-defined.hold"/>
 						<byte val="0x06" id="button-multiple-defined.release"/>
 					</ACTION>
 
-					<ACTION ref="IBUS_MSG_OPERATION">
+					<ACTION operation="IBUS_MSG_OPERATION">
 						<byte val="0x04" id="button-multiple-defined.push"/>
 						<byte val="0x05" id="button-multiple-defined.hold"/>
 						<byte val="0x06" id="button-multiple-defined.release"/>

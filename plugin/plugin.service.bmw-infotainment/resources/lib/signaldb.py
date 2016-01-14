@@ -7,8 +7,6 @@ code. Module returns a signal represented in a bytearray, using the signal-db.xm
 Reference doc:
 https://docs.python.org/2/library/xml.etree.elementtree.html
 """
-# TODO: rename attribute "ref" to "operation" in XML-database.
-# TODO: rename "check_length" to "get_obj"
 
 import xml.etree.ElementTree as ElementTree
 import os
@@ -52,7 +50,7 @@ def uniform(string):
 	return string.replace("0x0", "0x").lower()
 
 
-def check_length(obj, ident=""):
+def validate(obj, ident=""):
 	if len(obj) == 1:
 		return obj[0]
 
@@ -68,7 +66,7 @@ def get_event(ident):
 	"""
 
 	obj = root.findall("./MESSAGE/DATA/ACTION/byte[@id='{}']/..".format(ident))
-	return check_length(obj, ident=ident)
+	return validate(obj, ident=ident)
 
 
 def operation(event):
@@ -79,8 +77,8 @@ def operation(event):
 	defined within <OPERATION>-tag
 	"""
 
-	obj = root.findall("./MESSAGE/DATA/OPERATION/byte[@id='{}']".format(event.get('ref')))
-	return check_length(obj, ident=event.get('ref')).get('val')
+	obj = root.findall("./MESSAGE/DATA/OPERATION/byte[@id='{}']".format(event.get('operation')))
+	return validate(obj, ident=event.get('operation')).get('val')
 
 
 def action(event, ident):
@@ -92,7 +90,7 @@ def action(event, ident):
 	"""
 
 	obj = event.findall("byte[@id='{}']".format(ident))
-	return check_length(obj, ident=ident).get('val')
+	return validate(obj, ident=ident).get('val')
 
 
 def device(ident):
@@ -104,7 +102,7 @@ def device(ident):
 	"""
 
 	obj = root.findall("./MESSAGE/DEVICE/byte[@id='{}']".format(ident))
-	return check_length(obj, ident=ident).get('val')
+	return validate(obj, ident=ident).get('val')
 
 
 def data(ident):
