@@ -1,15 +1,13 @@
 __author__ = 		'Lars'
 __modulename__ = 	"xbmcaddon"
 
-import os
+import os.path as path
 import events
 
 # can be overriden from test-script
 event = events.Debug()
 
-
-ADDON_ID = "plugin.service.bmw-infotainment"
-ADDON_PATH = os.getcwd()
+PREFIX = path.expanduser("~")
 
 settings = {
 	"gateway.ip-address": "127.0.0.1",
@@ -18,8 +16,8 @@ settings = {
 
 addon = {
 	"name": 	"XBMC BMW addon",
-	"id": 		ADDON_ID,
-	"path": 	ADDON_PATH
+	"id": 		"plugin.service.bmw-infotainment",
+	"path": 	path.join(PREFIX, "git/bmw-infotainment/plugin/plugin.service.bmw-infotainment")
 }
 
 
@@ -27,7 +25,6 @@ class Addon(object):
 
 	def __init__(self):
 		pass
-
 
 	def getSetting(self, setting):
 
