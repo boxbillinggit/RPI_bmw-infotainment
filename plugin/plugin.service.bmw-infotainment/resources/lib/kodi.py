@@ -7,6 +7,7 @@ http://kodi.wiki/view/keymap#Actions
 http://kodi.wiki/view/Action_IDs
 """
 
+import settings
 import time
 import log as log_module
 log = log_module.init_logger(__name__)
@@ -41,14 +42,12 @@ def _action(event, *args):
 	Execute an action on XBMC/KODI.
 	"""
 
-	WAIT = 0.1
-
 	repeat = int(args[0]) if args else 1
 
 	for n in range(repeat):
 
 		if n > 0:
-			time.sleep(WAIT)
+			time.sleep(settings.Events.SCROLL_SPEED)
 
 		xbmc.executebuiltin("Action(%s)" % event)
 

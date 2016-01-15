@@ -43,3 +43,12 @@ class SignalDB(object):
 	""" XML signal-db """
 
 	PATH = os.path.join("resources", "data", "signal-db", "SignalDatabase.xml")
+
+
+class Events(object):
+
+	"""
+	different settings for events, etc..
+	"""
+
+	SCROLL_SPEED = 0.05
