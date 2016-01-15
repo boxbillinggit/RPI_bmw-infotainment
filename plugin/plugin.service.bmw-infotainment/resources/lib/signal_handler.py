@@ -75,5 +75,5 @@ class Filter(object):
 
 			if match is not None:
 				self.scheduler.add(event, *match)
-				log.debug("{} - match for signal: {}".format(self.__class__.__name__, " ".join(bus_sig).replace("0x", "")))
+				log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(bus_sig)))
 				break

@@ -2,26 +2,34 @@
 This module handles the overlay TCP/IP-protocol for communicating with gateway.
 """
 
-# TODO: avoid data conversions, use bytearray or string here in this module???
-
 import log as log_module
 
 log = log_module.init_logger(__name__)
 __author__ = 'lars'
 
+HEX_BASE = 16		# hex has base-16
 HEADER_SIZE = 8
-SRC = 0
-DST = 1
-LEN = 2
+SRC, DST, LEN = range(3)
 
 
-def hexstring(bytes):
+def to_bytes(string):
 
 	"""
-	Convert bytes to a hexstring.
+	Convert hexstring to bytes.
 	"""
 
-	return " ".join(map(lambda byte: hex(byte), bytes))
+	return bytearray(map(lambda byte: int(byte, HEX_BASE), string.split(" ")) if string else [])
+
+
+def to_hexstring(bytes):
+
+	"""
+	Convert bytes to a hexstring ("bytes" could be iterable -or single int)
+	"""
+
+	item = bytes if hasattr(bytes, "__iter__") else (bytes,)
+
+	return " ".join(map(lambda byte: hex(byte), item))
 
 
 def create_header(content):
@@ -36,30 +44,39 @@ def create_header(content):
 	return bytearray(header)
 
 
-def create_frame(msg):
+def create_frame(msg, prio=0):
 
 	"""
-	Create TCP/IP-frame from 3-tuple: ([src], [dst], [data])
+	Create TCP/IP-frame from 3-tuple hexstring: ("src", "dst", "data")
 	"""
 
-	src, dst, data = msg
+	src, dst, raw_data = msg
 
-	# create header and insert length
-	header = create_header(src+dst)
+	# create header
+	header = create_header([])
+	data = to_bytes(raw_data)
+
+	header[0] = int(src, HEX_BASE)
+	header[1] = int(dst, HEX_BASE)
 	header[2] = len(data)
+	header[4] = prio & 0xFF
+	header[5] = prio >> 8 & 0xFF
 
-	return header+bytearray(data)
+	return header+data
 
 
 def create_signal(data):
 
 	"""
-	Create 3-tuple signal from TCP/IP-frame. Frame must have length as expected
+	Create signal in 3-tuple hexstring from TCP/IP-frame. Frame must have length
+	as expected	.
 
 	("src", "dst", "data")
 	"""
 
-	return hex(data[SRC]), hex(data[DST]), hexstring(data[HEADER_SIZE:])
+	data = (data[SRC], data[DST], data[HEADER_SIZE:])
+
+	return tuple(map(lambda char: to_hexstring(char), data))
 
 
 def is_length_valid(data):
@@ -112,7 +129,7 @@ def get_slice(data):
 def get_port(header):
 
 	"""
-	Get port number from rerouting-request HEADER.
+	Get port number from rerouting-request HEADER. (this is actually the priority field)
 	"""
 
 	return int(header[5] << 8) + header[4]

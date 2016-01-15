@@ -213,7 +213,7 @@ class TestProtocol(TestCase):
 	def test_valid_frame_beginning_with_invalid_data(self):
 
 		"""
-		Expecting to rasise error and flush buffer.. and not return any signals..
+		Expecting to raise error and flush buffer.. and not return any signals..
 		"""
 
 		send = \

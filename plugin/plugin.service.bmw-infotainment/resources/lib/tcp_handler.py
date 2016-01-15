@@ -45,7 +45,7 @@ class TCPIPHandler(tcp_events.Events):
 		"""
 		Interface against other modules to send data through TCP/IP-socket.
 
-		"signal" is 3-tuple: ([src], [dst], [data])
+		"signal" is 3-tuple hexstring: ("src", "dst", "data")
 		"""
 
 		self.sendall(gateway_protocol.create_frame(signal))
@@ -58,7 +58,7 @@ class TCPIPHandler(tcp_events.Events):
 		abstracts the overlaying TCP/IP-protocol away allowing only signals passing
 		through to the signal "filter".
 
-		"signal" is 3-tuple: ([src], [dst], [data])
+		"signal" is 3-tuple hexstring: ("src", "dst", "data")
 		"""
 
 		signals = self.handle_data(bytearray(data))

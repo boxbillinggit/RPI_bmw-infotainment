@@ -139,6 +139,15 @@ def hexstring(data):
 	return " ".join(map(lambda byte: "%X" % byte, data)) if data else ""
 
 
+def pritty_hex(data):
+
+	"""
+	print a pretty HEX-string by removing "0x" and capitalize letters.
+	"""
+
+	return " ".join(data).replace("0x", "").upper()
+
+
 def init_logger(name, log_level=None):
 
 	"""
