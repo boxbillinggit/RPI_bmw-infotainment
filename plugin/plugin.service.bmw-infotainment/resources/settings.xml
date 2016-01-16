@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <!-- 
-	Settings for this  add-on/plugin/script/service???
+	Add-on settings
 	Reference: http://kodi.wiki/view/Add-on_settings 
 -->
 
@@ -22,7 +22,7 @@
 	</category>
 
 	<category label="BMW addon">
-		<setting label="Welcome text in IKE" type="text" id="welcome-text" />
+		<setting label="Welcome text in IKE" type="text" default="Welcome!" id="welcome-text"/>
 		<setting label="Let me know when the champagne is cooled" type="bool" id="background" default="true"/>
 	</category>
 

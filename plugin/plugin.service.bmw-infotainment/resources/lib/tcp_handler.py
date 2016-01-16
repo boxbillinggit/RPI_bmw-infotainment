@@ -48,7 +48,7 @@ class TCPIPHandler(tcp_events.Events):
 		"signal" is 3-tuple hexstring: ("src", "dst", "data")
 		"""
 
-		self.sendall(gateway_protocol.create_frame(signal))
+		self.handle_send(gateway_protocol.create_frame(signal))
 
 	def receive(self, data):
 
@@ -61,7 +61,7 @@ class TCPIPHandler(tcp_events.Events):
 		"signal" is 3-tuple hexstring: ("src", "dst", "data")
 		"""
 
-		signals = self.handle_data(bytearray(data))
+		signals = self.handle_receive(bytearray(data))
 
 		for signal in signals:
 			self.filter.handle_signal(signal)

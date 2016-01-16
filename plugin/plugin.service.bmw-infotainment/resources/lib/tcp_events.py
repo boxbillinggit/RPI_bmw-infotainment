@@ -80,6 +80,7 @@ class Request(object):
 		self.current_request = Request.RUNNING
 
 
+# TODO: rework this class (send method)
 class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 
 	"""
@@ -102,6 +103,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 		self.host = tcp_settings.get_host()
 		self.timestamp = time.time()
 		self.attempts = 0
+		self.send_buffer = []
 
 		request = Request()
 		self.request = request.current_request
@@ -130,8 +132,19 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 		if self.state_is("CONNECTED"):
 			self.sendall(Protocol.DISCONNECT)
 
+	def handle_send(self, data):
+
+		# TODO: is this blocking long time? (launch through event-handler..)
+		if self.state_is("CONNECTED"):
+			self.sendall(data)
+		else:
+			# TODO: max-limit buffer
+			self.send_buffer.append(data)
+
 	def reset_attempts(self):
+
 		""" Called only when user requests to connect """
+
 		self.attempts = 0
 
 	def reconnect(self):
@@ -214,6 +227,13 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 
 		if self.set_state_to("CONNECTED"):
 			tcp_settings.set_status(kodi.TCPIPSettings.STATUS, "Connected")
+
+			# TODO: put on queue, since we have not launched receive loop at this state..?
+			for data in self.send_buffer:
+				log.debug("sending buffered data {}".format(log_module.hexstring(data)))
+				self.sendall(data)
+
+			del self.send_buffer[:]
 
 	def state_disconnected(self):
 

@@ -44,7 +44,7 @@ def create_header(content):
 	return bytearray(header)
 
 
-def create_frame(msg, prio=0):
+def create_frame(msg, priority=0):
 
 	"""
 	Create TCP/IP-frame from 3-tuple hexstring: ("src", "dst", "data")
@@ -59,8 +59,8 @@ def create_frame(msg, prio=0):
 	header[0] = int(src, HEX_BASE)
 	header[1] = int(dst, HEX_BASE)
 	header[2] = len(data)
-	header[4] = prio & 0xFF
-	header[5] = prio >> 8 & 0xFF
+	header[4] = priority & 0xFF
+	header[5] = priority >> 8 & 0xFF
 
 	return header+data
 
@@ -147,10 +147,10 @@ class Protocol(object):
 	REROUTE 	= bytearray("ct")
 
 	def __init__(self):
-		self.buffer = bytearray()
+		self.recv_buffer = bytearray()
 		self.errors = 0
 
-	def handle_data(self, data):
+	def handle_receive(self, data):
 
 		"""
 		Main method for handling received TCP/IP-buffer.
@@ -167,7 +167,7 @@ class Protocol(object):
 
 		index = 0
 		signals = []
-		recvbuffer = self.buffer + data
+		recvbuffer = self.recv_buffer + data
 
 		while index < len(recvbuffer):
 
@@ -196,7 +196,7 @@ class Protocol(object):
 		if len(remaining_data) > HEADER_SIZE:
 			self.handle_error(remaining_data)
 		else:
-			self.buffer = remaining_data
+			self.recv_buffer = remaining_data
 
 		return signals
 
@@ -206,7 +206,7 @@ class Protocol(object):
 		Called when unknown data is received -or allocated in the buffer.
 		"""
 
-		del self.buffer[:]
+		del self.recv_buffer[:]
 		self.errors += 1
 		log.debug("unexpected frame: {} (error count: {})".format(log_module.hexstring(data), self.errors))
 

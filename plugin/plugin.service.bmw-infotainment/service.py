@@ -9,6 +9,8 @@ Python dev docs - http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 import resources.lib.settings as settings
 import resources.lib.log as logger
 import resources.lib.libguicallback as guicallback
+
+from resources.lib.signal_methods import KombiInstrument
 from resources.lib.event_handler import EventHandler
 from resources.lib.tcp_handler import TCPIPHandler
 
@@ -42,6 +44,16 @@ event_handler = EventHandler()
 tcp_service = TCPIPHandler()
 
 
+def launch_initial_events():
+
+	"""
+	Initial events launched when system is started!
+	"""
+
+	kombi_instrument = KombiInstrument(tcp_service.send)
+	kombi_instrument.set_text(__addon__.getSetting("welcome-text"))
+
+
 def set_callbacks():
 
 	"""
@@ -59,6 +71,8 @@ if __name__ == "__main__":
 	event_handler.start()
 
 	tcp_service.start()
+
+	launch_initial_events()
 
 	if __monitor__.waitForAbort():
 
