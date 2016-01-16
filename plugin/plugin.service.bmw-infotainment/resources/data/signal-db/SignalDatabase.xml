@@ -75,37 +75,38 @@
 
 			<!-- Operations is always first byte in 'data' -->
 			<OPERATION>
-				<byte val="0x01" id="IBUS_MSG_DEV_POLL">Poll any device</byte>
-				<byte val="0x02" id="IBUS_MSG_DEV_READY">Poll response from device (answer to poll message)</byte>
-				<byte val="0x10" id="IBUS_MSG_IGN_">Ignition status request</byte>
+				<byte val="0x01" id="DEV_POLL">Poll any device</byte>
+				<byte val="0x02" id="DEV_READY">Poll response from device (answer to poll message)</byte>
+				<byte val="0x10" id="IGN_STATUS_REQ">Ignition status request</byte>
 				<byte val="0x0C" id="UNDEFINED">External lights, boot lid and lock/unlock car</byte>
-				<byte val="0x11" id="IBUS_MSG_IGN_STATUS">Ignition key status</byte>
-				<byte val="0x13" id="IBUS_MSG_IKE_STATE">IKE informs about its state</byte>
+				<byte val="0x11" id="IGN_STATUS">Ignition key status</byte>
+				<byte val="0x13" id="IKE_STATE">IKE informs about its state</byte>
 				<byte val="0x14" id="UNDEFINED">Country coding request</byte>
 				<byte val="0x15" id="UNDEFINED">Country coding response?. Set unit on IKE.</byte>
 				<byte val="0x18" id="UNDEFINED">Speed and rpm</byte>
-				<byte val="0x1A" id="UNDEFINED">unknown</byte>
+				<byte val="0x1A" id="IKE_DISPLAY_TEXT">IKE text display</byte>
+				<byte val="0x21" id="UNDEFINED">unknown</byte>
 				<byte val="0x23" id="UNDEFINED">unknown</byte>
 				<byte val="0x24" id="UNDEFINED">IKE data request</byte>
 				<byte val="0x2B" id="UNDEFINED">LED command to BM </byte>
 				<byte val="0x2C" id="UNDEFINED">Display Phone symbol</byte>
 				<byte val="0x31" id="UNDEFINED">unknown</byte>
-				<byte val="0x32" id="IBUS_MSG_VOLUME_CTRL">Volume adjustment (wheel button and BMBT button)</byte>
+				<byte val="0x32" id="VOLUME_CTRL">Volume adjustment (wheel button and BMBT button)</byte>
 				<byte val="0x38" id="UNDEFINED">CD status and track info, request</byte>
 				<byte val="0x39" id="UNDEFINED">CD status and track info, response</byte>
-				<byte val="0x3B" id="IBUS_MSG_MFL_BUTTON">Steering wheel button action</byte>
+				<byte val="0x3B" id="MFL_BUTTON">Steering wheel button action</byte>
 				<byte val="0x40" id="UNDEFINED">Set date and time </byte>
 				<byte val="0x41" id="UNDEFINED">OBC get and reset value</byte>
 				<byte val="0x46" id="UNDEFINED">Menu commands to NAV </byte>
-				<byte val="0x47" id="IBUS_MSG_BMBT_INFO">INFO/SELECT board monitor button</byte>
-				<byte val="0x48" id="IBUS_MSG_BMBT_BUTTON">Board monitor button action</byte>
-				<byte val="0x49" id="IBUS_MSG_BMBT_RIGHT_KNOB">Board monitor right-knob turn left/right</byte>
+				<byte val="0x47" id="BMBT_INFO">INFO/SELECT board monitor button</byte>
+				<byte val="0x48" id="BMBT_BUTTON">Board monitor button action</byte>
+				<byte val="0x49" id="BMBT_RIGHT_KNOB">Board monitor right-knob turn left/right</byte>
 				<byte val="0x4A" id="UNDEFINED">LED on left BM button</byte>
 				<byte val="0x4F" id="UNDEFINED">unknown</byte>
 				<byte val="0x5D" id="UNDEFINED">unknown</byte>
-				<byte val="0x6D" id="IBUS_MSG_MFL_BUTTON">Side-view mirror button action</byte>
-				<byte val="0x72" id="IBUS_MSG_REMOTE_KEY">Remote key button action</byte>
-				<byte val="0x74" id="IBUS_MSG_IGN_KEY_STATUS">Ignition status response</byte>
+				<byte val="0x6D" id="MFL_BUTTON">Side-view mirror button action</byte>
+				<byte val="0x72" id="REMOTE_KEY">Remote key button action</byte>
+				<byte val="0x74" id="IGN_KEY_STATUS">Ignition status response</byte>
 				<byte val="0x76" id="UNDEFINED">External lights</byte>
 				<byte val="0x79" id="UNDEFINED">unknown</byte>
 				<byte val="0x7A" id="UNDEFINED">Window and door message, interior light control</byte>
@@ -114,14 +115,14 @@
 			</OPERATION>
 
 			<!-- ignition key buttons (bit-mapped but states won't occur simultaneously)  -->
-			<ACTION type="?" operation="IBUS_MSG_REMOTE_KEY">
+			<ACTION type="?" operation="REMOTE_KEY">
 				<byte val="0x00" id="ign-key.acc"/>
 				<byte val="0x01" id="ign-key.on"/>
 				<byte val="0x02" id="ign-key.starter"/>
 			</ACTION>
 
 			<!-- remote key buttons -->
-			<ACTION type="button" operation="IBUS_MSG_REMOTE_KEY">
+			<ACTION type="button" operation="REMOTE_KEY">
 				<byte val="0x02" id="remote-key.release"/>			
 				<byte val="0x12" id="remote-key.lock"/>
 				<byte val="0x22" id="remote-key.unlock"/>
@@ -129,7 +130,7 @@
 			</ACTION>
 			
 			<!-- Volume control for steering wheel buttons (and left turn knob on board monitor) -->	
-			<ACTION type="button" operation="IBUS_MSG_VOLUME_CTRL">
+			<ACTION type="button" operation="VOLUME_CTRL">
 				 <byte val="0x11" id="volume-up.push"/>
 				 <byte val="0x31" id="volume-up.release"/>
 				 <byte val="0x10" id="volume-down.push"/>
@@ -137,7 +138,7 @@
 			</ACTION>
 			
 			<!-- Steering wheel buttons -->
-			<ACTION type="button" operation="IBUS_MSG_MFL_BUTTON">
+			<ACTION type="button" operation="MFL_BUTTON">
 				<byte val="0x01" id="next.push"/>
 				<byte val="0x21" id="next.release"/>
 				<byte val="0x08" id="previous.push"/>
@@ -149,7 +150,7 @@
 			</ACTION>
 
 			<!-- Board monitor buttons -->	
-			<ACTION type="button" operation="IBUS_MSG_BMBT_BUTTON">
+			<ACTION type="button" operation="BMBT_BUTTON">
 			
 				<!-- Buttons, left side -->			
 				<byte val="0x11" id="one.push"/>
@@ -235,9 +236,9 @@
 			</ACTION>
 
 			<!-- INFO-SELECT button (has a special identifier) -->
-			<ACTION type="button" operation="IBUS_MSG_BMBT_INFO">
+			<ACTION type="button" operation="BMBT_INFO">
 		
-				<byte val="0x00 0x38" id="info.push"/>
+				<byte val="0x38" id="info.push"/>
 				<byte val="0x00 0x78" id="info.hold"/>
 				<byte val="0x00 0xB8" id="info.release"/>
 
@@ -247,9 +248,19 @@
 			</ACTION>
 
 			<!-- right knob button has different speeds: 1-9, hence using placeholder {SCROLL_SPEED} -->
-			<ACTION type="button" operation="IBUS_MSG_BMBT_RIGHT_KNOB">
+			<ACTION type="button" operation="BMBT_RIGHT_KNOB">
 				<byte val="0x0{SCROLL_SPEED}" id="right-knob.turn-right"/>
 				<byte val="0x8{SCROLL_SPEED}" id="right-knob.turn-left"/>
+			</ACTION>
+
+			<ACTION operation="IGN_KEY_STATUS">
+				<byte val="0x04 0x01" id="ign-key.in"/>
+				<byte val="0x00 0xFF" id="ign-key.out"/>
+			</ACTION>
+
+			<ACTION operation="IKE_DISPLAY_TEXT">
+				<byte byte="0x35 0x00 {TEXT}" default="0x20" id="ike-text.normal"/>
+				<byte byte="0x30 0x00 {TEXT}" default="0x20" id="ike-text.gong"/>
 			</ACTION>
 
 		</DATA>
