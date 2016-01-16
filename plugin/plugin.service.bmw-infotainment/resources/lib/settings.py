@@ -57,7 +57,7 @@ class Buttons(object):
 
 	"""	Settings for BUTTONS, etc..	"""
 
-	SCROLL_SPEED = 0.05
+	SCROLL_SPEED = 0.01
 
 	STATE_HOLD_INIT 	= 1.5
 	STATE_HOLD_INTERVAL = 0.5
