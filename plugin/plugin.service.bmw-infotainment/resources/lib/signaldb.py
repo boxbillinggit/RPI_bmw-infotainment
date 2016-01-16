@@ -50,11 +50,11 @@ def uniform(string):
 	return string.replace("0x0", "0x").lower()
 
 
-def validate(obj, ident=""):
+def validate(obj, ref=""):
 	if len(obj) == 1:
 		return obj[0]
 
-	raise DBError("{} - {} references(s) found in XML-database for '{}', expecting one item".format(__name__, len(obj), ident))
+	raise DBError("{} - {} references(s) found in XML-database for '{}', expecting one item".format(__name__, len(obj), ref))
 
 
 def get_event(ident):
@@ -65,8 +65,7 @@ def get_event(ident):
 	defined as <BYTE> within the <ACTION>-tag
 	"""
 
-	obj = root.findall("./MESSAGE/DATA/ACTION/byte[@id='{}']/..".format(ident))
-	return validate(obj, ident=ident)
+	return validate(root.findall("./MESSAGE/DATA/ACTION/byte[@id='{}']/..".format(ident)), ref=ident)
 
 
 def operation(event):
@@ -77,8 +76,13 @@ def operation(event):
 	defined within <OPERATION>-tag
 	"""
 
-	obj = root.findall("./MESSAGE/DATA/OPERATION/byte[@id='{}']".format(event.get('operation')))
-	return validate(obj, ident=event.get('operation')).get('val')
+	ident = event.get('operation')
+	res = validate(root.findall("./MESSAGE/DATA/OPERATION/byte[@id='{}']".format(ident)), ref=ident).get('val')
+
+	if not res:
+		raise DBError("missing attribute 'val' for {}".format(ident))
+
+	return res
 
 
 def action(event, ident):
@@ -89,8 +93,12 @@ def action(event, ident):
 	defined within <ACTION>-tag
 	"""
 
-	obj = event.findall("byte[@id='{}']".format(ident))
-	return validate(obj, ident=ident).get('val')
+	res = validate(event.findall("byte[@id='{}']".format(ident)), ref=ident).get('val')
+
+	if not res:
+		raise DBError("missing attribute 'val' for {}".format(ident))
+
+	return res
 
 
 def device(ident):
@@ -101,8 +109,12 @@ def device(ident):
 	defined within <DEVICE>-tag
 	"""
 
-	obj = root.findall("./MESSAGE/DEVICE/byte[@id='{}']".format(ident))
-	return validate(obj, ident=ident).get('val')
+	res = validate(root.findall("./MESSAGE/DEVICE/byte[@id='{}']".format(ident)), ref=ident).get('val')
+
+	if not res:
+		raise DBError("missing attribute 'val' for {}".format(ident))
+
+	return res
 
 
 def data(ident):

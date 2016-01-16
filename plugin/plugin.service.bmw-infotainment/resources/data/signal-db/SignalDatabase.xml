@@ -3,12 +3,14 @@
 <?xml-stylesheet type="text/xsl" href="SignalDatabase.xsl"?>
 
 <!--
-	BMW IBUS signal database
+	BMW IBUS signal database. Convenient way of handling all bus-signals. Supporting
+	placeholder expressed as {data} witch is replaced during signal translation in
+	signaldb.py
 
 	References:
 	iBus Core Repository - http://en4cer.co.uk/bmw-carputers/forum/viewtopic.php?p=139&sid=dcb37de01ede7b2b449cb76dc2deb9c1
 
-	TODO: fix an image-reference attribute for each tag.
+	TODO: fix an image-reference attribute for each tag for xsl-template.
 -->
 
 
@@ -259,8 +261,8 @@
 			</ACTION>
 
 			<ACTION operation="IKE_DISPLAY_TEXT">
-				<byte byte="0x35 0x00 {TEXT}" default="0x20" id="ike-text.normal"/>
-				<byte byte="0x30 0x00 {TEXT}" default="0x20" id="ike-text.gong"/>
+				<byte val="0x35 0x00 {TEXT}" id="ike-text.normal"/>
+				<byte val="0x30 0x00 {TEXT}" id="ike-text.gong"/>
 			</ACTION>
 
 		</DATA>
