@@ -119,7 +119,7 @@ def data(ident):
 	)
 
 
-def find(item):
+def find(item, **kwargs):
 
 	"""
 	Find signal from name.
@@ -136,17 +136,17 @@ def find(item):
 	return tuple([
 		uniform(device(src)) if src else None,
 		uniform(device(dst)) if dst else None,
-		uniform(data(event))
+		uniform(data(event).format(**kwargs))
 	])
 
 
-def create(item):
+def create(item, **kwargs):
 
 	"""
 	Main function for creating signals from reference-name. Catches exceptions.
 	"""
 
 	try:
-		return find(item)
+		return find(item, **kwargs)
 	except DBError as error:
 		log.error(error)

@@ -30,34 +30,38 @@ class Index(object):
 		return self.index
 
 
-def init_buttons(factory=None, index=None):
+# TODO: fix statemachine for power-on power-off, CD-emulation DISABLED-ENABLED, etc...
+def init_statemachine(bind_event):
+	pass
+
+
+def init_buttons(button, bind_event):
 
 	"""
 	Initialize all events for buttons.
 	"""
 
-	events = []
-	button = factory
-	SRC, DST = ("IBUS_DEV_BMBT", None)
+	src, dst = ("IBUS_DEV_BMBT", None)
+
+	# regular expression for scroll speed (this data is matched and forwarded to method)
+	regexp = "([1-9])"
 
 	right_knob = button.new(hold=kodi.action("back"), release=kodi.action("Select"))
-	events.append((index(), signaldb.create((SRC, DST, "right-knob.push")), right_knob.set_state_push))
-	events.append((index(), signaldb.create((SRC, DST, "right-knob.hold")), right_knob.set_state_hold))
-	events.append((index(), signaldb.create((SRC, DST, "right-knob.release")), right_knob.set_state_release))
-	events.append((index(), signaldb.create((SRC, DST, "right-knob.turn-left")), kodi.action("up")))
-	events.append((index(), signaldb.create((SRC, DST, "right-knob.turn-right")), kodi.action("down")))
+	bind_event(signaldb.create((src, dst, "right-knob.push")), right_knob.set_state_push)
+	bind_event(signaldb.create((src, dst, "right-knob.hold")), right_knob.set_state_hold)
+	bind_event(signaldb.create((src, dst, "right-knob.release")), right_knob.set_state_release)
+	bind_event(signaldb.create((src, dst, "right-knob.turn-left"), SCROLL_SPEED=regexp), kodi.action("up"))
+	bind_event(signaldb.create((src, dst, "right-knob.turn-right"), SCROLL_SPEED=regexp), kodi.action("down"))
 
 	left = button.new(hold=kodi.action("Left"), release=kodi.action("Left"))
-	events.append((index(), signaldb.create((SRC, DST, "left.push")), left.set_state_push))
-	events.append((index(), signaldb.create((SRC, DST, "left.hold")), left.set_state_hold))
-	events.append((index(), signaldb.create((SRC, DST, "left.release")), left.set_state_release))
+	bind_event(signaldb.create((src, dst, "left.push")), left.set_state_push)
+	bind_event(signaldb.create((src, dst, "left.hold")), left.set_state_hold)
+	bind_event(signaldb.create((src, dst, "left.release")), left.set_state_release)
 
 	right = button.new(hold=kodi.action("Right"), release=kodi.action("Right"))
-	events.append((index(), signaldb.create((SRC, DST, "right.push")), right.set_state_push))
-	events.append((index(), signaldb.create((SRC, DST, "right.hold")), right.set_state_hold))
-	events.append((index(), signaldb.create((SRC, DST, "right.release")), right.set_state_release))
-
-	return events
+	bind_event(signaldb.create((src, dst, "right.push")), right.set_state_push)
+	bind_event(signaldb.create((src, dst, "right.hold")), right.set_state_hold)
+	bind_event(signaldb.create((src, dst, "right.release")), right.set_state_release)
 
 
 class ButtonFactory(object):
@@ -103,22 +107,32 @@ class Events(object):
 		self.index = Index()
 
 		# add events
-		self.list.extend(init_buttons(factory=ButtonFactory(self.scheduler), index=self.index.inc))
+		init_buttons(ButtonFactory(self.scheduler), self.bind_event)
+		init_statemachine(self.bind_event)
 
-	def bind_event(self, signal=None, event=None):
+	def bind_event(self, signal, method, **kwargs):
 
 		"""
-		Add one event to list.
-
-		Append a 3-tuple: (<INDEX>, <SIGNAL>=(src, dst, data), <EVENT>)
+		Add one event to list. if keyword argument "static=False" is used, event will
+		be deleted from list after execution (one-time event)
 		"""
+		
+		index = self.index.inc()
+		item = (index, signal, method, kwargs)
 
-		self.list.append((self.index.inc(), signal, event))
+		self.list.append(item)
+		return index
 
-	def unbind_event(self, index):
+	def unbind_event(self, ref):
 
 		"""
 		Remove one event, with index as reference.
 		"""
-
-		self.list.remove(index)
+		
+		for item in self.list:
+			
+			index, signal, method, kwargs = item
+		
+			if index == ref:
+				self.list.remove(item)
+				return index

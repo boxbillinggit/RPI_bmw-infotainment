@@ -58,7 +58,7 @@ class Filter(object):
 		self.scheduler = Scheduler()
 		self.events = Events(self.scheduler)
 
-	def handle_signal(self, bus_sig):
+	def handle_signal(self, recvd_signal):
 
 		"""
 		Handles bus signals received from TCP/IP socket. Check if we have a matching
@@ -69,11 +69,18 @@ class Filter(object):
 		Signal is 3-tuple: (src, dst, data)
 		"""
 
-		for index, event_sig, event in self.events.list:
+		for item in self.events.list:
 
-			match = match_found(bus_sig, event_sig)
+			index, signal, method, kwargs = item
+
+			match = match_found(recvd_signal, signal)
 
 			if match is not None:
-				self.scheduler.add(event, *match)
-				log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(bus_sig)))
+				self.scheduler.add(method, *match)
+				log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(recvd_signal)))
+
+				# if single-time-event
+				if not kwargs.get("static", True):
+					self.events.list.remove(item)
+
 				break

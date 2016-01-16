@@ -246,11 +246,10 @@
 				<byte val="0x00 0x8F" id="select.release"/>				
 			</ACTION>
 
-			<!-- right knob button (has different speeds: 1-9, hence using regular expressions) -->
-
+			<!-- right knob button has different speeds: 1-9, hence using placeholder {SCROLL_SPEED} -->
 			<ACTION type="button" operation="IBUS_MSG_BMBT_RIGHT_KNOB">
-				<byte val="0x0([1-9])" id="right-knob.turn-right"/>
-				<byte val="0x8([1-9])" id="right-knob.turn-left"/>
+				<byte val="0x0{SCROLL_SPEED}" id="right-knob.turn-right"/>
+				<byte val="0x8{SCROLL_SPEED}" id="right-knob.turn-left"/>
 			</ACTION>
 
 		</DATA>
