@@ -16,6 +16,14 @@ class WinPDB(object):
 	TIMEOUT = 30
 
 
+class System(object):
+
+	"""	System settings	"""
+
+	# shutdown after 30min idle (after key has been pulled out from ignition lock)
+	IDLE_SHUTDOWN = 30 * 60
+
+
 class Logging(object):
 
 	""" Settings for logger (console -and file-handler) """
@@ -45,10 +53,12 @@ class SignalDB(object):
 	PATH = os.path.join("resources", "data", "signal-db", "SignalDatabase.xml")
 
 
-class Events(object):
+class Buttons(object):
 
-	"""
-	different settings for events, etc..
-	"""
+	"""	Settings for BUTTONS, etc..	"""
 
 	SCROLL_SPEED = 0.05
+
+	STATE_HOLD_INIT 	= 1.5
+	STATE_HOLD_INTERVAL = 0.5
+	STATE_HOLD_N_MAX	= 5 	# default number of times max allowed

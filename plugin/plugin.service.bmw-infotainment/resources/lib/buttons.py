@@ -3,10 +3,9 @@ This module contains a class used as template for constructing buttons
 with a state-machine.
 """
 
-import time
-
-# import local modules
+import settings
 import log as log_module
+
 log = log_module.init_logger(__name__)
 
 __author__ = 'Lars'
@@ -18,14 +17,9 @@ class State(object):
 	Object containing current state, new object for each Button.
 	"""
 
-	# define timings for state HOLD - unit in [seconds]
-	HOLD_INIT = 2.0
-	HOLD_PERIODIC = 0.5
-	HOLD_ABORT = 5.0
-
 	# define enumerated states
 	STATE = ["PUSH", "HOLD", "RELEASE"]
-	PUSH, HOLD, RELEASE = range(len(STATE))
+	PUSH, HOLD, RELEASE = range(3)
 
 	def __init__(self):
 		self.state = State.RELEASE
@@ -43,47 +37,44 @@ class Button(object):
 	a subclass, since "schedule_check_state_hold" must be implemented accordingly.
 	"""
 
-	def __init__(self, push=None, hold=None, release=None):
+	def __init__(self, push=None, hold=None, release=None, max_holdings=None):
 
 		# actions
 		self.push = push
 		self.hold = hold
 		self.release = release
+		self.max_holdings = max_holdings or settings.Buttons.STATE_HOLD_N_MAX
 
 		state = State()
 
 		# initial conditions
-		self.timestamp = time.time()
+		self.holding = 0
 		self.state = state.state
 
-	def still_holding(self):
-		return (time.time() - self.timestamp) < State.HOLD_ABORT
-
-	def schedule_check_state_hold(self, timeout=None):
+	def schedule_check_state_hold(self):
 		"""
-		Overridden in constructor's subclass. This function handles
-		event scheduling for evaluating if we should make transition
-		to state 'HOLD'..
+		Overridden in subclass. method for scheduling "check_state_hold" periodically.
 		"""
 		pass
 
 	def check_state_hold(self):
 
 		"""
-		This is called from event-thread and evaluates if we are about to
-		change state from 'PUSH' to 'HOLD', but also execute action for HOLD
-		periodically (max time-limited) by re-schedule this function while
-		current state is 'HOLD'
+		This is called periodically from scheduler and evaluates if we are about to
+		change state from 'PUSH' to 'HOLD'. Also execute action for HOLD
+		periodically (max-limited). Reschedule event as long as method returns "True"
 
 		Most of the buttons is broadcasting state 'HOLD' once after 1s -  hence
-		different initial sleep times to avoid interfering with this event.
+		different initial time-intervals to avoid interfering with this event.
 		"""
 
 		# log.debug("{} - check_state_hold() - still holding? (current state  '{}')'".format(self.__class__.__name__, State.STATE[self.state]))
 
-		if self.state != State.RELEASE and self.still_holding():
-			self.schedule_check_state_hold(timeout=State.HOLD_PERIODIC)
+		self.holding += 1
+
+		if self.state != State.RELEASE and self.holding <= self.max_holdings:
 			self.set_state_hold()
+			return True
 
 	def set_state_push(self):
 
@@ -99,7 +90,7 @@ class Button(object):
 			self.push()
 
 		if self.hold and self.state == State.RELEASE:
-			self.timestamp = time.time()
+			self.holding = 0
 			self.schedule_check_state_hold()
 
 		self.state = State.PUSH

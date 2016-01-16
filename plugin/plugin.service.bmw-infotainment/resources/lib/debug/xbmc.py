@@ -48,6 +48,11 @@ def translatePath(path):
 	return specialpaths.get(path)
 
 
+def shutdown():
+	exit_main_thread()
+	event.emit(module=__modulename__, method="shutdown", args="shutdown requested!")
+
+
 def exit_main_thread(sig, frame):
 	Monitor.abort_requested = True
 

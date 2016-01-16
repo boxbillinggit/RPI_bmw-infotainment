@@ -47,7 +47,7 @@ def _action(event, *args):
 	for n in range(repeat):
 
 		if n > 0:
-			time.sleep(settings.Events.SCROLL_SPEED)
+			time.sleep(settings.Buttons.SCROLL_SPEED)
 
 		xbmc.executebuiltin("Action(%s)" % event)
 
@@ -55,6 +55,12 @@ def _action(event, *args):
 def notification(msg):
 	dialog = xbmcgui.Dialog()
 	dialog.notification(__addonid__, msg)
+
+
+def shutdown():
+
+	# xbmc.shutdown()
+	xbmc.executebuiltin("Quit")
 
 
 class TCPIPSettings(object):
@@ -85,3 +91,35 @@ class TCPIPSettings(object):
 		self.port = int(addon.getSetting(TCPIPSettings.PORT))
 
 		return self.address, self.port
+
+
+class System(object):
+
+	"""
+	Interface for controlling system shutdown, etc
+	"""
+
+	SHUTDOWN, INIT = range(2)
+
+	def __init__(self, scheduler):
+		self.state = System.INIT
+		self.scheduler = scheduler
+
+	def state_init(self):
+
+		""" Driver came back within time, abort shutdown """
+
+		if self.state == System.SHUTDOWN:
+			self.scheduler.remove(shutdown)
+			log.info("{} - Welcome back! (Aborting system shutdown request)".format(self.__class__.__name__))
+
+		self.state = System.INIT
+
+	def state_shutdown(self):
+		""" Schedule shutdown when key has been pulled out from ignition lock """
+
+		if self.state == System.INIT:
+			self.scheduler.add(shutdown, timestamp=time.time()+settings.System.IDLE_SHUTDOWN)
+			log.info("{} - System shutdown is scheduled within {} min".format(self.__class__.__name__, (settings.System.IDLE_SHUTDOWN/60)))
+
+		self.state = System.SHUTDOWN

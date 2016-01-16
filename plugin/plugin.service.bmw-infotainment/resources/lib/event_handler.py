@@ -18,13 +18,21 @@ __author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()
 
 # item on queue enumerated
-METHOD, TIMESTAMP, ARGS, KWARGS = range(4)
+METHOD, TIMESTAMP, INTERVAL, ARGS, KWARGS = range(5)
 
 
 class Scheduler(object):
 
 	"""
-	Interface for adding, removing -or rescheduling items in schedule.
+	Interface for adding, removing and rescheduling items in scheduler. Some keyword arguments is
+	reserved for scheduler internally (and will not be forwarded to method):
+
+		interval=[None] 	- interval for periodic tasks
+		timestamp=[None]	- time when task shall be executed.
+		remove=[False] 		- remove task
+		reschedule=[True] 	- reschedule task if already exists in schedule (allows method to be scheduled
+							only once).
+
 	"""
 
 	def __init__(self, queue=None):
@@ -33,8 +41,8 @@ class Scheduler(object):
 	def add(self, event, *args, **kwargs):
 		self.queue.put((event, args, kwargs))
 
-	def remove(self):
-		pass
+	def remove(self, event):
+		self.queue.put((event, (), {"remove": True}))
 
 
 class EventHandler(threading.Thread):
@@ -57,29 +65,39 @@ class EventHandler(threading.Thread):
 	def check_schedule(self):
 
 		"""
-		Check if any scheduled tasks is in time to be executed.
+		Check if any scheduled tasks is in time to be executed. if method returns true we
+		reschedule task.
 		"""
+
+		periodic_tasks = []
 
 		for task in self.schedule:
 
 			timestamp = task[TIMESTAMP]
+			reschedule = False
 
 			if (timestamp is None) or (time.time() >= timestamp):
 
-				method, args, kwargs = task[METHOD], task[ARGS], task[KWARGS]
+				method, interval, args, kwargs = task[METHOD], task[INTERVAL], task[ARGS], task[KWARGS]
 
 				try:
-					method(*args, **kwargs)
+					reschedule = method(*args, **kwargs)
 				except TypeError as error:
 					log.error("{} - {}".format(self.__class__.__name__, error))
 
 				self.schedule.remove(task)
+
+				if reschedule and interval:
+					periodic_tasks.append((method, timestamp+interval, interval, args, kwargs))
+
 				# log.debug("{} - events to schedule {}".format(self.__class__.__name__, len(self.schedule)))
 
-	def reschedule(self, method):
+		self.schedule.extend(periodic_tasks)
+
+	def unschedule(self, method):
 
 		"""
-		remove task for rescheduling with a new time (event is allowed to be scheduled only once).
+		remove task (e.g. before rescheduling with a new time).
 		"""
 
 		for task in self.schedule:
@@ -88,16 +106,19 @@ class EventHandler(threading.Thread):
 				# log.debug("{} - rescheduling task".format(self.__class__.__name__))
 				self.schedule.remove(task)
 
-	def schedule_task(self, method, *args, **kwargs):
+	def handle_task(self, method, *args, **kwargs):
 
 		"""
-		Append new task to schedule, re-schedule task with a new time if requested (default True).
+		Append, remove or reschedule task.
 		"""
 
-		if kwargs.pop("reschedule", True):
-			self.reschedule(method)
+		remove, reschedule = kwargs.pop("remove", False), kwargs.pop("reschedule", True)
 
-		self.schedule.append((method, kwargs.pop("timestamp", None), args, kwargs))
+		if reschedule or remove:
+			self.unschedule(method)
+
+		if not remove:
+			self.schedule.append((method, kwargs.pop("timestamp", None), kwargs.pop("interval", None), args, kwargs))
 
 	def run(self):
 
@@ -119,5 +140,5 @@ class EventHandler(threading.Thread):
 			except Queue.Empty:
 				continue
 
-			self.schedule_task(method, *args, **kwargs)
+			self.handle_task(method, *args, **kwargs)
 			self.queue.task_done()

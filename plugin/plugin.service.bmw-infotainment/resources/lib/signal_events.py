@@ -8,7 +8,8 @@ import time
 # import local modules
 import kodi
 import signaldb
-from buttons import Button, State
+import settings
+from buttons import Button
 
 import log as log_module
 log = log_module.init_logger(__name__)
@@ -30,9 +31,15 @@ class Index(object):
 		return self.index
 
 
-# TODO: fix statemachine for power-on power-off, CD-emulation DISABLED-ENABLED, etc...
-def init_statemachine(bind_event):
-	pass
+def init_system_events(scheduler, bind_event):
+
+	"""
+	State-machine for controlling power off and current MID-state (CD, TAPE, RADIO, etc..)
+	"""
+	# TODO: identify signals for currrent MID-state
+	system = kodi.System(scheduler)
+	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), system.state_init)
+	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), system.state_shutdown)
 
 
 def init_buttons(button, bind_event):
@@ -88,9 +95,10 @@ class NewButton(Button):
 		super(NewButton, self).__init__(**kwargs)
 		self.scheduler = scheduler
 
-	def schedule_check_state_hold(self, timeout=State.HOLD_INIT):
+	def schedule_check_state_hold(self):
 		# log.debug("{} -schedule_check_state_hold() ".format(self.__class__.__name__))
-		self.scheduler.add(self.check_state_hold, timestamp=timeout+time.time())
+		timestamp = time.time()+settings.Buttons.STATE_HOLD_INIT
+		self.scheduler.add(self.check_state_hold, timestamp=timestamp, interval=settings.Buttons.STATE_HOLD_INTERVAL)
 
 
 class Events(object):
@@ -108,7 +116,7 @@ class Events(object):
 
 		# add events
 		init_buttons(ButtonFactory(self.scheduler), self.bind_event)
-		init_statemachine(self.bind_event)
+		init_system_events(self.scheduler, self.bind_event)
 
 	def bind_event(self, signal, method, **kwargs):
 

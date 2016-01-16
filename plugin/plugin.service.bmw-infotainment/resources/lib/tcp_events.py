@@ -26,10 +26,6 @@ def state(string):
 	return States.state.index(string)
 
 
-def next_check():
-	return time.time() + settings.TCPIP.TIME_INTERVAL_PING
-
-
 def next_reconnect():
 	return time.time() + settings.TCPIP.TIME_RECONNECT
 
@@ -148,17 +144,19 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 	def check_still_alive(self):
 
 		"""
-		Scheduled to get called periodically (if still connected). Send ping to gateway.
+		Scheduled to get called periodically, as long as method returns "True" (while
+		still connected). Send a ping to the gateway.
 		"""
 
 		if not self.state_is("CONNECTED"):
-			return
+			return False
 
 		self.sendall(Protocol.PING)
-		self.scheduler.add(self.check_still_alive, timestamp=next_check())
 
 		if (time.time() - self.timestamp) >= settings.TCPIP.ALIVE_TIMEOUT:
 			self.alive_timeout()
+
+		return True
 
 	def handle_init(self):
 
@@ -167,7 +165,8 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 		if self.state_is("INIT"):
 			self.sendall(Protocol.CONNECT)
 		else:
-			self.scheduler.add(self.check_still_alive, timestamp=next_check())
+			next_check = time.time() + settings.TCPIP.TIME_INTERVAL_PING
+			self.scheduler.add(self.check_still_alive, timestamp=next_check, interval=settings.TCPIP.TIME_INTERVAL_PING)
 
 	def handle_ping(self):
 
