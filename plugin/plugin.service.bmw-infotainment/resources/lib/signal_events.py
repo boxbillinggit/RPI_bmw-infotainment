@@ -5,7 +5,7 @@ and removing events at runtime.
 
 import time
 
-# import local modules
+import system as module_system
 import kodi
 import signaldb
 import settings
@@ -37,9 +37,9 @@ def init_system_events(scheduler, bind_event):
 	State-machine for controlling power off and current MID-state (CD, TAPE, RADIO, etc..)
 	"""
 	# TODO: identify signals for currrent MID-state
-	system = kodi.System(scheduler)
-	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), system.state_init)
-	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), system.state_shutdown)
+	system = module_system.State(scheduler)
+	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), system.set_state_init)
+	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), system.set_state_shutdown)
 
 
 def init_buttons(button, bind_event):
@@ -114,7 +114,6 @@ class Events(object):
 		self.scheduler = scheduler
 		self.index = Index()
 
-		# add events
 		init_buttons(ButtonFactory(self.scheduler), self.bind_event)
 		init_system_events(self.scheduler, self.bind_event)
 

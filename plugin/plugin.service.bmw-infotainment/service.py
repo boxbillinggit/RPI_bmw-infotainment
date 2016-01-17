@@ -1,12 +1,12 @@
 """
-This is the service add'on for XBMC/KODI
+This is the service add-on for XBMC/KODI
 
 References:
 http://kodi.wiki/view/Service_addons
 Python dev docs - http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 """
-
-import resources.lib.settings as settings
+import resources.lib.winpdb as winpdb
+import resources.lib.kodi as kodi
 import resources.lib.log as logger
 import resources.lib.libguicallback as guicallback
 
@@ -17,28 +17,15 @@ from resources.lib.tcp_handler import TCPIPHandler
 log = logger.init_logger(__name__)
 
 try:
-	import xbmc, xbmcgui, xbmcaddon
-
+	import xbmc
 except ImportError as err:
 	log.warning("%s - using debug-modules instead" % err.message)
 	import resources.lib.debug.xbmc as xbmc
-	import resources.lib.debug.xbmcgui as xbmcgui
-	import resources.lib.debug.xbmcaddon as xbmcaddon
 
 __author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()
-__addon__		= xbmcaddon.Addon()
-__addonname__	= __addon__.getAddonInfo('name')
-__addonid__		= __addon__.getAddonInfo('id')
 
-
-if settings.WinPDB.ACTIVE:
-
-	dialog = xbmcgui.Dialog()
-	dialog.notification(__addonid__, "Debugger on, waiting for connection ({}s)...").format(settings.WinPDB.TIMEOUT)
-
-	import rpdb2
-	rpdb2.start_embedded_debugger('pw', timeout=settings.WinPDB.TIMEOUT)
+winpdb.launch_debugger()
 
 event_handler = EventHandler()
 tcp_service = TCPIPHandler()
@@ -51,7 +38,7 @@ def launch_initial_events():
 	"""
 
 	kombi_instrument = KombiInstrument(tcp_service.send)
-	kombi_instrument.set_text(__addon__.getSetting("welcome-text"))
+	kombi_instrument.set_text(kodi.AddonSettings.get_welcome_text())
 
 
 def set_callbacks():

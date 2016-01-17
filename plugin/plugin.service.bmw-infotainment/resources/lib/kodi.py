@@ -52,74 +52,45 @@ def _action(event, *args):
 		xbmc.executebuiltin("Action(%s)" % event)
 
 
-def notification(msg):
-	dialog = xbmcgui.Dialog()
-	dialog.notification(__addonid__, msg)
-
-
 def shutdown():
 
 	# xbmc.shutdown()
 	xbmc.executebuiltin("Quit")
 
 
-class TCPIPSettings(object):
+def notify_disconnected(attempts):
+	dialog = xbmcgui.Dialog()
+	dialog.notification(__addonid__, "Connection lost, reconnecting... ({} of {})".format(attempts, settings.TCPIP.MAX_ATTEMPTS))
+
+
+class AddonSettings(object):
 
 	"""
-	Class containing the Interface against XBMC/KODI TCP/IP plugin settings.
+	Class for plugin settings.
 	"""
 
-	STATUS = "gateway.status"
+	TEXT 	= "welcome-text"
+	STATUS 	= "gateway.status"
 	ADDRESS = "gateway.ip-address"
-	PORT = "gateway.port"
+	PORT 	= "gateway.port"
+
+	@staticmethod
+	def get_welcome_text():
+		addon = xbmcaddon.Addon()
+		return addon.getSetting(AddonSettings.TEXT)
+
+	@staticmethod
+	def set_status(state):
+		__addon__.setSetting(AddonSettings.STATUS, state.capitalize())
 
 	def __init__(self):
 		self.address = None
 		self.port = None
 
-	def set_status(self, ident, status):
-		__addon__.setSetting(ident, status)
-
-	def get_status(self, ident):
-		addon = xbmcaddon.Addon()
-		return addon.getSetting(ident)
-
 	def get_host(self):
 
 		addon = xbmcaddon.Addon()
-		self.address = addon.getSetting(TCPIPSettings.ADDRESS)
-		self.port = int(addon.getSetting(TCPIPSettings.PORT))
+		self.address = addon.getSetting(AddonSettings.ADDRESS)
+		self.port = int(addon.getSetting(AddonSettings.PORT))
 
 		return self.address, self.port
-
-
-class System(object):
-
-	"""
-	Interface for controlling system shutdown, etc
-	"""
-
-	SHUTDOWN, INIT = range(2)
-
-	def __init__(self, scheduler):
-		self.state = System.INIT
-		self.scheduler = scheduler
-
-	def state_init(self):
-
-		""" Driver came back within time, abort shutdown """
-
-		if self.state == System.SHUTDOWN:
-			self.scheduler.remove(shutdown)
-			log.info("{} - Welcome back! (Aborting system shutdown request)".format(self.__class__.__name__))
-
-		self.state = System.INIT
-
-	def state_shutdown(self):
-		""" Schedule shutdown when key has been pulled out from ignition lock """
-
-		if self.state == System.INIT:
-			self.scheduler.add(shutdown, timestamp=time.time()+settings.System.IDLE_SHUTDOWN)
-			log.info("{} - System shutdown is scheduled within {} min".format(self.__class__.__name__, (settings.System.IDLE_SHUTDOWN/60)))
-
-		self.state = System.SHUTDOWN

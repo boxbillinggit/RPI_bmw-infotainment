@@ -15,41 +15,44 @@ except ImportError:
 
 log = log_module.init_logger(__name__)
 Protocol = gateway_protocol.Protocol
-tcp_settings = kodi.TCPIPSettings()
-
+addon_settings = kodi.AddonSettings()
 
 __author__		= 'lars'
 __monitor__ 	= xbmc.Monitor()
 
 
-def state(string):
-	return States.state.index(string)
-
-
-def next_reconnect():
-	return time.time() + settings.TCPIP.TIME_RECONNECT
-
-
-class States(object):
+class State(object):
 
 	"""
 	Current state on TCP-connection.
 	"""
 
-	state = ["INIT", "REROUTING", "CONNECTING", "CONNECTED", "DISCONNECTED", "RECONNECTING"]
+	states = ["INIT", "REROUTING", "CONNECTING", "CONNECTED", "DISCONNECTED", "RECONNECTING"]
+
+	INIT, REROUTING, CONNECTING, CONNECTED, DISCONNECTED, RECONNECTING = range(6)
 
 	def __init__(self):
-		self.state = state("INIT")
-		self.transitions = \
-			{"from": ("INIT",),         "to": ("REROUTING", "DISCONNECTED")}, \
-			{"from": ("REROUTING",),    "to": ("CONNECTING",)}, \
-			{"from": ("CONNECTING",),   "to": ("CONNECTED", "DISCONNECTED")}, \
-			{"from": ("CONNECTED",),    "to": ("DISCONNECTED",)}, \
-			{"from": ("DISCONNECTED",), "to": ("RECONNECTING", "INIT")}, \
-			{"from": ("RECONNECTING",), "to": ("INIT",)}
 
-	def state_is(self, current_state):
-		return self.state is States.state.index(current_state)
+		self.state = State.INIT
+		self.transitions = \
+			{"from": (State.INIT,),         "to": (State.REROUTING, State.DISCONNECTED)}, \
+			{"from": (State.REROUTING,),    "to": (State.CONNECTING,)}, \
+			{"from": (State.CONNECTING,),   "to": (State.CONNECTED, State.DISCONNECTED)}, \
+			{"from": (State.CONNECTED,),    "to": (State.DISCONNECTED,)}, \
+			{"from": (State.DISCONNECTED,), "to": (State.RECONNECTING, State.INIT)}, \
+			{"from": (State.RECONNECTING,), "to": (State.INIT,)}
+
+	def state_is(self, state):
+
+		""" shortcut for comparing with current state """
+
+		return self.state is state
+
+	def translate_state(self, state=None):
+
+		""" translate current state (or state provided from argument) to a string """
+
+		return State.states[state if state else self.state]
 
 	def set_state_to(self, new_state):
 
@@ -60,12 +63,10 @@ class States(object):
 
 		for transition in self.transitions:
 
-			if States.state[self.state] in transition.get("from") and new_state in transition.get("to"):
+			if self.state in transition.get("from") and new_state in transition.get("to"):
 				# log.debug("State {} -> {}".format(States.state[self.state], new_state))
-				self.state = state(new_state)
+				self.state = new_state
 				return True
-
-		return False
 
 
 class Request(object):
@@ -80,30 +81,32 @@ class Request(object):
 		self.current_request = Request.RUNNING
 
 
-# TODO: rework this class (send method)
-class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
+class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 
 	"""
 	Base class for handling all events for the TCP/IP-layer with help from a
 	state-machine.
 	"""
 
-	# TODO: use acquire/release lock (notify, wait) instead of "event"??
 	Event = threading.Event()
 	POLL = 1
 
+	@staticmethod
+	def next_reconnect():
+		return time.time() + settings.TCPIP.TIME_RECONNECT
+
 	def __init__(self, event=None):
-		States.__init__(self)
+		State.__init__(self)
 		gateway_protocol.Protocol.__init__(self)
 		tcp_socket.ThreadedSocket.__init__(self)
 
 		self.event = event or Events.Event
 		self.scheduler = event_handler.Scheduler()
 
-		self.host = tcp_settings.get_host()
+		self.host = addon_settings.get_host()
 		self.timestamp = time.time()
 		self.attempts = 0
-		self.send_buffer = []
+		self.send_buffer = ""
 
 		request = Request()
 		self.request = request.current_request
@@ -111,14 +114,14 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 	def start_service(self):
 
 		"""
-		Used to start -or restart service (from user -or event-handler).
+		Used to start -or restart service (from user -or internally by event-handler).
 		"""
 
 		if self.request is Request.STOPPED:
 			return
 
-		if self.set_state_to("INIT"):
-			self.host = tcp_settings.get_host()
+		if self.set_state_to(State.INIT):
+			self.host = addon_settings.get_host()
 			self.timestamp = time.time()
 			self.event.set()
 
@@ -129,30 +132,50 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 		and the server will disconnect us gracefully.
 		"""
 
-		if self.state_is("CONNECTED"):
+		if self.state_is(State.CONNECTED):
 			self.sendall(Protocol.DISCONNECT)
 
 	def handle_send(self, data):
 
-		# TODO: is this blocking long time? (launch through event-handler..)
-		if self.state_is("CONNECTED"):
+		"""
+		Method for sending data. we must be connected, else buffer data and send
+		when connected.
+		"""
+
+		# TODO: how to handle send? is it blocking long time, etc.. run in a separate thread??
+
+		if self.state_is(State.CONNECTED):
 			self.sendall(data)
 		else:
-			# TODO: max-limit buffer
-			self.send_buffer.append(data)
+			self.send_buffer += data
+
+	def send_data_buffered(self):
+
+		"""	Send data accumulated when DISCONNECTED """
+
+		if self.send_buffer:
+			self.sendall(self.send_buffer)
+			del self.send_buffer[:]
 
 	def reset_attempts(self):
 
-		""" Called only when user requests to connect """
+		"""	Called only when user requests to connect """
 
 		self.attempts = 0
 
-	def reconnect(self):
+	def allowed_to_reconnect(self):
+
+		"""	Are we allowed to reconnect (after a unintended disconnection)? """
+
 		return self.request is Request.RUNNING and (self.attempts < settings.TCPIP.MAX_ATTEMPTS)
 
 	def alive_timeout(self):
-		self.sendall(Protocol.DISCONNECT)
-		log.error("{} - Alive timeout, request to disconnect!".format(self.__class__.__name__))
+
+		"""	We have not received a ping lately.. """
+
+		# TODO how to handle, is pipe broken??
+		# self.set_state_to(State.DISCONNECTED)
+		log.error("{} - Alive timeout! Is pipe broken???".format(self.__class__.__name__))
 
 	def check_still_alive(self):
 
@@ -161,8 +184,8 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 		still connected). Send a ping to the gateway.
 		"""
 
-		if not self.state_is("CONNECTED"):
-			return False
+		if not self.state_is(State.CONNECTED):
+			return
 
 		self.sendall(Protocol.PING)
 
@@ -175,7 +198,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 
 		"""	This is called just after a successful connection """
 
-		if self.state_is("INIT"):
+		if self.state_is(State.INIT):
 			self.sendall(Protocol.CONNECT)
 		else:
 			next_check = time.time() + settings.TCPIP.TIME_INTERVAL_PING
@@ -191,25 +214,25 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 
 		"""	Received a rerouting-request from gateway """
 
-		self.host = (tcp_settings.address, port)
-		self.set_state_to("REROUTING")
+		self.host = (addon_settings.address, port)
+		self.set_state_to(State.REROUTING)
 
 	def handle_reconnect(self):
 
 		"""
-		Called just after disconnected. Reschedule new attempt to connect (if
-		allowed)
+		Called just after a disconnection. Reschedule new attempt to connect (if
+		allowed). This method blocks until event is set. Using a polling loop, else
+		XBMC/KODI locks during system shutdown.
 		"""
 
-		if self.state_is("REROUTING"):
+		if self.state_is(State.REROUTING):
 			return
 
-		if self.reconnect() and self.set_state_to("RECONNECTING"):
+		if self.allowed_to_reconnect() and self.set_state_to(State.RECONNECTING):
 			self.attempts += 1
-			self.scheduler.add(self.start_service, timestamp=next_reconnect())
-			kodi.notification("Connection lost - reconnecting... ({} of {})".format(self.attempts, settings.TCPIP.MAX_ATTEMPTS))
+			self.scheduler.add(self.start_service, timestamp=Events.next_reconnect())
+			kodi.notify_disconnected(self.attempts)
 
-		# blocking wait (polling loop, else XBMC/KODI locks during system shutdown)
 		while not (self.event.wait(timeout=Events.POLL) or __monitor__.abortRequested()):
 			pass
 
@@ -217,25 +240,30 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, States):
 
 	def state_connecting(self):
 
-		# notify at the very beginning of the connection.
-		if self.state_is("INIT"):
-			tcp_settings.set_status(kodi.TCPIPSettings.STATUS, "Connecting...")
+		"""
+		Set status connecting in the very beginning of the connection.
+		"""
 
-		self.set_state_to("CONNECTING")
+		if self.state_is(State.INIT):
+			addon_settings.set_status(self.translate_state(State.CONNECTING))
+
+		self.set_state_to(State.CONNECTING)
 
 	def state_connected(self):
 
-		if self.set_state_to("CONNECTED"):
-			tcp_settings.set_status(kodi.TCPIPSettings.STATUS, "Connected")
+		"""
+		Successfully connected, Empty the send-buffer
+		"""
 
-			# TODO: put on queue, since we have not launched receive loop at this state..?
-			for data in self.send_buffer:
-				log.debug("sending buffered data {}".format(log_module.hexstring(data)))
-				self.sendall(data)
-
-			del self.send_buffer[:]
+		if self.set_state_to(State.CONNECTED):
+			addon_settings.set_status(self.translate_state())
+			self.send_data_buffered()
 
 	def state_disconnected(self):
 
-		if self.set_state_to("DISCONNECTED"):
-			tcp_settings.set_status(kodi.TCPIPSettings.STATUS, "Disconnected")
+		"""
+		Socket is disconnected.
+		"""
+
+		if self.set_state_to(State.DISCONNECTED):
+			addon_settings.set_status(self.translate_state())
