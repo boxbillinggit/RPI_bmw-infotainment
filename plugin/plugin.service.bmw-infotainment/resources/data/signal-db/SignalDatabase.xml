@@ -17,13 +17,13 @@
 <IBUS>
 
 	<!-- IBUS Communication protocol definition -->
-	<COM-settings>
+	<COM-SETTINGS>
 		<BaudRate>9600</BaudRate>
 		<DataBits>8</DataBits>
 		<Parity>Even</Parity>
 		<StopBits>1</StopBits>
 		<Handshake>none</Handshake>
-	</COM-settings>
+	</COM-SETTINGS>
 	
 	<!-- IBUS Message definition -->
 	<MESSAGE>
@@ -88,7 +88,7 @@
 				<byte val="0x18" id="UNDEFINED">Speed and rpm</byte>
 				<byte val="0x1A" id="IKE_DISPLAY_TEXT">IKE text display</byte>
 				<byte val="0x21" id="UNDEFINED">unknown</byte>
-				<byte val="0x23" id="UNDEFINED">unknown</byte>
+				<byte val="0x23" id="BM_UPDATE_TEXTFIELD">Write value to boardmonitor text field</byte>
 				<byte val="0x24" id="UNDEFINED">IKE data request</byte>
 				<byte val="0x2B" id="UNDEFINED">LED command to BM </byte>
 				<byte val="0x2C" id="UNDEFINED">Display Phone symbol</byte>
@@ -263,6 +263,10 @@
 			<ACTION operation="IKE_DISPLAY_TEXT">
 				<byte val="0x35 0x00 {TEXT}" id="ike-text.normal"/>
 				<byte val="0x30 0x00 {TEXT}" id="ike-text.gong"/>
+			</ACTION>
+
+			<ACTION operation="BM_UPDATE_TEXTFIELD">
+				<byte val="0x62 0x10 {DATA}" id="areaX.X"/>
 			</ACTION>
 
 		</DATA>

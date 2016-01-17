@@ -57,6 +57,15 @@ def validate(obj, ref=""):
 	raise DBError("{} - {} references(s) found in XML-database for '{}', expecting one item".format(__name__, len(obj), ref))
 
 
+def get_setting(setting):
+
+	"""
+	Get communication port settings.
+	"""
+
+	return validate(root.findall("./COM-SETTINGS/{}".format(setting)), ref=setting).text
+
+
 def get_event(ident):
 
 	"""

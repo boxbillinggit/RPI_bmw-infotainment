@@ -70,6 +70,7 @@ class AddonSettings(object):
 	"""
 
 	TEXT 	= "welcome-text"
+	BUS_STS	= "gateway.bus-activity"
 	STATUS 	= "gateway.status"
 	ADDRESS = "gateway.ip-address"
 	PORT 	= "gateway.port"
@@ -82,6 +83,10 @@ class AddonSettings(object):
 	@staticmethod
 	def set_status(state):
 		__addon__.setSetting(AddonSettings.STATUS, state.capitalize())
+
+	@staticmethod
+	def set_bus_activity(percent):
+		__addon__.setSetting(AddonSettings.BUS_STS, "{:.2%}".format(percent))
 
 	def __init__(self):
 		self.address = None

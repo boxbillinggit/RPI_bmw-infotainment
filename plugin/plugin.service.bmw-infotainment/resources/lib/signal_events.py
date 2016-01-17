@@ -8,6 +8,7 @@ import time
 import system as module_system
 import kodi
 import signaldb
+from signal_methods import hexstring
 import settings
 from buttons import Button
 
@@ -36,10 +37,16 @@ def init_system_events(scheduler, bind_event):
 	"""
 	State-machine for controlling power off and current MID-state (CD, TAPE, RADIO, etc..)
 	"""
-	# TODO: identify signals for currrent MID-state
+
 	system = module_system.State(scheduler)
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), system.set_state_init)
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), system.set_state_shutdown)
+
+	# identifiers for currrent MID-state
+	# TODO: not fully implemented (need regexp to match data after (end of string), etc..)
+	bind_event(signaldb.create((None, "IBUS_DEV_GT", "areaX.X"), DATA=hexstring("CDC")), None)
+	bind_event(signaldb.create((None, "IBUS_DEV_GT", "areaX.X"), DATA=hexstring("TAPE")), None)
+
 
 
 def init_buttons(button, bind_event):

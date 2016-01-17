@@ -176,7 +176,7 @@ class Protocol(object):
 			if is_header_and_data(chunk):
 				signal = get_slice(chunk)
 				index += len(signal)
-				signals.append(create_signal(signal))
+				signals.append(signal)
 				continue
 
 			elif is_header_only(chunk):

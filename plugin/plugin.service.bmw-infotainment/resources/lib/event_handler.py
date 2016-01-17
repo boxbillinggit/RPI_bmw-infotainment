@@ -88,7 +88,7 @@ class EventHandler(threading.Thread):
 				self.schedule.remove(task)
 
 				if reschedule and interval:
-					periodic_tasks.append((method, timestamp+interval, interval, args, kwargs))
+					periodic_tasks.append((method, (timestamp or time.time())+interval, interval, args, kwargs))
 
 				# log.debug("{} - events to schedule {}".format(self.__class__.__name__, len(self.schedule)))
 
