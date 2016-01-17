@@ -46,7 +46,7 @@ class GatewayProtocol(gateway_protocol.Protocol):
 
 protocol = GatewayProtocol()
 
-SIGNAL = signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_CDC", "source.push"))
+SIGNAL = gateway_protocol.create_frame(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_CDC", "source.push")))
 
 
 class TestProtocol(TestCase):
@@ -63,7 +63,7 @@ class TestProtocol(TestCase):
 		Test action for receiving a ping, expecting callback "handle_ping()"
 		"""
 
-		recv = protocol.handle_data(Protocol.PING)
+		recv = protocol.handle_receive(Protocol.PING)
 		self.assertEqual(len(recv), 0)
 		self.assertTrue(protocol.ping)
 
@@ -76,7 +76,7 @@ class TestProtocol(TestCase):
 
 		port = 1234
 		send = reroute_to_port(port)
-		recv = protocol.handle_data(send)
+		recv = protocol.handle_receive(send)
 		self.assertEqual(len(recv), 0)
 		self.assertEqual(port, protocol.reroute_to)
 
@@ -87,9 +87,9 @@ class TestProtocol(TestCase):
 		"""
 
 		send = bytearray([0]*8)
-		recv = protocol.handle_data(send)
+		recv = protocol.handle_receive(send)
 		self.assertEqual(len(recv), 0)
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 		self.assertEqual(protocol.errors, 1)
 
 	def test_one_complete_frame(self):
@@ -98,11 +98,10 @@ class TestProtocol(TestCase):
 		One complete frame of header+data is sent.
 		"""
 
-		send = gateway_protocol.create_frame(SIGNAL)
-		recv = protocol.handle_data(send)
+		recv = protocol.handle_receive(SIGNAL)
 		self.assertEqual(len(recv), 1)
 		self.assertEqual(SIGNAL, recv[0])
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 
 	def test_multiple_complete_frames(self):
 
@@ -110,10 +109,10 @@ class TestProtocol(TestCase):
 
 		"""
 
-		send = gateway_protocol.create_frame(SIGNAL)*6
-		recv = protocol.handle_data(send)
+		send = SIGNAL*6
+		recv = protocol.handle_receive(send)
 		self.assertEqual(len(recv), 6)
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 
 		for index, recv_signal in enumerate(recv):
 			self.assertEqual(recv_signal, recv[index])
@@ -124,13 +123,13 @@ class TestProtocol(TestCase):
 		header and data is sent in separate frames.
 		"""
 
-		send = gateway_protocol.create_frame(SIGNAL)
-		recv_none = protocol.handle_data(send[:gateway_protocol.HEADER_SIZE])
+		send = SIGNAL
+		recv_none = protocol.handle_receive(send[:gateway_protocol.HEADER_SIZE])
 		self.assertEqual(len(recv_none), 0)
-		recv = protocol.handle_data(send[gateway_protocol.HEADER_SIZE:])
+		recv = protocol.handle_receive(send[gateway_protocol.HEADER_SIZE:])
 		self.assertEqual(len(recv), 1)
 		self.assertEqual(SIGNAL, recv[0])
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 
 	def test_mixed_valid_frames(self):
 
@@ -138,15 +137,11 @@ class TestProtocol(TestCase):
 		send some mixed data containing frames along with ping and reroute, etc..
 		"""
 
-		send = \
-			gateway_protocol.create_frame(SIGNAL)*2 + \
-			Protocol.PING + \
-			gateway_protocol.create_frame(SIGNAL)*2 + \
-			reroute_to_port(1234)
+		send = SIGNAL*2 + Protocol.PING + SIGNAL*2 + reroute_to_port(1234)
 
-		recv = protocol.handle_data(send)
+		recv = protocol.handle_receive(send)
 		self.assertEqual(len(recv), 4)
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 		self.assertTrue(protocol.ping)
 		self.assertIsNotNone(protocol.reroute_to)
 		for index, recv_signal in enumerate(recv):
@@ -159,19 +154,15 @@ class TestProtocol(TestCase):
 		but in slices..
 		"""
 
-		send = \
-			gateway_protocol.create_frame(SIGNAL)*2 + \
-			Protocol.PING + \
-			gateway_protocol.create_frame(SIGNAL)*2 + \
-			reroute_to_port(1234)
+		send = SIGNAL*2 + Protocol.PING + SIGNAL*2 + reroute_to_port(1234)
 
 		recv = []
 		half = len(send) / 2
-		recv.extend(protocol.handle_data(send[:half]))
-		recv.extend(protocol.handle_data(send[half:]))
+		recv.extend(protocol.handle_receive(send[:half]))
+		recv.extend(protocol.handle_receive(send[half:]))
 
 		self.assertEqual(len(recv), 4)
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 		self.assertTrue(protocol.ping)
 		self.assertIsNotNone(protocol.reroute_to)
 		for index, recv_signal in enumerate(recv):
@@ -186,11 +177,11 @@ class TestProtocol(TestCase):
 		"""
 
 		send = bytearray([0xFF]*14)
-		# self.assertRaises(gateway_protocol.RecvError, protocol.handle_data, send)
-		recv = protocol.handle_data(send)
+		# self.assertRaises(gateway_protocol.RecvError, protocol.handle_receive, send)
+		recv = protocol.handle_receive(send)
 		self.assertEqual(protocol.errors, 1)
 		self.assertEqual(len(recv), 0)
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 
 	def test_sliced_frame_not_valid(self):
 
@@ -202,13 +193,13 @@ class TestProtocol(TestCase):
 		"""
 
 		send = bytearray([0xFF]*8)
-		recv = protocol.handle_data(send)
+		recv = protocol.handle_receive(send)
 		self.assertEqual(len(recv), 0)
-		recv = protocol.handle_data(send)
-		# self.assertRaises(gateway_protocol.RecvError, protocol.handle_data, send)
+		recv = protocol.handle_receive(send)
+		# self.assertRaises(gateway_protocol.RecvError, protocol.handle_receive, send)
 		self.assertEqual(protocol.errors, 1)
 		self.assertEqual(len(recv), 0)
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 
 	def test_valid_frame_beginning_with_invalid_data(self):
 
@@ -216,15 +207,13 @@ class TestProtocol(TestCase):
 		Expecting to raise error and flush buffer.. and not return any signals..
 		"""
 
-		send = \
-			bytearray([0xFF]*14) + \
-			gateway_protocol.create_frame(SIGNAL)
+		send = bytearray([0xFF]*14) + SIGNAL
 
-		# self.assertRaises(gateway_protocol.RecvError, protocol.handle_data, send)
-		recv = protocol.handle_data(send)
+		# self.assertRaises(gateway_protocol.RecvError, protocol.handle_receive, send)
+		recv = protocol.handle_receive(send)
 		self.assertEqual(protocol.errors, 1)
 		self.assertEqual(len(recv), 0)
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 
 	def test_valid_frame_ending_with_invalid_data(self):
 
@@ -232,12 +221,11 @@ class TestProtocol(TestCase):
 		Expecting to return the parsed frames until invalid data occurs.
 		"""
 
-		send = gateway_protocol.create_frame(SIGNAL)*3 + \
-			bytearray([0xFF]*14)
-		recv = protocol.handle_data(send)
+		send = SIGNAL*3 + bytearray([0xFF]*14)
+		recv = protocol.handle_receive(send)
 
 		# self.assertRaises()
 		self.assertEqual(len(recv), 3)
-		self.assertEqual(len(protocol.buffer), 0)
+		self.assertEqual(len(protocol.recv_buffer), 0)
 		self.assertEqual(SIGNAL, recv[0])
 		self.assertEqual(protocol.errors, 1)

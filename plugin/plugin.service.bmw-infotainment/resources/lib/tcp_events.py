@@ -2,6 +2,7 @@ import time
 import threading
 
 import kodi
+import statemachine
 import settings
 import gateway_protocol
 import tcp_socket
@@ -21,19 +22,19 @@ __author__		= 'lars'
 __monitor__ 	= xbmc.Monitor()
 
 
-class State(object):
+class State(statemachine.State):
 
 	"""
 	Current state on TCP-connection.
 	"""
 
-	states = ["INIT", "REROUTING", "CONNECTING", "CONNECTED", "DISCONNECTED", "RECONNECTING"]
+	states = ("INIT", "REROUTING", "CONNECTING", "CONNECTED", "DISCONNECTED", "RECONNECTING")
 
 	INIT, REROUTING, CONNECTING, CONNECTED, DISCONNECTED, RECONNECTING = range(6)
 
 	def __init__(self):
+		super(State, self).__init__(State.INIT)
 
-		self.state = State.INIT
 		self.transitions = \
 			{"from": (State.INIT,),         "to": (State.REROUTING, State.DISCONNECTED)}, \
 			{"from": (State.REROUTING,),    "to": (State.CONNECTING,)}, \
@@ -41,32 +42,6 @@ class State(object):
 			{"from": (State.CONNECTED,),    "to": (State.DISCONNECTED,)}, \
 			{"from": (State.DISCONNECTED,), "to": (State.RECONNECTING, State.INIT)}, \
 			{"from": (State.RECONNECTING,), "to": (State.INIT,)}
-
-	def state_is(self, state):
-
-		""" shortcut for comparing with current state """
-
-		return self.state is state
-
-	def translate_state(self, state=None):
-
-		""" translate current state (or state provided from argument) to a string """
-
-		return State.states[state if state else self.state]
-
-	def set_state_to(self, new_state):
-
-		"""
-		Minimalistic state-machine. Returns "True" if transition is allowed,
-		and also update current state.
-		"""
-
-		for transition in self.transitions:
-
-			if self.state in transition.get("from") and new_state in transition.get("to"):
-				# log.debug("State {} -> {}".format(States.state[self.state], new_state))
-				self.state = new_state
-				return True
 
 
 class Request(object):
@@ -101,7 +76,6 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 		tcp_socket.ThreadedSocket.__init__(self)
 
 		self.event = event or Events.Event
-		self.scheduler = event_handler.Scheduler()
 
 		self.host = addon_settings.get_host()
 		self.timestamp = time.time()
@@ -202,7 +176,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 			self.sendall(Protocol.CONNECT)
 		else:
 			next_check = time.time() + settings.TCPIP.TIME_INTERVAL_PING
-			self.scheduler.add(self.check_still_alive, timestamp=next_check, interval=settings.TCPIP.TIME_INTERVAL_PING)
+			event_handler.add(self.check_still_alive, timestamp=next_check, interval=settings.TCPIP.TIME_INTERVAL_PING)
 
 	def handle_ping(self):
 
@@ -230,7 +204,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 
 		if self.allowed_to_reconnect() and self.set_state_to(State.RECONNECTING):
 			self.attempts += 1
-			self.scheduler.add(self.start_service, timestamp=Events.next_reconnect())
+			event_handler.add(self.start_service, timestamp=Events.next_reconnect())
 			kodi.notify_disconnected(self.attempts)
 
 		while not (self.event.wait(timeout=Events.POLL) or __monitor__.abortRequested()):

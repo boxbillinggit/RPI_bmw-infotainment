@@ -3,42 +3,63 @@ import time
 import kodi
 import log as log_module
 import settings
+import statemachine
+import event_handler
 
 log = log_module.init_logger(__name__)
 __author__ = 'lars'
 
 
-class State(object):
+# TODO: finish this
+class State(statemachine.State):
 
 	"""
 	Interface for controlling system shutdown, etc
 	"""
 
-	SHUTDOWN, INIT = range(2)
+	INIT, SHUTDOWN = range(2)
 
-	def __init__(self, scheduler):
-		self.state = State.INIT
-		self.scheduler = scheduler
+	# MID-states
+	states = ("UNDEFINED", "MENU", "RADIO", "CD", "TAPE")
+
+	UNDEFINED, MENU, RADIO, CD, TAPE = range(5)
+
+	def __init__(self):
+		super(State, self).__init__(State.UNDEFINED)
+
+		self.transitions = \
+			{"from": (State.UNDEFINED,), "to": (State.MENU, State.RADIO, State.CD, State.TAPE)}, \
+			{"from": (State.RADIO,), 	"to": (State.CD,)}, \
+			{"from": (State.CD,), 		"to": (State.TAPE,)}, \
+			{"from": (State.TAPE,), 	"to": (State.MENU,)}, \
+			{"from": (State.MENU,), 	"to": (State.RADIO,)}
+
+		# we expecting a state change only when button is pressed
+		self.transition_allowed = False
+		self.sys_state = State.INIT
+
+	def button_pressed(self):
+		self.transition_allowed = True
 
 	def set_state_init(self):
 
 		""" Driver came back within time, abort shutdown """
 
-		if self.state == State.SHUTDOWN:
-			self.scheduler.remove(kodi.shutdown)
+		if self.sys_state == State.SHUTDOWN:
+			event_handler.remove(kodi.shutdown)
 			log.info("{} - Welcome back! (Aborting system shutdown request)".format(self.__class__.__name__))
 
-		self.state = State.INIT
+		self.sys_state = State.INIT
 
 	def set_state_shutdown(self):
 
 		""" Schedule shutdown when key has been pulled out from ignition lock """
 
-		if self.state == State.INIT:
+		if self.sys_state == State.INIT:
 
 			shutdown = settings.System.IDLE_SHUTDOWN
 
-			self.scheduler.add(kodi.shutdown, timestamp=time.time()+shutdown)
+			event_handler.add(kodi.shutdown, timestamp=time.time()+shutdown)
 			log.info("{} - System shutdown is scheduled within {} min".format(self.__class__.__name__, (shutdown/60)))
 
-		self.state = State.SHUTDOWN
+		self.sys_state = State.SHUTDOWN

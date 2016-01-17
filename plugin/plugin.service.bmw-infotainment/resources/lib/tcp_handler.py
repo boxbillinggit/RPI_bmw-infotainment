@@ -1,18 +1,19 @@
 """
 This is the current main TCP-interface to use.
 """
-
-import kodi
 import time
+
+import event_handler
+import kodi
+import log as log_module
 import signaldb
 import gateway_protocol
 import signal_handler
 import tcp_events
 
-from event_handler import Scheduler
-
 __author__ = 'lars'
 
+log = log_module.init_logger(__name__)
 Request = tcp_events.Request
 
 
@@ -40,19 +41,19 @@ class BusStats(object):
 		self.timestamp = time.time()
 		self.bytes = 0
 
-		self.scheduler = Scheduler()
 		self.start()
 
 	def start(self):
-		self.scheduler.add(self.update_value, interval=BusStats.UPDATE_RATE)
+		event_handler.add(self.update_value, interval=BusStats.UPDATE_RATE)
 
-	def add_bytes(self, bytes):
-		self.bytes += bytes - BusStats.TCP_OVERHEAD
+	def add_bytes(self, bytes_handled):
+		self.bytes += bytes_handled - BusStats.TCP_OVERHEAD
 
 	def update_value(self):
 
-		current_rate = self.bytes / (time.time() - self.timestamp)
-		kodi.AddonSettings.set_bus_activity(current_rate/self.max_rate)
+		percent = self.bytes / ((time.time() - self.timestamp) * self.max_rate)
+		kodi.AddonSettings.set_bus_activity(percent)
+		log.debug("Current bus-activity: {:.2%}".format(percent))
 
 		self.bytes = 0
 		self.timestamp = time.time()

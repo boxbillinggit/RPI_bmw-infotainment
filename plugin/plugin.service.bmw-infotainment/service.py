@@ -37,8 +37,8 @@ def launch_initial_events():
 	Initial events launched when system is started!
 	"""
 
-	kombi_instrument = KombiInstrument(tcp_service.send)
-	kombi_instrument.set_text(kodi.AddonSettings.get_welcome_text())
+	kombi_instrument = KombiInstrument(tcp_service.send, tcp_service.filter.events)
+	kombi_instrument.welcome_text(kodi.AddonSettings.get_welcome_text())
 
 
 def set_callbacks():

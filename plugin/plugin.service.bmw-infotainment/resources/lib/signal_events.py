@@ -3,13 +3,10 @@ Handle initialization of all events, also implements methods for adding
 and removing events at runtime.
 """
 
-import time
-
-import system as module_system
 import kodi
 import signaldb
+import system as module_system
 from signal_methods import hexstring
-import settings
 from buttons import Button
 
 import log as log_module
@@ -32,24 +29,28 @@ class Index(object):
 		return self.index
 
 
-def init_system_events(scheduler, bind_event):
+def init_system_events(bind_event):
 
 	"""
 	State-machine for controlling power off and current MID-state (CD, TAPE, RADIO, etc..)
 	"""
 
-	system = module_system.State(scheduler)
+	system = module_system.State()
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), system.set_state_init)
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), system.set_state_shutdown)
 
 	# identifiers for currrent MID-state
 	# TODO: not fully implemented (need regexp to match data after (end of string), etc..)
-	bind_event(signaldb.create((None, "IBUS_DEV_GT", "areaX.X"), DATA=hexstring("CDC")), None)
-	bind_event(signaldb.create((None, "IBUS_DEV_GT", "areaX.X"), DATA=hexstring("TAPE")), None)
+	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=hexstring("CDC")), None)
+	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=hexstring("TAPE")), None)
+
+	# a state change is about to happen TODO get source and dst
+	mode_btn = Button(release=system.button_pressed)
+	bind_event(signaldb.create((None, None, "mode.push")), mode_btn.set_state_push)
+	bind_event(signaldb.create((None, None, "mode.release")), mode_btn.set_state_release)
 
 
-
-def init_buttons(button, bind_event):
+def init_controls(bind_event):
 
 	"""
 	Initialize all events for buttons.
@@ -57,55 +58,25 @@ def init_buttons(button, bind_event):
 
 	src, dst = ("IBUS_DEV_BMBT", None)
 
-	# regular expression for scroll speed (this data is matched and forwarded to method)
+	# regular expression for scroll speed (forwarded to method)
 	regexp = "([1-9])"
 
-	right_knob = button.new(hold=kodi.action("back"), release=kodi.action("Select"))
+	right_knob = Button(hold=kodi.action("back"), release=kodi.action("Select"))
 	bind_event(signaldb.create((src, dst, "right-knob.push")), right_knob.set_state_push)
 	bind_event(signaldb.create((src, dst, "right-knob.hold")), right_knob.set_state_hold)
 	bind_event(signaldb.create((src, dst, "right-knob.release")), right_knob.set_state_release)
 	bind_event(signaldb.create((src, dst, "right-knob.turn-left"), SCROLL_SPEED=regexp), kodi.action("up"))
 	bind_event(signaldb.create((src, dst, "right-knob.turn-right"), SCROLL_SPEED=regexp), kodi.action("down"))
 
-	left = button.new(hold=kodi.action("Left"), release=kodi.action("Left"))
+	left = Button(hold=kodi.action("Left"), release=kodi.action("Left"))
 	bind_event(signaldb.create((src, dst, "left.push")), left.set_state_push)
 	bind_event(signaldb.create((src, dst, "left.hold")), left.set_state_hold)
 	bind_event(signaldb.create((src, dst, "left.release")), left.set_state_release)
 
-	right = button.new(hold=kodi.action("Right"), release=kodi.action("Right"))
+	right = Button(hold=kodi.action("Right"), release=kodi.action("Right"))
 	bind_event(signaldb.create((src, dst, "right.push")), right.set_state_push)
 	bind_event(signaldb.create((src, dst, "right.hold")), right.set_state_hold)
 	bind_event(signaldb.create((src, dst, "right.release")), right.set_state_release)
-
-
-class ButtonFactory(object):
-
-	"""
-	Factory class for creating new instances of "NewButton".
-	"""
-
-	def __init__(self, scheduler):
-		self.scheduler = scheduler
-
-	def new(self, **kwargs):
-		return NewButton(self.scheduler, **kwargs)
-
-
-class NewButton(Button):
-
-	"""
-	Used to create a new button. This class implements a method for
-	"schedule_check_state_hold" (not implemented in Base class).
-	"""
-
-	def __init__(self, scheduler, **kwargs):
-		super(NewButton, self).__init__(**kwargs)
-		self.scheduler = scheduler
-
-	def schedule_check_state_hold(self):
-		# log.debug("{} -schedule_check_state_hold() ".format(self.__class__.__name__))
-		timestamp = time.time()+settings.Buttons.STATE_HOLD_INIT
-		self.scheduler.add(self.check_state_hold, timestamp=timestamp, interval=settings.Buttons.STATE_HOLD_INTERVAL)
 
 
 class Events(object):
@@ -115,24 +86,25 @@ class Events(object):
 	to dynamically update, add -or remove events at runtime.
 	"""
 
-	def __init__(self, scheduler):
+	INDEX, SIGNAL, METHOD, ARGS, KWARGS = range(5)
+
+	def __init__(self):
 
 		self.list = []
-		self.scheduler = scheduler
 		self.index = Index()
 
-		init_buttons(ButtonFactory(self.scheduler), self.bind_event)
-		init_system_events(self.scheduler, self.bind_event)
+		init_controls(self.bind_event)
+		init_system_events(self.bind_event)
 
-	def bind_event(self, signal, method, **kwargs):
+	def bind_event(self, signal, method, *args, **kwargs):
 
 		"""
 		Add one event to list. if keyword argument "static=False" is used, event will
 		be deleted from list after execution (one-time event)
 		"""
-		
+
 		index = self.index.inc()
-		item = (index, signal, method, kwargs)
+		item = (index, signal, method, args, kwargs)
 
 		self.list.append(item)
 		return index
@@ -142,11 +114,11 @@ class Events(object):
 		"""
 		Remove one event, with index as reference.
 		"""
-		
+
 		for item in self.list:
-			
-			index, signal, method, kwargs = item
-		
+
+			index = item[Events.INDEX]
+
 			if index == ref:
 				self.list.remove(item)
 				return index

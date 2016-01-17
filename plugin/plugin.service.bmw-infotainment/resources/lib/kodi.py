@@ -9,8 +9,6 @@ http://kodi.wiki/view/Action_IDs
 
 import settings
 import time
-import log as log_module
-log = log_module.init_logger(__name__)
 
 try:
 	import xbmc, xbmcgui, xbmcaddon

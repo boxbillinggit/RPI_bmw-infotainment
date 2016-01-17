@@ -5,10 +5,10 @@ This module handles received BUS-signals.
 import re
 
 from signal_events import Events
-from event_handler import Scheduler
+import event_handler
 import log as log_module
-log = log_module.init_logger(__name__)
 
+log = log_module.init_logger(__name__)
 __author__ = 'lars'
 
 
@@ -55,32 +55,31 @@ class Filter(object):
 
 	def __init__(self):
 
-		self.scheduler = Scheduler()
-		self.events = Events(self.scheduler)
+		self.events = Events()
 
 	def handle_signal(self, recvd_signal):
 
 		"""
 		Handles bus signals received from TCP/IP socket. Check if we have a matching
-		event. If match found, put task on event queue and stop searching.
+		event. If match found, put task on event queue but don't stop searching (could
+		be more events when using regexp, etc..).
 
-		Forward data from regexp as *args (if that data exists).
+		Forward data from regexp (if that data exists), along with args and kwargs
+		provided from binding event.
 
 		Signal is 3-tuple: (src, dst, data)
 		"""
 
 		for item in self.events.list:
 
-			index, signal, method, kwargs = item
+			index, signal, method, args, kwargs = item
 
 			match = match_found(recvd_signal, signal)
 
 			if match is not None:
-				self.scheduler.add(method, *match)
-				log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(recvd_signal)))
 
-				# if single-time-event
-				if not kwargs.get("static", True):
+				if not kwargs.pop("static", True):
 					self.events.list.remove(item)
 
-				break
+				event_handler.add(method, *(match+args), **kwargs)
+				log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(recvd_signal)))

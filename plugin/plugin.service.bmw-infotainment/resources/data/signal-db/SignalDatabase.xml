@@ -81,7 +81,7 @@
 				<byte val="0x02" id="DEV_READY">Poll response from device (answer to poll message)</byte>
 				<byte val="0x10" id="IGN_STATUS_REQ">Ignition status request</byte>
 				<byte val="0x0C" id="UNDEFINED">External lights, boot lid and lock/unlock car</byte>
-				<byte val="0x11" id="IGN_STATUS">Ignition key status</byte>
+				<byte val="0x11" id="IGN_KEY_STATUS">Ignition key status</byte>
 				<byte val="0x13" id="IKE_STATE">IKE informs about its state</byte>
 				<byte val="0x14" id="UNDEFINED">Country coding request</byte>
 				<byte val="0x15" id="UNDEFINED">Country coding response?. Set unit on IKE.</byte>
@@ -108,7 +108,7 @@
 				<byte val="0x5D" id="UNDEFINED">unknown</byte>
 				<byte val="0x6D" id="MFL_BUTTON">Side-view mirror button action</byte>
 				<byte val="0x72" id="REMOTE_KEY">Remote key button action</byte>
-				<byte val="0x74" id="IGN_KEY_STATUS">Ignition status response</byte>
+				<byte val="0x74" id="IGN_LOCK_STATUS">Ignition status response</byte>
 				<byte val="0x76" id="UNDEFINED">External lights</byte>
 				<byte val="0x79" id="UNDEFINED">unknown</byte>
 				<byte val="0x7A" id="UNDEFINED">Window and door message, interior light control</byte>
@@ -116,15 +116,24 @@
 				<byte val="0xA5" id="UNDEFINED">unknown</byte>
 			</OPERATION>
 
-			<!-- ignition key buttons (bit-mapped but states won't occur simultaneously)  -->
-			<ACTION type="?" operation="REMOTE_KEY">
+			<ACTION operation="IGN_KEY_STATUS">
 				<byte val="0x00" id="ign-key.acc"/>
 				<byte val="0x01" id="ign-key.on"/>
 				<byte val="0x02" id="ign-key.starter"/>
 			</ACTION>
 
+			<ACTION operation="IGN_LOCK_STATUS">
+				<byte val="0x04 0x01" id="ign-key.in"/>
+				<byte val="0x00 0xFF" id="ign-key.out"/>
+			</ACTION>
+
+			<!--  TODO: how to handle requests as operations-only? must be empty but are not allowed now.. have operation as tag? <IGN_STATUS_REQ>-->
+			<ACTION operation="IGN_STATUS_REQ">
+				<byte val="0x00" id="ign-key.req-state"/>
+			</ACTION>
+
 			<!-- remote key buttons -->
-			<ACTION type="button" operation="REMOTE_KEY">
+			<ACTION operation="REMOTE_KEY">
 				<byte val="0x02" id="remote-key.release"/>			
 				<byte val="0x12" id="remote-key.lock"/>
 				<byte val="0x22" id="remote-key.unlock"/>
@@ -132,7 +141,7 @@
 			</ACTION>
 			
 			<!-- Volume control for steering wheel buttons (and left turn knob on board monitor) -->	
-			<ACTION type="button" operation="VOLUME_CTRL">
+			<ACTION operation="VOLUME_CTRL">
 				 <byte val="0x11" id="volume-up.push"/>
 				 <byte val="0x31" id="volume-up.release"/>
 				 <byte val="0x10" id="volume-down.push"/>
@@ -140,7 +149,7 @@
 			</ACTION>
 			
 			<!-- Steering wheel buttons -->
-			<ACTION type="button" operation="MFL_BUTTON">
+			<ACTION operation="MFL_BUTTON">
 				<byte val="0x01" id="next.push"/>
 				<byte val="0x21" id="next.release"/>
 				<byte val="0x08" id="previous.push"/>
@@ -152,7 +161,7 @@
 			</ACTION>
 
 			<!-- Board monitor buttons -->	
-			<ACTION type="button" operation="BMBT_BUTTON">
+			<ACTION operation="BMBT_BUTTON">
 			
 				<!-- Buttons, left side -->			
 				<byte val="0x11" id="one.push"/>
@@ -238,7 +247,7 @@
 			</ACTION>
 
 			<!-- INFO-SELECT button (has a special identifier) -->
-			<ACTION type="button" operation="BMBT_INFO">
+			<ACTION operation="BMBT_INFO">
 		
 				<byte val="0x38" id="info.push"/>
 				<byte val="0x00 0x78" id="info.hold"/>
@@ -250,14 +259,9 @@
 			</ACTION>
 
 			<!-- right knob button has different speeds: 1-9, hence using placeholder {SCROLL_SPEED} -->
-			<ACTION type="button" operation="BMBT_RIGHT_KNOB">
+			<ACTION operation="BMBT_RIGHT_KNOB">
 				<byte val="0x0{SCROLL_SPEED}" id="right-knob.turn-right"/>
 				<byte val="0x8{SCROLL_SPEED}" id="right-knob.turn-left"/>
-			</ACTION>
-
-			<ACTION operation="IGN_KEY_STATUS">
-				<byte val="0x04 0x01" id="ign-key.in"/>
-				<byte val="0x00 0xFF" id="ign-key.out"/>
 			</ACTION>
 
 			<ACTION operation="IKE_DISPLAY_TEXT">
@@ -266,7 +270,7 @@
 			</ACTION>
 
 			<ACTION operation="BM_UPDATE_TEXTFIELD">
-				<byte val="0x62 0x10 {DATA}" id="areaX.X"/>
+				<byte val="0x62 0x10 {DATA}" id="text-area.unknown"/>
 			</ACTION>
 
 		</DATA>

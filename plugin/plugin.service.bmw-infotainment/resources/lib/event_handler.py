@@ -1,48 +1,50 @@
 """
-This module handle events in a separate thread.
+This module handle all events in a separate thread.
 """
 
 import threading
 import Queue
 import time
+import log as log_module
 
 try:
 	import xbmc
 except ImportError as err:
 	import debug.xbmc as xbmc
 
-import log as log_module
 log = log_module.init_logger(__name__)
+queue = Queue.Queue()
 
 __author__ 		= 'Lars'
 __monitor__ 	= xbmc.Monitor()
 
-# item on queue enumerated
+# item on queue
 METHOD, TIMESTAMP, INTERVAL, ARGS, KWARGS = range(5)
 
 
-class Scheduler(object):
+def add(method, *args, **kwargs):
 
 	"""
-	Interface for adding, removing and rescheduling items in scheduler. Some keyword arguments is
-	reserved for scheduler internally (and will not be forwarded to method):
+	Used for scheduling an event. following keyword-argument is used internally
+	and will not be forwarded to method;
 
-		interval=[None] 	- interval for periodic tasks
-		timestamp=[None]	- time when task shall be executed.
-		remove=[False] 		- remove task
-		reschedule=[True] 	- reschedule task if already exists in schedule (allows method to be scheduled
-							only once).
-
+		interval	= [None]  - interval for periodic tasks
+		timestamp	= [None]  - time when task shall be executed.
+		remove		= [False] - remove task
+		reschedule	= [True]  - reschedule task if already exists in schedule (allows method to be scheduled
+								only once).
 	"""
 
-	def __init__(self, queue=None):
-		self.queue = queue or EventHandler.Queue
+	queue.put((method, args, kwargs))
 
-	def add(self, event, *args, **kwargs):
-		self.queue.put((event, args, kwargs))
 
-	def remove(self, event):
-		self.queue.put((event, (), {"remove": True}))
+def remove(method):
+
+	"""
+	Used for removing an event from schedule.
+	"""
+
+	queue.put((method, (), {"remove": True}))
 
 
 class EventHandler(threading.Thread):
@@ -51,15 +53,13 @@ class EventHandler(threading.Thread):
 	This class runs in a separate worker thread and processes all queued tasks.
 	"""
 
-	Queue = Queue.Queue()
-
 	POLL_IDLE = 1.0
 	POLL_TASK = 0.2
 
-	def __init__(self, queue=None):
+	def __init__(self, new_queue=None):
 		super(EventHandler, self).__init__()
 		self.daemon = True
-		self.queue = queue or EventHandler.Queue
+		self.queue = new_queue or queue
 		self.schedule = []
 
 	def check_schedule(self):

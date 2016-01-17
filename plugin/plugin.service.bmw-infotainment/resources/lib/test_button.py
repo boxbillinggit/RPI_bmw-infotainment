@@ -1,4 +1,3 @@
-import time
 from unittest import TestCase
 from buttons import State, Button
 __author__ = 'lars'
@@ -69,11 +68,11 @@ class TestButton(TestCase):
 		"""
 		Check transition from INIT to HOLD.
 
-		No action expected.
+		No action expected, state shall not be updated.
 		"""
 
 		self.button.set_state_hold()
-		self.assertEqual(self.button.state, State.HOLD)
+		self.assertNotEqual(self.button.state, State.HOLD)
 		self.assertIsNone(self.event.action)
 
 	def test_from_init_to_release(self):
@@ -132,12 +131,13 @@ class TestButton(TestCase):
 		"""
 		Check transition from HOLD to PUSH.
 
-		This might happen if signals get lost, etc, hence no action is expected?
+		This might happen if signals get lost, etc. State transition is not
+		allowed; hence state is not updated and no action is expected.
 		"""
 
 		self.button.state = State.HOLD
 		self.button.set_state_push()
-		self.assertEqual(self.button.state, State.PUSH)
+		self.assertEqual(self.button.state, State.HOLD)
 		self.assertIsNone(self.event.action)
 
 	def test_from_hold_to_hold(self):
@@ -188,12 +188,13 @@ class TestButton(TestCase):
 		This might occur if signal for PUSH is lost, but receiving state HOLD
 		from the IBUS.
 
-		This is an error-state, hence no action shall be executed.
+		This is an error-state, state transition is not allowed; hence no action
+		shall be executed and state is not updated.
 		"""
 
 		self.button.state = State.RELEASE
 		self.button.set_state_hold()
-		self.assertEqual(self.button.state, State.HOLD)
+		self.assertEqual(self.button.state, State.RELEASE)
 		self.assertIsNone(self.event.action)
 
 	def test_from_release_to_release(self):
