@@ -73,10 +73,11 @@ class EventHandler(threading.Thread):
 
 		for task in self.schedule:
 
+			now = time.time()
 			timestamp = task[TIMESTAMP]
 			reschedule = False
 
-			if (timestamp is None) or (time.time() >= timestamp):
+			if (timestamp is None) or (now >= timestamp):
 
 				method, interval, args, kwargs = task[METHOD], task[INTERVAL], task[ARGS], task[KWARGS]
 
@@ -88,7 +89,11 @@ class EventHandler(threading.Thread):
 				self.schedule.remove(task)
 
 				if reschedule and interval:
-					periodic_tasks.append((method, (timestamp or time.time())+interval, interval, args, kwargs))
+
+					# if something goes wrong and system locks for a long while, we don't want to accumulate periodic tasks.
+					next_time = (timestamp if timestamp and (now - timestamp) < interval else now) + interval
+
+					periodic_tasks.append((method, next_time, interval, args, kwargs))
 
 				# log.debug("{} - events to schedule {}".format(self.__class__.__name__, len(self.schedule)))
 
