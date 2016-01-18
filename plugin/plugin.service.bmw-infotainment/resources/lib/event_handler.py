@@ -91,9 +91,11 @@ class EventHandler(threading.Thread):
 				if reschedule and interval:
 
 					# if something goes wrong and system locks for a long while, we don't want to accumulate periodic tasks.
-					next_time = (timestamp if timestamp and (now - timestamp) < interval else now) + interval
+					if timestamp and (now - timestamp) > interval:
+						log.warning("{} - System busy, periodic task were missed".format(self.__class__.__name__))
+						timestamp = now
 
-					periodic_tasks.append((method, next_time, interval, args, kwargs))
+					periodic_tasks.append((method, (timestamp or now)+interval, interval, args, kwargs))
 
 				# log.debug("{} - events to schedule {}".format(self.__class__.__name__, len(self.schedule)))
 
