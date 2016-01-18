@@ -4,9 +4,9 @@ This module handles received BUS-signals.
 
 import re
 
-from signal_events import Events
 import event_handler
 import log as log_module
+from signal_events import Events
 
 log = log_module.init_logger(__name__)
 __author__ = 'lars'
@@ -47,30 +47,26 @@ def match_found(bus_sig, event_sig):
 	return None if not devices_matches else check_if_data_matches(bus_data, data)
 
 
-class Filter(object):
+class SignalHandler(Events):
 
 	"""
-	Main class for this module. Filter BUS-messages to a matching event (if defined)
+	Interface implementing callbacks and methods for bus-signals.
 	"""
 
-	def __init__(self):
+	def __init__(self, send):
+		Events.__init__(self, send)
 
-		self.events = Events()
-
-	def handle_signal(self, recvd_signal):
+	def receive(self, recvd_signal):
 
 		"""
-		Handles bus signals received from TCP/IP socket. Check if we have a matching
-		event. If match found, put task on event queue but don't stop searching (could
-		be more events when using regexp, etc..).
-
-		Forward data from regexp (if that data exists), along with args and kwargs
-		provided from binding event.
+		Received a bus signal, filter against matching event, can use regular expressions.
+		Matched regexp defined in group will be forwarded to method as *args,  along with
+		*args and **kwargs provided from event-binding.
 
 		Signal is 3-tuple: (src, dst, data)
 		"""
 
-		for item in self.events.list:
+		for item in self.events:
 
 			index, signal, method, args, kwargs = item
 
@@ -79,7 +75,7 @@ class Filter(object):
 			if match is not None:
 
 				if not kwargs.pop("static", True):
-					self.events.list.remove(item)
+					self.events.remove(item)
 
 				event_handler.add(method, *(match+args), **kwargs)
 				log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(recvd_signal)))

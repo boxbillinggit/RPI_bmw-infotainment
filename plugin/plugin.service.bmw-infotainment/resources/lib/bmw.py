@@ -1,45 +1,37 @@
-import signaldb as sdb
+import signaldb
 
 __author__ = 'lars'
 
-SRC = "IBUS_DEV_CDC"
-
-
-def hexstring(string):
-
-	""" converts a string to hexstring"""
-
-	return " ".join(map(lambda char: "{:#x}".format(ord(char)), string))
+EMULATED_IBUS_DEV = "IBUS_DEV_CDC"
 
 
 class KombiInstrument(object):
 
+	DEVICE 		 = "IBUS_DEV_IKE"
 	DISPLAY_SIZE = 20
 
-	def __init__(self, send, signal_filter):
+	def __init__(self, send):
 		self.send = send
-		self.signal_filter = signal_filter
 
 	@staticmethod
 	def format_text(raw_text):
 
+		""" adjust size and convet to hex-string """
+
 		size = KombiInstrument.DISPLAY_SIZE
 		text = raw_text[:size] + " " * (size - len(raw_text[:size]))
 
-		return hexstring(text)
+		return signaldb.hex_string(text)
 
-	def write_text(self, text):
+	def write_to_display(self, text):
 
 		""" Write text to kombiinstrument-display! """
 
-		self.send(sdb.create((SRC, "IBUS_DEV_IKE", "ike-text.normal"), TEXT=self.format_text(text)))
+		self.send(signaldb.create((EMULATED_IBUS_DEV, self.DEVICE, "ike-text.normal"), TEXT=self.format_text(text)))
 
-	def welcome_text(self, text):
+	def request_ign_state(self):
 
-		"""
-		Show welcome-text only if ignition is on. Send ignition-status request and
-		set callback for ignition-status on.
-		"""
+		""" Request current ign-state """
 
-		self.signal_filter.bind_event(sdb.create(("IBUS_DEV_IKE", "IBUS_DEV_GLO", "ign-key.on")), self.write_text, text, static=False)
-		self.send(sdb.create((SRC, "IBUS_DEV_IKE", "ign-key.req-state")))
+		# self.send(signaldb.create((bmw.EMULATED_IBUS_DEV, bmw.EMULATED_IBUS_DEV, "IGN_STATUS_REQ")))
+		self.send(signaldb.create((EMULATED_IBUS_DEV, self.DEVICE, "ign-key.req-state")))

@@ -8,8 +8,8 @@ import kodi
 import log as log_module
 import signaldb
 import gateway_protocol
-import signal_handler
 import tcp_events
+from signal_handler import SignalHandler
 
 __author__ = 'lars'
 
@@ -70,7 +70,7 @@ class TCPIPHandler(tcp_events.Events):
 
 	def __init__(self):
 		super(TCPIPHandler, self).__init__()
-		self.filter = signal_handler.Filter()
+		self.signal_handler = SignalHandler(self.send)
 		self.bus_stats = BusStats()
 
 	def request_start(self):
@@ -119,5 +119,5 @@ class TCPIPHandler(tcp_events.Events):
 		raw_signals = self.handle_receive(bytearray(data))
 
 		for data in raw_signals:
-			self.filter.handle_signal(gateway_protocol.create_signal(data))
+			self.signal_handler.receive(gateway_protocol.create_signal(data))
 			self.bus_stats.add_bytes(len(data))

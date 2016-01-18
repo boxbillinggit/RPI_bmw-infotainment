@@ -6,11 +6,9 @@ http://kodi.wiki/view/Service_addons
 Python dev docs - http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 """
 import resources.lib.winpdb as winpdb
-import resources.lib.kodi as kodi
 import resources.lib.log as logger
 import resources.lib.libguicallback as guicallback
 
-from resources.lib.bmw import KombiInstrument
 from resources.lib.event_handler import EventHandler
 from resources.lib.tcp_handler import TCPIPHandler
 
@@ -28,7 +26,7 @@ __monitor__ 	= xbmc.Monitor()
 winpdb.launch_debugger()
 
 event_handler = EventHandler()
-tcp_service = TCPIPHandler()
+tcp_ip = TCPIPHandler()
 
 
 def launch_initial_events():
@@ -37,8 +35,7 @@ def launch_initial_events():
 	Initial events launched when system is started!
 	"""
 
-	kombi_instrument = KombiInstrument(tcp_service.send, tcp_service.filter.events)
-	kombi_instrument.welcome_text(kodi.AddonSettings.get_welcome_text())
+	tcp_ip.signal_handler.launch_initial_events()
 
 
 def set_callbacks():
@@ -48,8 +45,8 @@ def set_callbacks():
 	and service module, allowing callbacks from GUI to interact with service-module.
 	"""
 
-	guicallback.setOnConnect(tcp_service.request_start)
-	guicallback.setOnDisconnect(tcp_service.request_stop)
+	guicallback.setOnConnect(tcp_ip.request_start)
+	guicallback.setOnDisconnect(tcp_ip.request_stop)
 
 if __name__ == "__main__":
 
@@ -57,7 +54,7 @@ if __name__ == "__main__":
 
 	event_handler.start()
 
-	tcp_service.start()
+	tcp_ip.start()
 
 	launch_initial_events()
 
@@ -66,4 +63,4 @@ if __name__ == "__main__":
 		log.info("Bye!")
 
 		# Close socket gracefully (XBMC/KODI waits for thread to finish before it closes down)
-		tcp_service.request_stop()
+		tcp_ip.request_stop()

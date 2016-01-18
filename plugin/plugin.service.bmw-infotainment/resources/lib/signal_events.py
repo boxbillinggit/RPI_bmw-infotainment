@@ -6,7 +6,7 @@ and removing events at runtime.
 import kodi
 import signaldb
 import system as module_system
-from signal_methods import hexstring
+from bmw import KombiInstrument
 from buttons import Button
 
 import log as log_module
@@ -41,13 +41,18 @@ def init_system_events(bind_event):
 
 	# identifiers for currrent MID-state
 	# TODO: not fully implemented (need regexp to match data after (end of string), etc..)
-	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=hexstring("CDC")), None)
-	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=hexstring("TAPE")), None)
+	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("CDC")), None)
+	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("TAPE")), None)
 
-	# a state change is about to happen TODO get source and dst
+	# state identifiers
+	# this indicates that state was not changed from previous state..
+	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("NO TAPE")), None)
+	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("NO DISC")), None)
+
+	# possible state transitions
 	mode_btn = Button(release=system.button_pressed)
-	bind_event(signaldb.create((None, None, "mode.push")), mode_btn.set_state_push)
-	bind_event(signaldb.create((None, None, "mode.release")), mode_btn.set_state_release)
+	bind_event(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "mode.push")), mode_btn.set_state_push)
+	bind_event(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "mode.release")), mode_btn.set_state_release)
 
 
 def init_controls(bind_event):
@@ -58,43 +63,77 @@ def init_controls(bind_event):
 
 	src, dst = ("IBUS_DEV_BMBT", None)
 
-	# regular expression for scroll speed (forwarded to method)
+	# regular expression for scroll speed (forwarded speed to method)
 	regexp = "([1-9])"
 
 	right_knob = Button(hold=kodi.action("back"), release=kodi.action("Select"))
 	bind_event(signaldb.create((src, dst, "right-knob.push")), right_knob.set_state_push)
 	bind_event(signaldb.create((src, dst, "right-knob.hold")), right_knob.set_state_hold)
 	bind_event(signaldb.create((src, dst, "right-knob.release")), right_knob.set_state_release)
-	bind_event(signaldb.create((src, dst, "right-knob.turn-left"), SCROLL_SPEED=regexp), kodi.action("up"))
-	bind_event(signaldb.create((src, dst, "right-knob.turn-right"), SCROLL_SPEED=regexp), kodi.action("down"))
+	bind_event(signaldb.create((src, dst, "right-knob.turn-left"), SCROLL_SPEED=regexp), kodi.scroll("up"))
+	bind_event(signaldb.create((src, dst, "right-knob.turn-right"), SCROLL_SPEED=regexp), kodi.scroll("down"))
 
-	left = Button(hold=kodi.action("Left"), release=kodi.action("Left"))
+	left = Button(push=kodi.action("Left"), hold=kodi.action("Left"))
 	bind_event(signaldb.create((src, dst, "left.push")), left.set_state_push)
 	bind_event(signaldb.create((src, dst, "left.hold")), left.set_state_hold)
 	bind_event(signaldb.create((src, dst, "left.release")), left.set_state_release)
 
-	right = Button(hold=kodi.action("Right"), release=kodi.action("Right"))
+	right = Button(push=kodi.action("Right"), hold=kodi.action("Right"))
 	bind_event(signaldb.create((src, dst, "right.push")), right.set_state_push)
 	bind_event(signaldb.create((src, dst, "right.hold")), right.set_state_hold)
 	bind_event(signaldb.create((src, dst, "right.release")), right.set_state_release)
 
 
+class Methods(object):
+
+	"""
+	Methods dependent on bus-communication.
+	"""
+
+	def __init__(self, send):
+		self.send = send
+		self.kombi_instrument = KombiInstrument(send)
+
+	def welcome_text(self, bind_event):
+
+		"""
+		Show welcome-text only if ignition is on. Request ignition-status and
+		set callback for ignition-status on.
+		"""
+
+		text = kodi.AddonSettings.get_welcome_text()
+
+		bind_event(signaldb.create((KombiInstrument.DEVICE, "IBUS_DEV_GLO", "ign-key.on")), self.kombi_instrument.write_to_display, text, static=False)
+		self.kombi_instrument.request_ign_state()
+
+
 class Events(object):
 
 	"""
-	Main Class for this module. Initializes default events. it is also possible
-	to dynamically update, add -or remove events at runtime.
+	Callbacks to be triggered from a received signal. also containing
+	methods for to dynamically update, add -or remove events at runtime.
 	"""
 
 	INDEX, SIGNAL, METHOD, ARGS, KWARGS = range(5)
 
-	def __init__(self):
+	def __init__(self, send):
 
-		self.list = []
+		self.send = send
+		self.events = []
 		self.index = Index()
+		self.methods = Methods(self.send)
 
+		# init callbacks
 		init_controls(self.bind_event)
 		init_system_events(self.bind_event)
+
+	def launch_initial_events(self):
+
+		"""
+		Initial events launched when system is just started (called from service.py)!
+		"""
+
+		self.methods.welcome_text(self.bind_event)
 
 	def bind_event(self, signal, method, *args, **kwargs):
 
@@ -106,7 +145,7 @@ class Events(object):
 		index = self.index.inc()
 		item = (index, signal, method, args, kwargs)
 
-		self.list.append(item)
+		self.events.append(item)
 		return index
 
 	def unbind_event(self, ref):
@@ -115,10 +154,10 @@ class Events(object):
 		Remove one event, with index as reference.
 		"""
 
-		for item in self.list:
+		for item in self.events:
 
 			index = item[Events.INDEX]
 
 			if index == ref:
-				self.list.remove(item)
+				self.events.remove(item)
 				return index

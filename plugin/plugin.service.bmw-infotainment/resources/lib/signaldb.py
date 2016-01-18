@@ -40,6 +40,13 @@ class DBError(Exception):
 	pass
 
 
+def hex_string(string):
+
+	""" Convert a string (each character) to bytes, represented in a hex-string"""
+
+	return " ".join(map(lambda char: "{:#x}".format(ord(char)), string))
+
+
 def uniform(string):
 
 	"""
@@ -140,7 +147,7 @@ def data(ident):
 	)
 
 
-def find(item, **kwargs):
+def create(item, **kwargs):
 
 	"""
 	Find signal from name.
@@ -159,15 +166,3 @@ def find(item, **kwargs):
 		uniform(device(dst)) if dst else None,
 		uniform(data(event).format(**kwargs))
 	])
-
-
-def create(item, **kwargs):
-
-	"""
-	Main function for creating signals from reference-name. Catches exceptions.
-	"""
-
-	try:
-		return find(item, **kwargs)
-	except DBError as error:
-		log.error(error)

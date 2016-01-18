@@ -26,12 +26,19 @@ __addonid__		= __addon__.getAddonInfo('id')
 
 def action(event):
 
+	""" Factory method for creating callback."""
+
+	return lambda: _action(event)
+
+
+def scroll(direction):
+
 	"""
-	Factory function returning a executable action in XBMC/KODI. When scrolling
-	we must handle different speeds, hence *args is forwarded to method
+	Factory method for creating callback for e'scrolling (supports different
+	scroll-speeds
 	"""
 
-	return lambda *args: _action(event, *args)
+	return lambda *args: _action(direction, *args)
 
 
 def _action(event, *args):
@@ -47,7 +54,7 @@ def _action(event, *args):
 		if n > 0:
 			time.sleep(settings.Buttons.SCROLL_SPEED)
 
-		xbmc.executebuiltin("Action(%s)" % event)
+		xbmc.executebuiltin("Action({event})".format(event=event))
 
 
 def shutdown():
