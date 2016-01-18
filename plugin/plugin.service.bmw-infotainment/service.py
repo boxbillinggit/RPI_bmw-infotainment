@@ -10,7 +10,7 @@ import resources.lib.kodi as kodi
 import resources.lib.log as logger
 import resources.lib.libguicallback as guicallback
 
-from resources.lib.signal_methods import KombiInstrument
+from resources.lib.bmw import KombiInstrument
 from resources.lib.event_handler import EventHandler
 from resources.lib.tcp_handler import TCPIPHandler
 
