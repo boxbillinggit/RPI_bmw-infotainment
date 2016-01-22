@@ -116,8 +116,6 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 		when connected.
 		"""
 
-		# TODO: how to handle send? is it blocking long time, etc.. run in a separate thread??
-
 		if self.state_is(State.CONNECTED):
 			self.sendall(data)
 		else:

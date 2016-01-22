@@ -47,6 +47,13 @@ def remove(method):
 	queue.put((method, (), {"remove": True}))
 
 
+class TimingError(Exception):
+	"""
+	Exception raised if timing issues occurs when scheduling event.
+	"""
+	pass
+
+
 class EventHandler(threading.Thread):
 
 	"""
@@ -73,31 +80,31 @@ class EventHandler(threading.Thread):
 
 		for task in self.schedule:
 
-			now = time.time()
-			timestamp = task[TIMESTAMP]
+			now, timestamp = time.time(), task[TIMESTAMP]
 			reschedule = False
 
-			if (timestamp is None) or (now >= timestamp):
+			if timestamp and now < timestamp:
+				continue
 
-				method, interval, args, kwargs = task[METHOD], task[INTERVAL], task[ARGS], task[KWARGS]
+			method, interval, args, kwargs = task[METHOD], task[INTERVAL], task[ARGS], task[KWARGS]
 
-				try:
-					reschedule = method(*args, **kwargs)
-				except TypeError as error:
-					log.error("{} - {}".format(self.__class__.__name__, error))
+			try:
+				reschedule = method(*args, **kwargs)
+			except TypeError as error:
+				log.error("{} - {}".format(self.__class__.__name__, error))
 
-				self.schedule.remove(task)
+			self.schedule.remove(task)
 
-				if reschedule and interval:
+			if reschedule and interval:
 
-					# if something goes wrong and system locks for a long while, we don't want to accumulate periodic tasks.
-					if timestamp and (now - timestamp) > interval:
-						log.warning("{} - System busy, periodic task were missed".format(self.__class__.__name__))
-						timestamp = now
+				# if something goes wrong and system locks for a long while, we don't want to accumulate periodic tasks.
+				if timestamp and (now - timestamp) > interval:
+					log.warning("{} - System busy, periodic task were missed".format(self.__class__.__name__))
+					timestamp = now
 
-					periodic_tasks.append((method, (timestamp or now)+interval, interval, args, kwargs))
+				periodic_tasks.append((method, (timestamp or now)+interval, interval, args, kwargs))
 
-				# log.debug("{} - events to schedule {}".format(self.__class__.__name__, len(self.schedule)))
+			# log.debug("{} - events to schedule {}".format(self.__class__.__name__, len(self.schedule)))
 
 		self.schedule.extend(periodic_tasks)
 
@@ -119,13 +126,16 @@ class EventHandler(threading.Thread):
 		Append, remove or reschedule task.
 		"""
 
-		remove, reschedule = kwargs.pop("remove", False), kwargs.pop("reschedule", True)
+		remove_task, reschedule, interval = kwargs.pop("remove", False), kwargs.pop("reschedule", True), kwargs.pop("interval", None)
 
-		if reschedule or remove:
+		if interval and interval <= self.POLL_TASK:
+			raise TimingError("interval set lower than polling")
+
+		if reschedule or remove_task:
 			self.unschedule(method)
 
-		if not remove:
-			self.schedule.append((method, kwargs.pop("timestamp", None), kwargs.pop("interval", None), args, kwargs))
+		if not remove_task:
+			self.schedule.append((method, kwargs.pop("timestamp", None), interval, args, kwargs))
 
 	def run(self):
 

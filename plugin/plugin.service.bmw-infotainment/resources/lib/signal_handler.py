@@ -53,24 +53,36 @@ class SignalHandler(Events):
 	Interface implementing callbacks and methods for bus-signals.
 	"""
 
-	def __init__(self, send):
-		Events.__init__(self, send)
+	def __init__(self, handle_send):
+		self.handle_send = handle_send
+		Events.__init__(self, self.send)
 
-	def receive(self, recvd_signal):
+	def send(self, signal, *args, **kwargs):
+
+		"""
+		Use event-handler for sending since "handle_send is directly refereed down to
+		socket (could maybe be blocking, etc).
+		"""
+
+		event_handler.add(self.handle_send, signal, *args, **kwargs)
+
+	def receive(self, signal):
 
 		"""
 		Received a bus signal, filter against matching event, can use regular expressions.
 		Matched regexp defined in group will be forwarded to method as *args,  along with
 		*args and **kwargs provided from event-binding.
 
+		Callback from ThreadedSocket-thread, transfer task to EventHandler-thread instead.
+
 		Signal is 3-tuple: (src, dst, data)
 		"""
 
 		for item in self.events:
 
-			index, signal, method, args, kwargs = item
+			index, _signal, method, args, kwargs = item
 
-			match = match_found(recvd_signal, signal)
+			match = match_found(signal, _signal)
 
 			if match is not None:
 
@@ -78,4 +90,4 @@ class SignalHandler(Events):
 					self.events.remove(item)
 
 				event_handler.add(method, *(match+args), **kwargs)
-				log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(recvd_signal)))
+				log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(signal)))
