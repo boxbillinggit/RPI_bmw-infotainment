@@ -1,3 +1,13 @@
+v1.0.2
+ - New implementation; Welcome-text when ignition turns on, system
+   shutdown scheduled when ignition turns off. Monitor for LIN-bus
+   activity implemented.
+
+v1.0.1
+- Version bump. Previous unreleased versions was tagged with 1.0.0
+  hence bumping version for automatic updates to get notified.
+
+
 v1.0.0
 - Fist stable release!
   Basic controls (left, right, enter, back) for controlling XBMC/KODI
