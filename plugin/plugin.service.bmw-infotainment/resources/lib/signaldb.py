@@ -2,7 +2,8 @@
 Interface for handling signals in a convenient way. By using a human-readable reference-
 names when working with signals, instead of handling 'hard-to-read' raw bytearrays.
 All signals is now defined in one XML-database instead of spread-out everywhere in the
-code. Module returns a signal represented in a bytearray, using the signal-db.xml as reference.
+code. Module returns a signal represented in a hex-string, using the signal-db.xml as
+reference.
 
 Reference doc:
 https://docs.python.org/2/library/xml.etree.elementtree.html
@@ -31,6 +32,16 @@ __addonpath__	= __addon__.getAddonInfo('path')
 tree = ElementTree.parse(os.path.join(__addonpath__, settings.SignalDB.PATH))
 root = tree.getroot()
 
+parent = dict((c, p) for p in root.getiterator() for c in p)
+
+DATA = root.find("./MESSAGE/DATA")
+
+NAMESPACE = {
+	"signal": "sdb://signal",
+	"device": "sdb://device",
+	"ref":    "sdb://reference"
+}
+
 
 class DBError(Exception):
 	"""
@@ -58,93 +69,70 @@ def uniform(string):
 
 
 def validate(obj, ref=""):
-	if len(obj) == 1:
-		return obj[0]
 
-	raise DBError("{} - {} references(s) found in XML-database for '{}', expecting one item".format(__name__, len(obj), ref))
+	""" Check and validate number of results found from searching xml-db """
+
+	if len(obj) != 1:
+		raise DBError("{} - {} references(s) found in XML-database for '{}', expecting one item".format(__name__, len(obj), ref))
+
+	return obj[0]
+
+
+def get_val(obj):
+
+	""" get value from <byte>-tag """
+
+	val = obj.get('val')
+
+	if not val:
+		raise DBError("missing attribute 'val' for tag {}".format(ElementTree.tostring(obj)))
+
+	return val
 
 
 def get_setting(setting):
 
-	"""
-	Get communication port settings.
-	"""
+	"""	Get communication port settings """
 
 	return validate(root.findall("./COM-SETTINGS/{}".format(setting)), ref=setting).text
 
 
-def get_event(ident):
+def device(attr_id):
 
-	"""
-	Return the event object for further operations in this module.
+	"""	Return bytes for SRC and DST """
 
-	defined as <BYTE> within the <ACTION>-tag
-	"""
+	obj = validate(root.findall("./MESSAGE/byte[@device:id='{}']".format(attr_id), NAMESPACE), ref=attr_id)
 
-	return validate(root.findall("./MESSAGE/DATA/ACTION/byte[@id='{}']/..".format(ident)), ref=ident)
+	return get_val(obj)
 
 
-def operation(event):
+def get_byte_from_reference(attr_id):
 
-	"""
-	Return byte for operation - which is the first byte of the DATA-chunk
+	""" Get byte with attribute ref:id """
 
-	defined within <OPERATION>-tag
-	"""
+	obj = validate(root.findall("./MESSAGE/DATA//byte[@ref:id='{}']".format(attr_id), NAMESPACE), ref=attr_id)
 
-	ident = event.get('operation')
-	res = validate(root.findall("./MESSAGE/DATA/OPERATION/byte[@id='{}']".format(ident)), ref=ident).get('val')
-
-	if not res:
-		raise DBError("missing attribute 'val' for {}".format(ident))
-
-	return res
+	return get_val(obj)
 
 
-def action(event, ident):
+def data(attr_id):
 
-	"""
-	Return bytes for action - which is the second part of the DATA-chunk
+	""" traverse upward and replace reference-tag with byte, until end is reached (when parent tag is <DATA>) """
 
-	defined within <ACTION>-tag
-	"""
+	chunk = []
 
-	res = validate(event.findall("byte[@id='{}']".format(ident)), ref=ident).get('val')
+	data_tag = validate(root.findall("./MESSAGE/DATA//byte[@signal:id='{}']".format(attr_id), NAMESPACE), attr_id)
+	chunk.append(get_val(data_tag))
+	obj = parent.get(data_tag)
 
-	if not res:
-		raise DBError("missing attribute 'val' for {}".format(ident))
+	while not (obj is DATA) or (obj is None):
 
-	return res
+		chunk.append(get_byte_from_reference(obj.tag))
+		obj = parent.get(obj)
 
+	chunk.reverse()
 
-def device(ident):
-
-	"""
-	Return bytes for SRC and DST.
-
-	defined within <DEVICE>-tag
-	"""
-
-	res = validate(root.findall("./MESSAGE/DEVICE/byte[@id='{}']".format(ident)), ref=ident).get('val')
-
-	if not res:
-		raise DBError("missing attribute 'val' for {}".format(ident))
-
-	return res
-
-
-def data(ident):
-
-	"""
-	Return bytes for DATA-chunk (from operation + action)
-	"""
-
-	event = get_event(ident)
-
-	return None if event is None else (
-		operation(event) + " " +
-		action(event, ident)
-	)
+	return " ".join(chunk)
 
 
 def create(item, **kwargs):
@@ -152,7 +140,7 @@ def create(item, **kwargs):
 	"""
 	Find signal from name.
 
-	Return signal in type string, represented in a 3-tuple (SRC, DST, DATA)
+	Return signal in hex-string, represented in a 3-tuple (SRC, DST, DATA)
 	"""
 
 	src, dst, event = item

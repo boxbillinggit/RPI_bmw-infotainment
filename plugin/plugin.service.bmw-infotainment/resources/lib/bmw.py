@@ -14,9 +14,9 @@ class KombiInstrument(object):
 		self.send = send
 
 	@staticmethod
-	def format_text(raw_text):
+	def _format_text(raw_text):
 
-		""" adjust size and convet to hex-string """
+		""" adjust size and convert to hex-string """
 
 		size = KombiInstrument.DISPLAY_SIZE
 		text = raw_text[:size] + " " * (size - len(raw_text[:size]))
@@ -27,11 +27,10 @@ class KombiInstrument(object):
 
 		""" Write text to kombiinstrument-display! """
 
-		self.send(signaldb.create((EMULATED_IBUS_DEV, self.DEVICE, "ike-text.normal"), TEXT=self.format_text(text)))
+		self.send(signaldb.create((EMULATED_IBUS_DEV, self.DEVICE, "ike-text.normal"), TEXT=self._format_text(text)))
 
 	def request_ign_state(self):
 
 		""" Request current ign-state """
 
-		# self.send(signaldb.create((bmw.EMULATED_IBUS_DEV, bmw.EMULATED_IBUS_DEV, "IGN_STATUS_REQ")))
-		self.send(signaldb.create((EMULATED_IBUS_DEV, self.DEVICE, "ign-key.req-state")))
+		self.send(signaldb.create((EMULATED_IBUS_DEV, self.DEVICE, "ign-key.req-sts")))

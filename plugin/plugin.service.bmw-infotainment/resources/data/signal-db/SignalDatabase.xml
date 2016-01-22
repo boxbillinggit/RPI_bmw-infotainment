@@ -4,17 +4,20 @@
 
 <!--
 	BMW IBUS signal database. Convenient way of handling all bus-signals. Supporting
-	placeholder expressed as {data} witch is replaced during signal translation in
-	signaldb.py
+	placeholders expressed as {data} witch is replaced during signal translation in
+	signaldb.py by providing **kwargs to signaldb.create()
+
+	<byte> with namespace "signal" indicates that this is a signal. Start traversing
+	upwards, replace tags with <byte>.
 
 	References:
 	iBus Core Repository - http://en4cer.co.uk/bmw-carputers/forum/viewtopic.php?p=139&sid=dcb37de01ede7b2b449cb76dc2deb9c1
-
-	TODO: fix an image-reference attribute for each tag for xsl-template.
 -->
 
 
-<IBUS>
+<IBUS	xmlns:device="sdb://device"
+		xmlns:signal="sdb://signal"
+		xmlns:ref="sdb://reference">
 
 	<!-- IBUS Communication protocol definition -->
 	<COM-SETTINGS>
@@ -24,254 +27,245 @@
 		<StopBits>1</StopBits>
 		<Handshake>none</Handshake>
 	</COM-SETTINGS>
-	
-	<!-- IBUS Message definition -->
+
 	<MESSAGE>
-	
-		<!-- SourceID -and DestinationID descriptions -->
-		<DEVICE>
-			<byte val="0x00" id="IBUS_DEV_GM">Body Module</byte>
-			<byte val="0x18" id="IBUS_DEV_CDC">CD Changer</byte>
-			<byte val="0x28" id="IBUS_DEV_FUH">Radio controlled clock</byte>
-			<byte val="0x30" id="IBUS_DEV_CCM">Check control module</byte>
-			<byte val="0x3B" id="IBUS_DEV_GT">Graphics driver (in navigation system)</byte>
-			<byte val="0x3F" id="IBUS_DEV_DIA">Diagnostic</byte>
-			<byte val="0x40" id="IBUS_DEV_FBZV">Remote control central locking</byte>
-			<byte val="0x43" id="IBUS_DEV_GTF">Graphics driver for rear screen (in navigation system)</byte>
-			<byte val="0x44" id="IBUS_DEV_EWS">Immobiliser</byte>
-			<byte val="0x46" id="IBUS_DEV_CID">Central information display (flip-up LCD screen)</byte>
-			<byte val="0x50" id="IBUS_DEV_MFL">Multi function steering wheel</byte>
-			<byte val="0x51" id="IBUS_DEV_MM">Mirror memory</byte>
-			<byte val="0x5B" id="IBUS_DEV_IHK">Integrated heating and air conditioning</byte>
-			<byte val="0x60" id="IBUS_DEV_PDC">Park distance control</byte>
-			<byte val="0x67" id="IBUS_DEV_ONL">unknown</byte>
-			<byte val="0x68" id="IBUS_DEV_RAD">Radio</byte>
-			<byte val="0x6A" id="IBUS_DEV_DSP">Digital signal processing audio amplifier (DSP)</byte>
-			<byte val="0x72" id="IBUS_DEV_SM1">Seat memory</byte>
-			<byte val="0x76" id="IBUS_DEV_CDCD">CD changer, DIN size.</byte>
-			<byte val="0x7F" id="IBUS_DEV_NAVE">Navigation (Europe)</byte>
-			<byte val="0x80" id="IBUS_DEV_IKE">Instrument cluster electronics</byte>
-			<byte val="0x9B" id="IBUS_DEV_MM1">Mirror memory</byte>
-			<byte val="0x9C" id="IBUS_DEV_MM2">Mirror memory</byte>
-			<byte val="0xA0" id="IBUS_DEV_FMID">Rear multi-info-display</byte>
-			<byte val="0xA4" id="IBUS_DEV_ABM">Air bag module</byte>
-			<byte val="0xA8" id="IBUS_DEV_KAM">unknown</byte>
-			<byte val="0xAC" id="IBUS_DEV_ASP">unknown</byte>
-			<byte val="0xB0" id="IBUS_DEV_SES">Speed recognition system</byte>
-			<byte val="0xBB" id="IBUS_DEV_NAVJ">Navigation (Japan)</byte>
-			<byte val="0xBF" id="IBUS_DEV_GLO">Global, broadcast address</byte>
-			<byte val="0xC0" id="IBUS_DEV_MID">Multi-info display</byte>
-			<byte val="0xC8" id="IBUS_DEV_TEL">Telephone</byte>
-			<byte val="0xD0" id="IBUS_DEV_LCM">Light control module</byte>
-			<byte val="0xDA" id="IBUS_DEV_SM2">Seat memory</byte>
-			<byte val="0xE0" id="IBUS_DEV_IRIS">Integrated radio information system</byte>
-			<byte val="0xE7" id="IBUS_DEV_ANZV">Front display</byte>
-			<byte val="0xE8" id="IBUS_DEV_ISP">unknown</byte>
-			<byte val="0xED" id="IBUS_DEV_TV">Television</byte>
-			<byte val="0xF0" id="IBUS_DEV_BMBT">On-board monitor operating part</byte>
-			<byte val="0xF5" id="IBUS_DEV_CSU">unknown</byte>
-			<byte val="0xFF" id="IBUS_DEV_LOC">Local</byte>
-		</DEVICE>
+
+		<byte val="0x00" device:id="IBUS_DEV_GM">Body Module</byte>
+		<byte val="0x18" device:id="IBUS_DEV_CDC">CD Changer</byte>
+		<byte val="0x28" device:id="IBUS_DEV_FUH">Radio controlled clock</byte>
+		<byte val="0x30" device:id="IBUS_DEV_CCM">Check control module</byte>
+		<byte val="0x3B" device:id="IBUS_DEV_GT">Graphics driver (in navigation system)</byte>
+		<byte val="0x3F" device:id="IBUS_DEV_DIA">Diagnostic</byte>
+		<byte val="0x40" device:id="IBUS_DEV_FBZV">Remote control central locking</byte>
+		<byte val="0x43" device:id="IBUS_DEV_GTF">Graphics driver for rear screen (in navigation system)</byte>
+		<byte val="0x44" device:id="IBUS_DEV_EWS">Immobiliser</byte>
+		<byte val="0x46" device:id="IBUS_DEV_CID">Central information display (flip-up LCD screen)</byte>
+		<byte val="0x50" device:id="IBUS_DEV_MFL">Multi function steering wheel</byte>
+		<byte val="0x51" device:id="IBUS_DEV_MM">Mirror memory</byte>
+		<byte val="0x5B" device:id="IBUS_DEV_IHK">Integrated heating and air conditioning</byte>
+		<byte val="0x60" device:id="IBUS_DEV_PDC">Park distance control</byte>
+		<byte val="0x67" device:id="IBUS_DEV_ONL">unknown</byte>
+		<byte val="0x68" device:id="IBUS_DEV_RAD">Radio</byte>
+		<byte val="0x6A" device:id="IBUS_DEV_DSP">Digital signal processing audio amplifier (DSP)</byte>
+		<byte val="0x72" device:id="IBUS_DEV_SM1">Seat memory</byte>
+		<byte val="0x76" device:id="IBUS_DEV_CDCD">CD changer, DIN size.</byte>
+		<byte val="0x7F" device:id="IBUS_DEV_NAVE">Navigation (Europe)</byte>
+		<byte val="0x80" device:id="IBUS_DEV_IKE">Instrument cluster electronics</byte>
+		<byte val="0x9B" device:id="IBUS_DEV_MM1">Mirror memory</byte>
+		<byte val="0x9C" device:id="IBUS_DEV_MM2">Mirror memory</byte>
+		<byte val="0xA0" device:id="IBUS_DEV_FMID">Rear multi-info-display</byte>
+		<byte val="0xA4" device:id="IBUS_DEV_ABM">Air bag module</byte>
+		<byte val="0xA8" device:id="IBUS_DEV_KAM">unknown</byte>
+		<byte val="0xAC" device:id="IBUS_DEV_ASP">unknown</byte>
+		<byte val="0xB0" device:id="IBUS_DEV_SES">Speed recognition system</byte>
+		<byte val="0xBB" device:id="IBUS_DEV_NAVJ">Navigation (Japan)</byte>
+		<byte val="0xBF" device:id="IBUS_DEV_GLO">Global, broadcast address</byte>
+		<byte val="0xC0" device:id="IBUS_DEV_MID">Multi-info display</byte>
+		<byte val="0xC8" device:id="IBUS_DEV_TEL">Telephone</byte>
+		<byte val="0xD0" device:id="IBUS_DEV_LCM">Light control module</byte>
+		<byte val="0xDA" device:id="IBUS_DEV_SM2">Seat memory</byte>
+		<byte val="0xE0" device:id="IBUS_DEV_IRIS">Integrated radio information system</byte>
+		<byte val="0xE7" device:id="IBUS_DEV_ANZV">Front display</byte>
+		<byte val="0xE8" device:id="IBUS_DEV_ISP">unknown</byte>
+		<byte val="0xED" device:id="IBUS_DEV_TV">Television</byte>
+		<byte val="0xF0" device:id="IBUS_DEV_BMBT">On-board monitor operating part</byte>
+		<byte val="0xF5" device:id="IBUS_DEV_CSU">unknown</byte>
+		<byte val="0xFF" device:id="IBUS_DEV_LOC">Local</byte>
 
 		<DATA>
 
-			<!-- Operations is always first byte in 'data' -->
-			<OPERATION>
-				<byte val="0x01" id="DEV_POLL">Poll any device</byte>
-				<byte val="0x02" id="DEV_READY">Poll response from device (answer to poll message)</byte>
-				<byte val="0x10" id="IGN_STATUS_REQ">Ignition status request</byte>
-				<byte val="0x0C" id="UNDEFINED">External lights, boot lid and lock/unlock car</byte>
-				<byte val="0x11" id="IGN_KEY_STATUS">Ignition key status</byte>
-				<byte val="0x13" id="IKE_STATE">IKE informs about its state</byte>
-				<byte val="0x14" id="UNDEFINED">Country coding request</byte>
-				<byte val="0x15" id="UNDEFINED">Country coding response?. Set unit on IKE.</byte>
-				<byte val="0x18" id="UNDEFINED">Speed and rpm</byte>
-				<byte val="0x1A" id="IKE_DISPLAY_TEXT">IKE text display</byte>
-				<byte val="0x21" id="UNDEFINED">unknown</byte>
-				<byte val="0x23" id="BM_UPDATE_TEXTFIELD">Write value to boardmonitor text field</byte>
-				<byte val="0x24" id="UNDEFINED">IKE data request</byte>
-				<byte val="0x2B" id="UNDEFINED">LED command to BM </byte>
-				<byte val="0x2C" id="UNDEFINED">Display Phone symbol</byte>
-				<byte val="0x31" id="UNDEFINED">unknown</byte>
-				<byte val="0x32" id="VOLUME_CTRL">Volume adjustment (wheel button and BMBT button)</byte>
-				<byte val="0x38" id="UNDEFINED">CD status and track info, request</byte>
-				<byte val="0x39" id="UNDEFINED">CD status and track info, response</byte>
-				<byte val="0x3B" id="MFL_BUTTON">Steering wheel button action</byte>
-				<byte val="0x40" id="UNDEFINED">Set date and time </byte>
-				<byte val="0x41" id="UNDEFINED">OBC get and reset value</byte>
-				<byte val="0x46" id="UNDEFINED">Menu commands to NAV </byte>
-				<byte val="0x47" id="BMBT_INFO">INFO/SELECT board monitor button</byte>
-				<byte val="0x48" id="BMBT_BUTTON">Board monitor button action</byte>
-				<byte val="0x49" id="BMBT_RIGHT_KNOB">Board monitor right-knob turn left/right</byte>
-				<byte val="0x4A" id="UNDEFINED">LED on left BM button</byte>
-				<byte val="0x4F" id="UNDEFINED">unknown</byte>
-				<byte val="0x5D" id="UNDEFINED">unknown</byte>
-				<byte val="0x6D" id="MFL_BUTTON">Side-view mirror button action</byte>
-				<byte val="0x72" id="REMOTE_KEY">Remote key button action</byte>
-				<byte val="0x74" id="IGN_LOCK_STATUS">Ignition status response</byte>
-				<byte val="0x76" id="UNDEFINED">External lights</byte>
-				<byte val="0x79" id="UNDEFINED">unknown</byte>
-				<byte val="0x7A" id="UNDEFINED">Window and door message, interior light control</byte>
-				<byte val="0xA2" id="UNDEFINED">NAV position and time</byte>
-				<byte val="0xA5" id="UNDEFINED">unknown</byte>
-			</OPERATION>
+			<!-- Operations is defined as first byte in 'data' -->
+			<byte val="0x01" signal:id="device.poll">Poll any device</byte>
+			<byte val="0x02" ref:id="DEV_READY">Poll response from device (answer to poll message)</byte>
+			<byte val="0x0C" ref:id="UNDEFINED">External lights, boot lid and lock/unlock car</byte>
+			<byte val="0x10" signal:id="ign-key.req-sts">Ignition status request</byte>
+			<byte val="0x11" ref:id="IGN_KEY_STATUS">Ignition key status</byte>
+			<byte val="0x13" ref:id="IKE_STATE">IKE informs about its state</byte>
+			<byte val="0x14" ref:id="UNDEFINED">Country coding request</byte>
+			<byte val="0x15" ref:id="UNDEFINED">Country coding response?. Set unit on IKE.</byte>
+			<byte val="0x18" ref:id="UNDEFINED">Speed and rpm</byte>
+			<byte val="0x1A" ref:id="IKE_DISPLAY_TEXT">IKE text display</byte>
+			<byte val="0x21" ref:id="UNDEFINED">unknown</byte>
+			<byte val="0x23" ref:id="BM_UPDATE_TEXTFIELD">Write value to boardmonitor text field</byte>
+			<byte val="0x24" ref:id="UNDEFINED">IKE byte request</byte>
+			<byte val="0x2B" ref:id="UNDEFINED">LED command to BM </byte>
+			<byte val="0x2C" ref:id="UNDEFINED">Display Phone symbol</byte>
+			<byte val="0x31" ref:id="UNDEFINED">unknown</byte>
+			<byte val="0x32" ref:id="VOLUME_CTRL">Volume adjustment (wheel button and BMBT button)</byte>
+			<byte val="0x38" ref:id="CD_STATUS_REQUEST">CD status and track info, request</byte>
+			<byte val="0x39" ref:id="CD_STATUS_RESPONSE">CD status and track info, response</byte>
+			<byte val="0x3B" ref:id="MFL_BUTTON">Steering wheel button action</byte>
+			<byte val="0x40" ref:id="UNDEFINED">Set date and time </byte>
+			<byte val="0x41" ref:id="UNDEFINED">OBC get and reset value</byte>
+			<byte val="0x46" ref:id="UNDEFINED">Menu commands to NAV </byte>
+			<byte val="0x47" ref:id="BMBT_INFO_SELECT">INFO/SELECT board monitor button</byte>
+			<byte val="0x48" ref:id="BMBT_BUTTON">Board monitor button action</byte>
+			<byte val="0x49" ref:id="BMBT_RIGHT_KNOB">Board monitor right-knob turn left/right</byte>
+			<byte val="0x4A" ref:id="UNDEFINED">LED on left BM button</byte>
+			<byte val="0x4F" ref:id="UNDEFINED">unknown</byte>
+			<byte val="0x5D" ref:id="UNDEFINED">unknown</byte>
+			<byte val="0x6D" ref:id="SIDEVIEW_MIRROR_BTN">Side-view mirror button action</byte>
+			<byte val="0x72" ref:id="REMOTE_KEY">Remote key button action</byte>
+			<byte val="0x74" ref:id="IGN_LOCK_STATUS">Ignition status response</byte>
+			<byte val="0x76" ref:id="UNDEFINED">External lights</byte>
+			<byte val="0x79" ref:id="UNDEFINED">unknown</byte>
+			<byte val="0x7A" ref:id="UNDEFINED">Window and door message, interior light control</byte>
+			<byte val="0xA2" ref:id="UNDEFINED">NAV position and time</byte>
+			<byte val="0xA5" ref:id="UNDEFINED">unknown</byte>
 
-			<ACTION operation="IGN_KEY_STATUS">
-				<byte val="0x00" id="ign-key.acc"/>
-				<byte val="0x01" id="ign-key.on"/>
-				<byte val="0x02" id="ign-key.starter"/>
-			</ACTION>
+			<IGN_KEY_STATUS>
+				<byte val="0x00" signal:id="ign-key.off"/>
+				<byte val="0x01" signal:id="ign-key.acc"/>
+				<byte val="0x03" signal:id="ign-key.on"/>
+				<byte val="0x07" signal:id="ign-key.starter"/>
+			</IGN_KEY_STATUS>
 
-			<ACTION operation="IGN_LOCK_STATUS">
-				<byte val="0x04 0x01" id="ign-key.in"/>
-				<byte val="0x00 0xFF" id="ign-key.out"/>
-			</ACTION>
+			<IGN_LOCK_STATUS>
+				<byte val="0x04 0x01" signal:id="ign-key.in"/>
+				<byte val="0x00 0xFF" signal:id="ign-key.out"/>
+			</IGN_LOCK_STATUS>
 
-			<!--  TODO: how to handle requests as operations-only? must be empty but are not allowed now.. have operation as tag? <IGN_STATUS_REQ>-->
-			<ACTION operation="IGN_STATUS_REQ">
-				<byte val="0x00" id="ign-key.req-state"/>
-			</ACTION>
+			<REMOTE_KEY>
+				<byte val="0x02" signal:id="remote-key.release"/>
+				<byte val="0x12" signal:id="remote-key.lock"/>
+				<byte val="0x22" signal:id="remote-key.unlock"/>
+				<byte val="0x42" signal:id="remote-key.boot-lid"/>
+			</REMOTE_KEY>
 
-			<!-- remote key buttons -->
-			<ACTION operation="REMOTE_KEY">
-				<byte val="0x02" id="remote-key.release"/>			
-				<byte val="0x12" id="remote-key.lock"/>
-				<byte val="0x22" id="remote-key.unlock"/>
-				<byte val="0x42" id="remote-key.boot-lid"/>
-			</ACTION>
-			
-			<!-- Volume control for steering wheel buttons (and left turn knob on board monitor) -->	
-			<ACTION operation="VOLUME_CTRL">
-				 <byte val="0x11" id="volume-up.push"/>
-				 <byte val="0x31" id="volume-up.release"/>
-				 <byte val="0x10" id="volume-down.push"/>
-				 <byte val="0x30" id="volume-down.release"/>
-			</ACTION>
+			<VOLUME_CTRL>
+				 <byte val="0x11" signal:id="volume-up.push"/>
+				 <byte val="0x31" signal:id="volume-up.release"/>
+				 <byte val="0x10" signal:id="volume-down.push"/>
+				 <byte val="0x30" signal:id="volume-down.release"/>
+			</VOLUME_CTRL>
 			
 			<!-- Steering wheel buttons -->
-			<ACTION operation="MFL_BUTTON">
-				<byte val="0x01" id="next.push"/>
-				<byte val="0x21" id="next.release"/>
-				<byte val="0x08" id="previous.push"/>
-				<byte val="0x28" id="previous.release"/>					
-				<byte val="0x80" id="RT.push"/>
-				<data val="0x80" id="voice.push"/>
-				<data val="0x90" id="voice.hold"/>
-				<data val="0xA0" id="voice.release"/>					
-			</ACTION>
+			<MFL_BUTTON>
+				<byte val="0x01" signal:id="next.push"/>
+				<byte val="0x21" signal:id="next.release"/>
 
-			<!-- Board monitor buttons -->	
-			<ACTION operation="BMBT_BUTTON">
-			
-				<!-- Buttons, left side -->			
-				<byte val="0x11" id="one.push"/>
-				<byte val="0x51" id="one.hold"/>
-				<byte val="0x91" id="one.release"/>
-				
-				<byte val="0x02" id="four.push"/>
-				<byte val="0x42" id="four.hold"/>
-				<byte val="0x82" id="four.release"/>
-				
-				<byte val="0x01" id="two.push"/>
-				<byte val="0x41" id="two.hold"/>
-				<byte val="0x81" id="two.release"/>
-				
-				<byte val="0x13" id="five.push"/>
-				<byte val="0x52" id="five.hold"/>
-				<byte val="0x93" id="five.release"/>
-				
-				<byte val="0x12" id="three.push"/>
-				<byte val="0x52" id="three.hold"/>
-				<byte val="0x92" id="three.release"/>
-				
-				<byte val="0x03" id="six.push"/>
-				<byte val="0x43" id="six.hold"/>
-				<byte val="0x83" id="six.release"/>
-				
-				<byte val="0x31" id="FM.push"/>
-				<byte val="0x71" id="FM.hold"/>
-				<byte val="0xB1" id="FM.release"/>
-				
-				<byte val="0x21" id="AM.push"/>
-				<byte val="0x61" id="AM.hold"/>
-				<byte val="0xA1" id="AM.release"/>
-				
-				<byte val="0x23" id="mode.push"/>
-				<byte val="0x63" id="mode.hold"/>
-				<byte val="0xA3" id="mode.release"/>
-				
-				<byte val="0x30" id="source.push"/>
-				<byte val="0x70" id="source.hold"/>
-				<byte val="0xB0" id="source.release"/>
+				<byte val="0x08" signal:id="previous.push"/>
+				<byte val="0x28" signal:id="previous.release"/>
 
-				<byte val="0x06" id="left-knob.push"/>
-				<byte val="0x46" id="left-knob.hold"/>
-				<byte val="0x86" id="left-knob.release"/>
-				
-				<!-- Buttons, right side -->	
-				<byte val="0x24" id="eject.push"/>
-				<byte val="0x64" id="eject.hold"/>
-				<byte val="0xA4" id="eject.release"/>
-				
-				<byte val="0x08" id="phone.push"/>
-				<byte val="0x48" id="phone.hold"/>
-				<byte val="0x88" id="phone.release"/>	
-				
-				<byte val="0x14" id="reverse-tape.push"/>
-				<byte val="0x54" id="reverse-tape.hold"/>
-				<byte val="0x94" id="reverse-tape.release"/>
-				
-				<byte val="0x07" id="clock.push"/>
-				<byte val="0x47" id="clock.hold"/>
-				<byte val="0x87" id="clock.release"/>	
+				<byte val="0x80" signal:id="RT.push"/>
+				<byte val="0x40" signal:id="RT.poll-response"/>
 
-				<byte val="0x04" id="tone.push"/>
-				<byte val="0x44" id="tone.hold"/>
-				<byte val="0x84" id="tone.release"/>
+				<byte val="0x80" signal:id="voice.push"/>
+				<byte val="0x90" signal:id="voice.hold"/>
+				<byte val="0xA0" signal:id="voice.release"/>
+			</MFL_BUTTON>
+
+			<BMBT_BUTTON>
+
+				<!-- Buttons, left side -->
+				<byte val="0x11" signal:id="one.push"/>
+				<byte val="0x51" signal:id="one.hold"/>
+				<byte val="0x91" signal:id="one.release"/>
 				
-				<byte val="0x10" id="left.push"/>
-				<byte val="0x50" id="left.hold"/>
-				<byte val="0x90" id="left.release"/>
+				<byte val="0x02" signal:id="four.push"/>
+				<byte val="0x42" signal:id="four.hold"/>
+				<byte val="0x82" signal:id="four.release"/>
 				
-				<byte val="0x00" id="right.push"/>
-				<byte val="0x40" id="right.hold"/>
-				<byte val="0x80" id="right.release"/>
-
-				<byte val="0x34" id="menu.push"/>
-				<byte val="0x74" id="menu.hold"/>
-				<byte val="0xB4" id="menu.release"/>
+				<byte val="0x01" signal:id="two.push"/>
+				<byte val="0x41" signal:id="two.hold"/>
+				<byte val="0x81" signal:id="two.release"/>
 				
-				<byte val="0x05" id="right-knob.push"/>
-				<byte val="0x45" id="right-knob.hold"/>
-				<byte val="0x85" id="right-knob.release"/>
-			</ACTION>
+				<byte val="0x13" signal:id="five.push"/>
+				<byte val="0x52" signal:id="five.hold"/>
+				<byte val="0x93" signal:id="five.release"/>
+				
+				<byte val="0x12" signal:id="three.push"/>
+				<byte val="0x52" signal:id="three.hold"/>
+				<byte val="0x92" signal:id="three.release"/>
+				
+				<byte val="0x03" signal:id="six.push"/>
+				<byte val="0x43" signal:id="six.hold"/>
+				<byte val="0x83" signal:id="six.release"/>
+				
+				<byte val="0x31" signal:id="FM.push"/>
+				<byte val="0x71" signal:id="FM.hold"/>
+				<byte val="0xB1" signal:id="FM.release"/>
+				
+				<byte val="0x21" signal:id="AM.push"/>
+				<byte val="0x61" signal:id="AM.hold"/>
+				<byte val="0xA1" signal:id="AM.release"/>
+				
+				<byte val="0x23" signal:id="mode.push"/>
+				<byte val="0x63" signal:id="mode.hold"/>
+				<byte val="0xA3" signal:id="mode.release"/>
+				
+				<byte val="0x30" signal:id="source.push"/>
+				<byte val="0x70" signal:id="source.hold"/>
+				<byte val="0xB0" signal:id="source.release"/>
 
-			<!-- INFO-SELECT button (has a special identifier) -->
-			<ACTION operation="BMBT_INFO">
-		
-				<byte val="0x38" id="info.push"/>
-				<byte val="0x00 0x78" id="info.hold"/>
-				<byte val="0x00 0xB8" id="info.release"/>
+				<byte val="0x06" signal:id="left-knob.push"/>
+				<byte val="0x46" signal:id="left-knob.hold"/>
+				<byte val="0x86" signal:id="left-knob.release"/>
+			</BMBT_BUTTON>
 
-				<byte val="0x00 0x0F" id="select.push"/>
-				<byte val="0x00 0x4F" id="select.hold"/>
-				<byte val="0x00 0x8F" id="select.release"/>				
-			</ACTION>
+			<BMBT_BUTTON>
 
-			<!-- right knob button has different speeds: 1-9, hence using placeholder {SCROLL_SPEED} -->
-			<ACTION operation="BMBT_RIGHT_KNOB">
-				<byte val="0x0{SCROLL_SPEED}" id="right-knob.turn-right"/>
-				<byte val="0x8{SCROLL_SPEED}" id="right-knob.turn-left"/>
-			</ACTION>
+				<!-- Buttons, right side -->
+				<byte val="0x24" signal:id="eject.push"/>
+				<byte val="0x64" signal:id="eject.hold"/>
+				<byte val="0xA4" signal:id="eject.release"/>
+				
+				<byte val="0x08" signal:id="phone.push"/>
+				<byte val="0x48" signal:id="phone.hold"/>
+				<byte val="0x88" signal:id="phone.release"/>	
+				
+				<byte val="0x14" signal:id="reverse-tape.push"/>
+				<byte val="0x54" signal:id="reverse-tape.hold"/>
+				<byte val="0x94" signal:id="reverse-tape.release"/>
+				
+				<byte val="0x07" signal:id="clock.push"/>
+				<byte val="0x47" signal:id="clock.hold"/>
+				<byte val="0x87" signal:id="clock.release"/>	
 
-			<ACTION operation="IKE_DISPLAY_TEXT">
-				<byte val="0x35 0x00 {TEXT}" id="ike-text.normal"/>
-				<byte val="0x30 0x00 {TEXT}" id="ike-text.gong"/>
-			</ACTION>
+				<byte val="0x04" signal:id="tone.push"/>
+				<byte val="0x44" signal:id="tone.hold"/>
+				<byte val="0x84" signal:id="tone.release"/>
+				
+				<byte val="0x10" signal:id="left.push"/>
+				<byte val="0x50" signal:id="left.hold"/>
+				<byte val="0x90" signal:id="left.release"/>
+				
+				<byte val="0x00" signal:id="right.push"/>
+				<byte val="0x40" signal:id="right.hold"/>
+				<byte val="0x80" signal:id="right.release"/>
 
-			<ACTION operation="BM_UPDATE_TEXTFIELD">
-				<byte val="0x62 0x10 {DATA}" id="text-area.unknown"/>
-			</ACTION>
+				<byte val="0x34" signal:id="menu.push"/>
+				<byte val="0x74" signal:id="menu.hold"/>
+				<byte val="0xB4" signal:id="menu.release"/>
+				
+				<byte val="0x05" signal:id="right-knob.push"/>
+				<byte val="0x45" signal:id="right-knob.hold"/>
+				<byte val="0x85" signal:id="right-knob.release"/>
+			</BMBT_BUTTON>
+
+			<BMBT_INFO_SELECT>
+				<byte val="0x00 0x38" signal:id="info.push"/>
+				<byte val="0x00 0x78" signal:id="info.hold"/>
+				<byte val="0x00 0xB8" signal:id="info.release"/>
+
+				<byte val="0x00 0x0F" signal:id="select.push"/>
+				<byte val="0x00 0x4F" signal:id="select.hold"/>
+				<byte val="0x00 0x8F" signal:id="select.release"/>				
+			</BMBT_INFO_SELECT>
+
+			<BMBT_RIGHT_KNOB>
+				<byte val="0x0{SCROLL_SPEED}" signal:id="right-knob.turn-right"/>
+				<byte val="0x8{SCROLL_SPEED}" signal:id="right-knob.turn-left"/>
+			</BMBT_RIGHT_KNOB>
+
+			<IKE_DISPLAY_TEXT>
+				<byte val="0x35 0x00 {TEXT}" signal:id="ike-text.normal"/>
+				<byte val="0x30 0x00 {TEXT}" signal:id="ike-text.gong"/>
+			</IKE_DISPLAY_TEXT>
+
+			<BM_UPDATE_TEXTFIELD>
+				<byte val="0x62 0x10 {DATA}" signal:id="text-area.unknown"/>
+			</BM_UPDATE_TEXTFIELD>
 
 		</DATA>
 	</MESSAGE>
