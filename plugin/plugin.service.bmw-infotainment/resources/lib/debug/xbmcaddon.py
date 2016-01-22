@@ -12,7 +12,8 @@ PREFIX = path.expanduser("~")
 settings = {
 	"gateway.ip-address": "127.0.0.1",
 	"gateway.port": "4287",
-	"welcome-text": "Welcome!"
+	"welcome-text": "Welcome!",
+	"welcome-text.enabled": "true"
 }
 
 addon = {

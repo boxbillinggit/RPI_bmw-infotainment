@@ -21,9 +21,10 @@
 
 	</category>
 
-	<category label="BMW">
-		<setting label="Welcome text in IKE" type="text" default="Welcome!" id="welcome-text"/>
-		<setting label="Let me know when the champagne is cooled" type="bool" id="background" default="true"/>
+	<category label="BMW-infotainment">
+		<setting label="Welcome text" type="lsep"/>
+		<setting label="Text in Kombi-instument" type="text" default="Welcome!" id="welcome-text"/>
+		<setting label="Enabled" type="bool" id="welcome-text.enabled" default="true"/>
 	</category>
 
 </settings>

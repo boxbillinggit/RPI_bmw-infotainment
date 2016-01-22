@@ -75,6 +75,7 @@ class AddonSettings(object):
 	"""
 
 	TEXT 	= "welcome-text"
+	ENABLED = "welcome-text.enabled"
 	BUS_STS	= "gateway.bus-activity"
 	STATUS 	= "gateway.status"
 	ADDRESS = "gateway.ip-address"
@@ -83,7 +84,9 @@ class AddonSettings(object):
 	@staticmethod
 	def get_welcome_text():
 		addon = xbmcaddon.Addon()
-		return addon.getSetting(AddonSettings.TEXT)
+
+		if addon.getSetting(AddonSettings.ENABLED) == "true":
+			return addon.getSetting(AddonSettings.TEXT)
 
 	@staticmethod
 	def set_status(state):

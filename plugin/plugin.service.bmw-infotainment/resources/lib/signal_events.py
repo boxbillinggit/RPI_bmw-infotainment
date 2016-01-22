@@ -103,8 +103,9 @@ class Methods(object):
 
 		text = kodi.AddonSettings.get_welcome_text()
 
-		bind_event(signaldb.create((KombiInstrument.DEVICE, "IBUS_DEV_GLO", "ign-key.on")), self.kombi_instrument.write_to_display, text, static=False)
-		self.kombi_instrument.request_ign_state()
+		if text:
+			bind_event(signaldb.create((KombiInstrument.DEVICE, "IBUS_DEV_GLO", "ign-key.on")), self.kombi_instrument.write_to_display, text, static=False)
+			self.kombi_instrument.request_ign_state()
 
 
 class Events(object):
