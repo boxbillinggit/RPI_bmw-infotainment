@@ -41,18 +41,18 @@ def init_system_events(bind_event):
 
 	# identifiers for currrent MID-state
 	# TODO: not fully implemented (need regexp to match data after (end of string), etc..)
-	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("CDC")), None)
-	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("TAPE")), None)
-
-	# state identifiers
-	# this indicates that state was not changed from previous state..
-	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("NO TAPE")), None)
-	bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("NO DISC")), None)
-
-	# possible state transitions
-	mode_btn = Button(release=system.button_pressed)
-	bind_event(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "mode.push")), mode_btn.set_state_push)
-	bind_event(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "mode.release")), mode_btn.set_state_release)
+	# bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("CDC")), None)
+	# bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("TAPE")), None)
+	#
+	# # state identifiers
+	# # this indicates that state was not changed from previous state..
+	# bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("NO TAPE")), None)
+	# bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("NO DISC")), None)
+	#
+	# # possible state transitions
+	# mode_btn = Button(release=system.button_pressed)
+	# bind_event(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "mode.push")), mode_btn.set_state_push)
+	# bind_event(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "mode.release")), mode_btn.set_state_release)
 
 
 def init_controls(bind_event):
@@ -94,6 +94,7 @@ class Methods(object):
 		self.send = send
 		self.kombi_instrument = KombiInstrument(send)
 
+	# TODO how to handle welcome-message when other messages also pop's up in IKE during ignition on?
 	def welcome_text(self, bind_event):
 
 		"""
