@@ -310,6 +310,14 @@ class Gateway(object):
 		disconnect()
 
 
+HEX_BASE = 16		# hex has base-16
+
+# TODO: decide which datatype to use in module
+def convert_to_bytes(string):
+	return map(lambda byte: int(byte, HEX_BASE), string.split(" ")) if string else []
+
+
+
 def broadcast(messages, wait=0.5):
 
 	"""
@@ -321,7 +329,11 @@ def broadcast(messages, wait=0.5):
 	for sockfd in client_socks:
 
 		for msg in messages:
-			data = create_frame(msg)
+
+			# convert to list
+			src, dst, data = msg
+
+			data = create_frame((convert_to_bytes(src), convert_to_bytes(dst), convert_to_bytes(data)))
 			sockfd.send(data)
 
 			print "DEBUG - {} - sending: {}".format(threading.currentThread().name, hexstring(data))
