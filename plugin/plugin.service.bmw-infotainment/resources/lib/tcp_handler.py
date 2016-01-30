@@ -27,8 +27,7 @@ class BusStats(object):
 	Ref: https://learn.sparkfun.com/tutorials/serial-communication/rules-of-serial
 	"""
 
-
-	TCP_OVERHEAD = 5  # TODO: shall be 4; HEADER_SIZE - checksum - (src+dst+len)
+	TCP_OVERHEAD = 4
 	UPDATE_RATE = 5
 
 	def __init__(self):

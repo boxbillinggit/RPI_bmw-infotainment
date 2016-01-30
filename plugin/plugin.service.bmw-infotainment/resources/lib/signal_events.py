@@ -73,7 +73,6 @@ def init_basic_controls(bind_event):
 	bind_event(signaldb.create((src, dst, "right-knob.hold")), right_knob.set_state_hold)
 	bind_event(signaldb.create((src, dst, "right-knob.release")), right_knob.set_state_release)
 
-	# TODO scrolling must have been mixed together.. switch "up" and "down" (or bytes in xml-database)
 	bind_event(signaldb.create((src, dst, "right-knob.turn-left"), SCROLL_SPEED=regexp), kodi.builtin.scroll("up"))
 	bind_event(signaldb.create((src, dst, "right-knob.turn-right"), SCROLL_SPEED=regexp), kodi.builtin.scroll("down"))
 

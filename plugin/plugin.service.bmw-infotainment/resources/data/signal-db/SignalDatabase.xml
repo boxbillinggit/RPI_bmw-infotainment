@@ -254,8 +254,8 @@
 			</BMBT_INFO_SELECT>
 
 			<BMBT_RIGHT_KNOB>
-				<byte val="0x0{SCROLL_SPEED}" signal:id="right-knob.turn-right"/>
-				<byte val="0x8{SCROLL_SPEED}" signal:id="right-knob.turn-left"/>
+				<byte val="0x0{SCROLL_SPEED}" signal:id="right-knob.turn-left"/>
+				<byte val="0x8{SCROLL_SPEED}" signal:id="right-knob.turn-right"/>
 			</BMBT_RIGHT_KNOB>
 
 			<IKE_DISPLAY_TEXT>
