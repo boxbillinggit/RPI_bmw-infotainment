@@ -35,7 +35,7 @@ def handle_init():
 	event_thread.start()
 	tcpip_thread.start()
 
-	tcpip_thread.signal_handler.launch_initial_events()
+	tcpip_thread.signal_handler.initialize_events()
 
 
 def handle_shutdown():

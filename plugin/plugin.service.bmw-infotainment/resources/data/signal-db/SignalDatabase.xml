@@ -113,6 +113,11 @@
 			<byte val="0xA2" ref:id="UNDEFINED">NAV position and time</byte>
 			<byte val="0xA5" ref:id="UNDEFINED">unknown</byte>
 
+			<DEV_READY>
+				<byte val="0x00" signal:id="device.ready"/>
+				<byte val="0x01" signal:id="device.broadcast"/>
+			</DEV_READY>
+
 			<IGN_KEY_STATUS>
 				<byte val="0x00" signal:id="ign-key.off"/>
 				<byte val="0x01" signal:id="ign-key.acc"/>

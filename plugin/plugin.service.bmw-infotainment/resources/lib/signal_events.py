@@ -5,11 +5,11 @@ and removing events at runtime.
 import kodi.builtin
 import signaldb
 import main_thread
+import event_handler
 import log as log_module
-import system as module_system
 
 from kodi import addon_settings, gui
-from bmw import KombiInstrument
+from bmw import KombiInstrument, CDChanger
 from buttons import Button
 
 log = log_module.init_logger(__name__)
@@ -29,32 +29,6 @@ class Index(object):
 	def inc(self):
 		self.index += 1
 		return self.index
-
-
-def init_system_events(bind_event):
-
-	"""
-	State-machine for controlling power off and current MID-state (CD, TAPE, RADIO, etc..)
-	"""
-
-	system = module_system.State()
-	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), system.set_state_init)
-	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), system.set_state_shutdown)
-
-	# identifiers for currrent MID-state
-	# TODO: not fully implemented (need regexp to match data after (end of string), etc..)
-	# bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("CDC")), None)
-	# bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("TAPE")), None)
-	#
-	# # state identifiers
-	# # this indicates that state was not changed from previous state..
-	# bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("NO TAPE")), None)
-	# bind_event(signaldb.create((None, "IBUS_DEV_GT", "text-area.unknown"), DATA=signaldb.hex_string("NO DISC")), None)
-	#
-	# # possible state transitions
-	# mode_btn = Button(release=system.button_pressed)
-	# bind_event(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "mode.push")), mode_btn.set_state_push)
-	# bind_event(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "mode.release")), mode_btn.set_state_release)
 
 
 def init_basic_controls(bind_event):
@@ -110,6 +84,7 @@ class Methods(object):
 	def __init__(self, send):
 		self.send = send
 		self.kombi_instrument = KombiInstrument(send)
+		self.cd_changer = CDChanger(send)
 
 	# TODO how to handle welcome-message when other messages also pop's up in IKE during ignition on?
 	def welcome_text(self, bind_event):
@@ -121,9 +96,18 @@ class Methods(object):
 
 		text = addon_settings.get_welcome_text()
 
-		if text:
-			bind_event(signaldb.create((KombiInstrument.DEVICE, "IBUS_DEV_GLO", "ign-key.on")), self.kombi_instrument.write_to_display, text, static=False)
-			self.kombi_instrument.request_ign_state()
+		if not text:
+			return
+
+		bind_event(signaldb.create((KombiInstrument.DEVICE, "IBUS_DEV_GLO", "ign-key.on")), self.kombi_instrument.write_to_display, text, static=False)
+		self.kombi_instrument.request_ign_state()
+
+	def start_cd_emulation(self, bind_event):
+
+		""" Start the CD-changer emulation, broadcast poll periodically until acknowledged """
+
+		bind_event(signaldb.create(("IBUS_DEV_RAD", CDChanger.DEVICE, "device.poll")), self.cd_changer.poll_response)
+		event_handler.add(self.cd_changer.broadcast, interval=CDChanger.INTERVAL)
 
 
 class Events(object):
@@ -143,15 +127,15 @@ class Events(object):
 		self.methods = Methods(self.send)
 
 		init_basic_controls(self.bind_event)
-		init_system_events(self.bind_event)
 
-	def launch_initial_events(self):
+	def initialize_events(self):
 
 		"""
 		Initial events launched when system is just started (called from service.py)!
 		"""
 
 		self.methods.welcome_text(self.bind_event)
+		self.methods.start_cd_emulation(self.bind_event)
 
 	def bind_event(self, signal, method, *args, **kwargs):
 

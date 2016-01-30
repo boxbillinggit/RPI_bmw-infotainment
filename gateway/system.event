@@ -1,0 +1,2 @@
+"44 05 BF 74 00 FF 75" = sudo shutdown -h +30
+"44 05 BF 74 04 01 8F" = sudo shutdown -c

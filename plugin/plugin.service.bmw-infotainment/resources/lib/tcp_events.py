@@ -27,8 +27,10 @@ class State(StateMachine):
 
 	INIT, REROUTING, CONNECTING, CONNECTED, DISCONNECTED, RECONNECTING = range(6)
 
+	CurrentState = INIT
+
 	def __init__(self):
-		super(State, self).__init__(State.INIT)
+		super(State, self).__init__(State.INIT, State.new_state)
 
 		self.transitions = \
 			{"from": (State.INIT,),         "to": (State.REROUTING, State.DISCONNECTED)}, \
@@ -37,6 +39,13 @@ class State(StateMachine):
 			{"from": (State.CONNECTED,),    "to": (State.DISCONNECTED,)}, \
 			{"from": (State.DISCONNECTED,), "to": (State.RECONNECTING, State.INIT)}, \
 			{"from": (State.RECONNECTING,), "to": (State.INIT,)}
+
+	@classmethod
+	def new_state(cls, new_state):
+
+		""" update static class-variable for current state on TCP connection """
+
+		cls.CurrentState = new_state
 
 
 class Request(object):
@@ -75,7 +84,7 @@ class Events(Protocol, ThreadedSocket, State):
 		self.host = addon_settings.get_host()
 		self.timestamp = time.time()
 		self.attempts = 0
-		self.send_buffer = ""
+		self.send_buffer = []
 
 		request = Request()
 		self.request = request.current_request
@@ -114,15 +123,16 @@ class Events(Protocol, ThreadedSocket, State):
 		if self.state_is(State.CONNECTED):
 			self.sendall(data)
 		else:
-			self.send_buffer += data
+			self.send_buffer.append(data)
 
 	def send_data_buffered(self):
 
 		"""	Send data accumulated when DISCONNECTED """
 
-		if self.send_buffer:
-			self.sendall(self.send_buffer)
-			del self.send_buffer[:]
+		for chunk in self.send_buffer:
+			self.sendall(chunk)
+
+		del self.send_buffer[:]
 
 	def reset_attempts(self):
 
@@ -226,12 +236,13 @@ class Events(Protocol, ThreadedSocket, State):
 	def state_connected(self):
 
 		"""
-		Successfully connected, Empty the send-buffer
+		Successfully connected, Empty the send-buffer (not from current ThreadedSocket
+		but from EventHandler-thread)
 		"""
 
 		if self.set_state_to(State.CONNECTED):
 			GUI.event(UPDATE_STATUS, self.translate_state())
-			self.send_data_buffered()
+			event_handler.add(self.send_data_buffered)
 
 	def state_disconnected(self):
 

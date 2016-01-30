@@ -1,4 +1,5 @@
 import signaldb
+from tcp_events import State
 
 __author__ = 'lars'
 
@@ -34,3 +35,32 @@ class KombiInstrument(object):
 		""" Request current ign-state """
 
 		self.send(signaldb.create((EMULATED_IBUS_DEV, self.DEVICE, "ign-key.req-sts")))
+
+
+class CDChanger(object):
+
+	DEVICE 		= "IBUS_DEV_CDC"
+	INTERVAL 	= 8
+
+	def __init__(self, send):
+		self.send = send
+		self.acknowledged = False
+
+	def poll_response(self):
+
+		""" Reply on poll, stop broadcasting """
+
+		self.acknowledged = True
+		self.send(signaldb.create((self.DEVICE, "IBUS_DEV_LOC", "device.ready")))
+
+	def broadcast(self):
+
+		""" periodically broadcast until poll is answered """
+
+		if self.acknowledged:
+			return False
+
+		if State.CurrentState == State.CONNECTED:
+			self.send(signaldb.create((self.DEVICE, "IBUS_DEV_LOC", "device.broadcast")))
+
+		return True

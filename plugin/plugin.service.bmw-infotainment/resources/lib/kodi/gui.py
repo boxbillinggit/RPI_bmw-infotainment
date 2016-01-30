@@ -7,7 +7,8 @@ window_stack = {}
 def open_window(Window):
 
 	"""
-	Show add-on overview window.
+	Show add-on overview window. This shall be called from Main-thread since
+	this method is blocking.
 	"""
 
 	window = Window.new()
