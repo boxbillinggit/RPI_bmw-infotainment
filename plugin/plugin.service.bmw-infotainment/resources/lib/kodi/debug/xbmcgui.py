@@ -7,6 +7,27 @@ import events
 # can be overriden from test-script
 event = events.Debug()
 
+class WindowXML(object):
+
+	def __init__(self):
+		pass
+
+	def doModal(self):
+		pass
+
+	def close(self):
+		pass
+
+	@classmethod
+	def getControl(cls, control_id):
+		return Control()
+
+
+class Control(object):
+
+	def setLabel(self):
+		pass
+
 
 class Dialog(object):
 

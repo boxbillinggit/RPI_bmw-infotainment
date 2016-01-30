@@ -7,16 +7,10 @@ import Queue
 import time
 import log as log_module
 
-try:
-	import xbmc
-except ImportError as err:
-	import debug.xbmc as xbmc
-
 log = log_module.init_logger(__name__)
 queue = Queue.Queue()
 
 __author__ 		= 'Lars'
-__monitor__ 	= xbmc.Monitor()
 
 # item on queue
 METHOD, TIMESTAMP, INTERVAL, ARGS, KWARGS = range(5)
@@ -54,6 +48,13 @@ class TimingError(Exception):
 	pass
 
 
+def default_condition():
+
+	""" Default condition for running thread """
+
+	return True
+
+
 class EventHandler(threading.Thread):
 
 	"""
@@ -63,11 +64,15 @@ class EventHandler(threading.Thread):
 	POLL_IDLE = 1.0
 	POLL_TASK = 0.2
 
-	def __init__(self, new_queue=None):
+	def __init__(self, new_queue=None, condition=None, handle_exit=None):
 		super(EventHandler, self).__init__()
+		self.name = "EventHandler"
 		self.daemon = True
 		self.queue = new_queue or queue
 		self.schedule = []
+
+		self.still_alive = condition or default_condition
+		self.handle_exit = handle_exit
 
 	def check_schedule(self):
 
@@ -146,7 +151,7 @@ class EventHandler(threading.Thread):
 		schedule since the blocking get() won't let us terminate the thread.
 		"""
 
-		while not __monitor__.abortRequested():
+		while self.still_alive():
 
 			self.check_schedule()
 
@@ -159,3 +164,6 @@ class EventHandler(threading.Thread):
 
 			self.handle_task(method, *args, **kwargs)
 			self.queue.task_done()
+
+		if self.handle_exit:
+			self.handle_exit()

@@ -1,20 +1,20 @@
 """
 Implements the TCP-socket transport layer.
 """
-
 import socket
 import threading
-
-try:
-	import xbmc
-except ImportError:
-	import debug.xbmc as xbmc
-
 import log as log_module
+
 log = log_module.init_logger(__name__)
 
-__author__		= 'lars'
-__monitor__ 	= xbmc.Monitor()
+__author__ = 'lars'
+
+
+def default_condition():
+
+	""" Default condition for running thread (TODO create Threading.condition)"""
+
+	return True
 
 
 class ThreadedSocket(threading.Thread):
@@ -25,9 +25,12 @@ class ThreadedSocket(threading.Thread):
 
 	MAX_RECV = 1024
 
-	def __init__(self):
+	def __init__(self, condition=None):
 		super(ThreadedSocket, self).__init__()
+		self.still_alive = condition or default_condition
+		self.name = "ThreadedSocket"
 		self.daemon = True
+
 		self.sockfd = None
 		self.host = None
 
@@ -37,7 +40,7 @@ class ThreadedSocket(threading.Thread):
 		Thread's main activity - main loop for the state machine.
 		"""
 
-		while not __monitor__.abortRequested():
+		while self.still_alive():
 
 			if self.connect():
 				self.handle_init()
@@ -71,7 +74,7 @@ class ThreadedSocket(threading.Thread):
 		Mainloop for receiving data from TCP/IP-socket.
 		"""
 
-		while not __monitor__.abortRequested():
+		while self.still_alive():
 
 			try:
 				data = self.sockfd.recv(ThreadedSocket.MAX_RECV)

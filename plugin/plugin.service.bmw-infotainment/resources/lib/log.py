@@ -15,25 +15,10 @@ http://kodi.wiki/view/Log_file/Advanced#Enable_debugging
 import logging
 import os
 import datetime
-
-try:
-	import xbmc, xbmcgui, xbmcaddon
-	USING_XBMC = True
-
-except ImportError as err:
-	import debug.xbmc as xbmc
-	import debug.xbmcgui as xbmcgui
-	import debug.xbmcaddon as xbmcaddon
-	USING_XBMC = False
-
-# import local modules
 import settings
+from kodi import __addonid__, __xbmc__, __DEBUG__
 
-__author__ 		= 'Lars'
-__addon__		= xbmcaddon.Addon()
-__addonid__		= __addon__.getAddonInfo('id')
-__addonpath__	= __addon__.getAddonInfo('path')
-
+__author__ = 'Lars'
 
 # XBMC/KODI Debug levels
 LOGDEBUG 	= 0
@@ -49,7 +34,7 @@ LOGNONE 	= 7
 FNAME_UNIQUE = "{}-{}.log".format(__addonid__, datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"))
 FNAME = "{}.log".format(__addonid__)
 
-LOGPATH = os.path.join(xbmc.translatePath("special://logpath"), FNAME_UNIQUE if settings.Logging.UNIQUE_FILENAME else FNAME)
+LOGPATH = os.path.join(__xbmc__.translatePath("special://logpath"), FNAME_UNIQUE if settings.Logging.UNIQUE_FILENAME else FNAME)
 
 
 class LogHandler(object):
@@ -71,9 +56,9 @@ class LogHandler(object):
 			self.init_file_handle()
 
 		# KODI/XBMC has no console - use 'xbmc.log' instead
-		if settings.Logging.TO_CONSOLE and USING_XBMC:
+		if settings.Logging.TO_CONSOLE and not __DEBUG__:
 			self.init_console_xbmc()
-		elif settings.Logging.LOGLEVEL_CONSOLE and not USING_XBMC:
+		elif settings.Logging.LOGLEVEL_CONSOLE and __DEBUG__:
 			self.init_console_stdout()
 
 	def init_file_handle(self):
@@ -124,7 +109,7 @@ class XBMCLogger(logging.Handler):
 		# map XBMC-loglevel against built-in loglevels (default level is 'LOGINFO')
 		level = self.xbmc_loglevel.get(record.levelname, LOGINFO)
 
-		xbmc.log(msg, level)
+		__xbmc__.log(msg, level)
 
 
 log_handler = LogHandler(LogHandler.formatter)

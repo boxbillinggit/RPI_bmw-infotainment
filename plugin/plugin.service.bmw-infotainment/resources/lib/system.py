@@ -1,17 +1,17 @@
 import time
-
-import kodi
 import log as log_module
 import settings
-import statemachine
 import event_handler
+
+from statemachine import StateMachine
+from kodi import builtin as kodi
 
 log = log_module.init_logger(__name__)
 __author__ = 'lars'
 
 
 # TODO: finish this
-class State(statemachine.State):
+class State(StateMachine):
 
 	"""
 	Interface for controlling system shutdown, etc

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<includes>
+
+	<include name="LeftSideBlade.ListItem">
+		<width>250</width>
+		<height>35</height>
+		<textoffsetx>10</textoffsetx>
+		<aligny>center</aligny>
+		<align>left</align>
+	</include>
+
+	<!-- Taken from skin (must be independent of skin)-->
+	<include name="ButtonCommonValues">
+		<height>40</height>
+		<width>250</width>
+		<textoffsetx>10</textoffsetx>
+		<textwidth>200</textwidth>
+		<aligny>center</aligny>
+		<font>font12</font>
+		<texturefocus border="5">button-focus.png</texturefocus>
+		<texturenofocus>-</texturenofocus>
+		<pulseonselect>false</pulseonselect>
+	</include>
+
+	<include name="SideBladeLeft-Local">
+		<animation effect="slide" start="0,0" end="250,0" time="400" tween="quadratic" easing="out" condition="!IsEmpty(Window(Home).Property(SideBladeOpen)) | ControlGroup(9000).HasFocus">Conditional</animation>
+		<animation effect="slide" start="0,0" end="-300,0" time="400" tween="quadratic" easing="out" condition="!IsEmpty(Window(Home).Property(SideBladeOpen)) | ControlGroup(9000).HasFocus">WindowClose</animation>
+		<animation effect="slide" start="0,0" end="-50,0" time="300" tween="quadratic" easing="out" condition="IsEmpty(Window(Home).Property(SideBladeOpen)) | !ControlGroup(9000).HasFocus">WindowClose</animation>
+		<animation effect="slide" start="-50,0" end="0,0" time="300" tween="quadratic" easing="out">WindowOpen</animation>
+		<control type="button" id="8999">
+			<description>Fake button for mouse control</description>
+			<left>0</left>
+			<top>0</top>
+			<width>1280</width>
+			<height>720</height>
+			<label>-</label>
+			<font>-</font>
+			<texturenofocus>-</texturenofocus>
+			<texturefocus>-</texturefocus>
+			<onfocus condition="IsEmpty(Window(Home).Property(SideBladeOpen))">SetProperty(SideBladeOpen,True,Home)</onfocus>
+			<onup>9000</onup>
+			<ondown>9000</ondown>
+			<onleft>50</onleft>
+			<onright>ClearProperty(SideBladeOpen,Home)</onright>
+			<onback>ClearProperty(SideBladeOpen,Home)</onback>
+			<visible>!IsEmpty(Window(Home).Property(SideBladeOpen))</visible>
+		</control>
+		<control type="button" id="9001">
+			<left>250</left>
+			<top>260</top>
+			<width>42</width>
+			<height>128</height>
+			<font>-</font>
+			<texturefocus>HasSubFocus.png</texturefocus>
+			<texturenofocus>HasSub.png</texturenofocus>
+			<onright>ClearProperty(SideBladeOpen,Home)</onright>
+			<onleft>50</onleft>
+			<onclick condition="IsEmpty(Window(Home).Property(SideBladeOpen))">SetProperty(SideBladeOpen,True,Home)</onclick>
+			<onclick condition="!IsEmpty(Window(Home).Property(SideBladeOpen))">ClearProperty(SideBladeOpen,Home)</onclick>
+		</control>
+		<control type="image">
+			<left>0</left>
+			<top>0</top>
+			<width>260</width>
+			<height>720</height>
+			<texture border="0,0,10,0">MediaBladeSub.png</texture>
+		</control>
+	</include>
+
+</includes>

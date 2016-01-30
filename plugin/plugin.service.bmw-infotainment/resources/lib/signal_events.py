@@ -2,14 +2,16 @@
 Handle initialization of all events, also implements methods for adding
 and removing events at runtime.
 """
-
-import kodi
+import kodi.builtin
 import signaldb
+import main_thread
+import log as log_module
 import system as module_system
+
+from kodi import addon_settings, gui
 from bmw import KombiInstrument
 from buttons import Button
 
-import log as log_module
 log = log_module.init_logger(__name__)
 
 __author__ = 'lars'
@@ -55,7 +57,7 @@ def init_system_events(bind_event):
 	# bind_event(signaldb.create(("IBUS_DEV_BMBT", "IBUS_DEV_RAD", "mode.release")), mode_btn.set_state_release)
 
 
-def init_controls(bind_event):
+def init_basic_controls(bind_event):
 
 	"""
 	Initialize all events for buttons.
@@ -66,22 +68,38 @@ def init_controls(bind_event):
 	# regular expression for scroll speed (forwarded speed to method)
 	regexp = "([1-9])"
 
-	right_knob = Button(hold=kodi.action("back"), release=kodi.action("Select"))
+	right_knob = Button(hold=kodi.builtin.action("back"), release=kodi.builtin.action("Select"))
 	bind_event(signaldb.create((src, dst, "right-knob.push")), right_knob.set_state_push)
 	bind_event(signaldb.create((src, dst, "right-knob.hold")), right_knob.set_state_hold)
 	bind_event(signaldb.create((src, dst, "right-knob.release")), right_knob.set_state_release)
-	bind_event(signaldb.create((src, dst, "right-knob.turn-left"), SCROLL_SPEED=regexp), kodi.scroll("up"))
-	bind_event(signaldb.create((src, dst, "right-knob.turn-right"), SCROLL_SPEED=regexp), kodi.scroll("down"))
 
-	left = Button(push=kodi.action("Left"), hold=kodi.action("Left"))
+	# TODO scrolling must have been mixed together.. switch "up" and "down" (or bytes in xml-database)
+	bind_event(signaldb.create((src, dst, "right-knob.turn-left"), SCROLL_SPEED=regexp), kodi.builtin.scroll("up"))
+	bind_event(signaldb.create((src, dst, "right-knob.turn-right"), SCROLL_SPEED=regexp), kodi.builtin.scroll("down"))
+
+	left = Button(push=kodi.builtin.action("Left"), hold=kodi.builtin.action("Left"))
 	bind_event(signaldb.create((src, dst, "left.push")), left.set_state_push)
 	bind_event(signaldb.create((src, dst, "left.hold")), left.set_state_hold)
 	bind_event(signaldb.create((src, dst, "left.release")), left.set_state_release)
 
-	right = Button(push=kodi.action("Right"), hold=kodi.action("Right"))
+	right = Button(push=kodi.builtin.action("Right"), hold=kodi.builtin.action("Right"))
 	bind_event(signaldb.create((src, dst, "right.push")), right.set_state_push)
 	bind_event(signaldb.create((src, dst, "right.hold")), right.set_state_hold)
 	bind_event(signaldb.create((src, dst, "right.release")), right.set_state_release)
+
+	bind_event(signaldb.create((src, dst, "info.push")), open_or_close_win, gui.AddonOverview)
+
+
+def open_or_close_win(Window):
+
+	win = gui.window_stack.pop(Window.__name__, None)
+
+	if win:
+		win.close()
+		del win
+	else:
+		gui.close_all_windows()
+		main_thread.add(gui.open_window, Window)
 
 
 class Methods(object):
@@ -102,7 +120,7 @@ class Methods(object):
 		set callback for ignition-status on.
 		"""
 
-		text = kodi.AddonSettings.get_welcome_text()
+		text = addon_settings.get_welcome_text()
 
 		if text:
 			bind_event(signaldb.create((KombiInstrument.DEVICE, "IBUS_DEV_GLO", "ign-key.on")), self.kombi_instrument.write_to_display, text, static=False)
@@ -125,8 +143,7 @@ class Events(object):
 		self.index = Index()
 		self.methods = Methods(self.send)
 
-		# init callbacks
-		init_controls(self.bind_event)
+		init_basic_controls(self.bind_event)
 		init_system_events(self.bind_event)
 
 	def launch_initial_events(self):

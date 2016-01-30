@@ -4,24 +4,10 @@
 		version="1.0.2"
 		provider-name="Lars Gunnarsson">
 
-<!--
-    Add-on definitions.
-    reference: http://kodi.wiki/view/Addon.xml
-
-    This plugin is both a service (automatic start up) -and a script (callable)
-	
-	Service starts on XBMC/KODI startup. Service plugin can be found through:
-	"Settings -> Addons -> enabled add-ons > services -> Raspberry Pi BMW Infotainment"
-
-	Script usually appears as "launch" button under settings (in our case it's called internally). 
-	"Settings -> Addons -> enabled add-ons -> ... -> Raspberry Pi BMW Infotainment.
--->
-
 	<requires>
 		<import addon="xbmc.python" version="2.1.0"/>
 	</requires>
-	<extension point="xbmc.service" start="startup" library="service.py" />
-	<extension point="xbmc.python.script" library="guicallback.py" />
+	<extension point="xbmc.service" start="startup" library="service.py"/>
 	<extension point="xbmc.addon.metadata">
 		<platform>linux</platform>
 		<summary lang="en">BMW infotainment</summary>

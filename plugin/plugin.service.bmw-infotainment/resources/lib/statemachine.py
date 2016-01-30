@@ -5,7 +5,7 @@ log = log_module.init_logger(__name__)
 __author__ = 'lars'
 
 
-class State(object):
+class StateMachine(object):
 
 	"""
 	Minimalistic statemachine.
@@ -13,8 +13,8 @@ class State(object):
 
 	states = []
 
-	def __init__(self, state):
-
+	def __init__(self, state, debug=False):
+		self.debug = debug
 		self.state = state
 		self.transitions = ()
 
@@ -39,6 +39,9 @@ class State(object):
 		for transition in self.transitions:
 
 			if self.state in transition.get("from") and new_state in transition.get("to"):
-				# log.debug("State {} -> {}".format(States.state[self.state], new_state))
+
+				if self.debug:
+					log.debug("Class: {} - State {} -> {}".format(self.__class__.__name__, self.states[self.state], self.states[new_state]))
+
 				self.state = new_state
 				return True
