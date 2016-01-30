@@ -32,10 +32,10 @@ def handle_init():
 	Start threads, launch initial events.
 	"""
 
-	event_handler.start()
-	tcp_ip.start()
+	event_thread.start()
+	tcpip_thread.start()
 
-	tcp_ip.signal_handler.launch_initial_events()
+	tcpip_thread.signal_handler.launch_initial_events()
 
 
 def handle_shutdown():
@@ -45,10 +45,10 @@ def handle_shutdown():
 	"""
 
 	gui.close_all_windows()
-	tcp_ip.request_disconnect()
+	tcpip_thread.request_disconnect()
 
 
-event_handler, tcp_ip, main_thread = EventHandler(condition=still_alive, handle_exit=handle_shutdown), TCPIPHandler(condition=still_alive), MainThread(condition=still_alive)
+event_thread, tcpip_thread, main_thread = EventHandler(condition=still_alive, handle_exit=handle_shutdown), TCPIPHandler(condition=still_alive), MainThread(condition=still_alive)
 
 
 if __name__ == "__main__":

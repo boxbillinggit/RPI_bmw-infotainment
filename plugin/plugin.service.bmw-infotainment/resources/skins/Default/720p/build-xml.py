@@ -3,17 +3,18 @@ This module replaces all <include>-tags since add'on don't support include.xml-f
 at the moment.
 """
 import glob
+import os
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 
 __author__ 	= 'lars'
+PATH 		= os.path.dirname(os.path.abspath(__file__))
 SUFFIX 		= "-source"
-# FILE_TYPE 	= ".xml"
 INCLUDE 	= "includes.xml"
 WINDOWS 	= "*{suffix}.xml".format(suffix=SUFFIX)
 
 
-includes_tree = ET.parse(INCLUDE)
+includes_tree = ET.parse(os.path.join(PATH, INCLUDE))
 includes = includes_tree.getroot()
 
 
@@ -75,6 +76,6 @@ def save_xml(fname, _tree):
 if __name__ == "__main__":
 
 	for window in glob.glob(WINDOWS):
-		tree = ET.parse(window)
+		tree = ET.parse(os.path.join(PATH, window))
 		replace_includes(tree)
 		save_xml(window, tree)

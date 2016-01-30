@@ -1,0 +1,10 @@
+{"exclude": [
+  "__init__.py",
+  "guicallback/*",
+  "tests/*",
+  "*test_*",
+  "make-package.py",
+  "resources/skins/Default/720p/*-source.xml",
+  "resources/skins/Default/720p/build-xml.py",
+  "resources/skins/Default/720p/includes.xml"
+]}
