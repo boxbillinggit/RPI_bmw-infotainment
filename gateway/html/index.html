@@ -4,11 +4,14 @@
     <title>OpenBM-Gateway</title>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
     <link type="text/css" rel="stylesheet" href="/static/style.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/bootstrap.min.css"/>
     <script src="/static/jquery.pack.js"></script>
+    <script src="/static/jquery-1.11.3.min.js"></script>
+    <script src="/static/bootstrap.min.js"></script>
     <style type="text/css">
         body
         {
-                background: url(/static/panel.jpg) no-repeat center center fixed;
+                background: url(static/panel.jpg) no-repeat center center fixed;
                 -webkit-background-size: cover;
                 -moz-background-size: cover;
                 -o-background-size: cover;
@@ -66,6 +69,7 @@
     {
         if (xhr) xhr.abort();
         $('.carbox').hide();
+        $("#errors").hide();
         $('#carDataLoad').show();
         
         xhr = $.ajax({
@@ -96,6 +100,7 @@
             {
                 $('#error').text($('#error').text() + ' - ' + status);
                 $('#carDataLoad').hide();
+                $('#errors').show();
                 $('#error').show();
                 xhr.abort();
             }
@@ -198,29 +203,41 @@
         $('.carbox').hide();
         $('#carMode').fadeIn('slow');
         
+        var menu = {"Toggle Central/Lock":"3f,00,0c,00,0b","Open Trunk":"3f,00,0c,00,40", "Windschield water":"3f,00,0c,00,4B","Windschield water + washer":"3f,00,0c,00,02"};
+        
+        $("#button").empty();
+        
+        $.each( menu, function( key, value ) {
+            $("#button").append('<button type="button" class="btn btn-primary" aria-haspopup="true" aria-expanded="false" onclick="sendIbus(\''+value+'\')">'+key+'</button><p><br></p>');
+        });
+        
     }
     
     </script>
   </head>
 
     <body>
-        <div id="bodyhead"></div>
+        <div id="bodyhead"></div>        
         
         <div class="box roundedCorners hcenter" style="width: 50%; position: relative; top: 100px;">
-            <div style="margin-top: -60px;">
-                <button class="button" style="border: 1px solid black;" onclick="showInformation();">Information</button>
-                <button class="button" style="border: 1px solid black;" onclick="showCar();">Car</button>
-                <button class="button" style="border: 1px solid black;">Multimedia</button>
-                <button class="button" style="border: 1px solid black;">On-Board Computer</button>
-                <button class="button" style="border: 1px solid black;" onclick="showIBus();">IBus</button>
-            </div>
+            
+            <nav class="navbar navbar-default">
+  <ul class="nav navbar-nav">
+        <li><a href="#" onclick="showInformation();">Information</a></li>
+        <li><a href="#" onclick="showCar();">Car</a></li>
+        <li><a href="#">Multimedia</a></li>
+        <li><a href="#">On-Board Computer</a></li>
+        <li><a href="#" onclick="showIBus();">IBus</a></li>
+      </ul>
+</nav>
+
 
             <div class="carbox" id="carDataLoad">
                 <img src="/static/loading.gif"/>
             </div>
 
-            <div class="carbox" id="error">
-                <span style="color: red; font-size: 2.5em;">Cannot connect to BMW E39</span><br />
+            <div class="carbox" id="errors">
+                <div class="alert alert-danger" role="alert" id="error">Cannot connect to BMW E39</div>
             </div>
 
             <!-- BMW Information, like VIN, KM, ... -->
@@ -234,15 +251,29 @@
             </div>
 
             <!-- Car setup -->
-            <div class="carbox" id="carMode" style="text-align:center; font-size: 1.2em">      
-            <button class="button" onclick="sendIbus('3f,00,0c,00,0b')">Toggle Central/Lock</button><br />
-            Window driver rear: <button class="button" onclick="sendIbus('3f,00,0c,00,45')">open</button> <button class="button" onclick="sendIbus('3f,00,0c,00,44')">close</button><br />
-            Window passenger rear: <button class="button" onclick="sendIbus('3f,00,0c,00,47')">open</button> <button class="button" onclick="sendIbus('3f,00,0c,00,46')">close</button><br />
-            Windows front: <button class="button" onclick="sendIbus('3f,00,0c,00,65')">open</button><br />
-            Windows back: <button class="button" onclick="sendIbus('3f,00,0c,00,64')">open</button><br />
-            <button class="button" onclick="sendIbus('3f,00,0c,00,40')">Open Trunk</button><br />
-            <button class="button" onclick="sendIbus('3f,00,0c,00,4B')">Windschield water</button><br />
-            <button class="button" onclick="sendIbus('3f,00,0c,00,02')">Windschield water + washer</button>
+            <div class="carbox" id="carMode" style="margin-left: 20px; text-align:left; font-size: 1.2em">    
+                
+              <div id="button"></div>
+
+                
+Window driver rear: <button type="button" class="btn btn-primary" aria-haspopup="true" aria-expanded="false" onclick="sendIbus('3f,00,0c,00,45')">Open</button>
+<button type="button" class="btn btn-primary" aria-haspopup="true" aria-expanded="false" onclick="sendIbus('3f,00,0c,00,44')">Close</button><br/>
+    
+                <p><br></p>
+                
+Window passenger rear: <button type="button" class="btn btn-primary" aria-haspopup="true" aria-expanded="false" onclick="sendIbus('3f,00,0c,00,47')">Open</button>
+<button type="button" class="btn btn-primary" aria-haspopup="true" aria-expanded="false" onclick="sendIbus('3f,00,0c,00,46')">Close</button><br/>                
+
+                <p><br></p>
+                
+Windows front: <button type="button" class="btn btn-primary" aria-haspopup="true" aria-expanded="false" onclick="sendIbus('3f,00,0c,00,65')">Open</button>
+                
+                <p><br></p>
+                
+Windows back: <button type="button" class="btn btn-primary" aria-haspopup="true" aria-expanded="false" onclick="sendIbus('3f,00,0c,00,64')">Open</button>
+                
+                <p><br></p>
+
             </div>
             
             <!-- Raw IBus stream -->
