@@ -5,10 +5,9 @@ and removing events at runtime.
 import kodi.builtin
 import signaldb
 import main_thread
-import event_handler
 import log as log_module
 
-from kodi import addon_settings, gui
+from kodi import gui
 from bmw import KombiInstrument, CDChanger
 from buttons import Button
 
@@ -31,13 +30,14 @@ class Index(object):
 		return self.index
 
 
+# TODO: move to another module..
 def init_basic_controls(bind_event):
 
 	"""
 	Initialize all events for buttons.
 	"""
 
-	src, dst = ("IBUS_DEV_BMBT", None)
+	src, dst = "IBUS_DEV_BMBT", None
 
 	# regular expression for scroll speed (forwarded speed to method)
 	regexp = "([1-9])"
@@ -63,6 +63,7 @@ def init_basic_controls(bind_event):
 	bind_event(signaldb.create((src, dst, "info.push")), open_or_close_win, gui.AddonOverview)
 
 
+# TODO: move to another module..
 def open_or_close_win(Window):
 
 	win = gui.window_stack.pop(Window.__name__, None)
@@ -73,41 +74,6 @@ def open_or_close_win(Window):
 	else:
 		gui.close_all_windows()
 		main_thread.add(gui.open_window, Window)
-
-
-class Methods(object):
-
-	"""
-	Methods dependent on bus-communication.
-	"""
-
-	def __init__(self, send):
-		self.send = send
-		self.kombi_instrument = KombiInstrument(send)
-		self.cd_changer = CDChanger(send)
-
-	# TODO how to handle welcome-message when other messages also pop's up in IKE during ignition on?
-	def welcome_text(self, bind_event):
-
-		"""
-		Show welcome-text only if ignition is on. Request ignition-status and
-		set callback for ignition-status on.
-		"""
-
-		text = addon_settings.get_welcome_text()
-
-		if not text:
-			return
-
-		bind_event(signaldb.create((KombiInstrument.DEVICE, "IBUS_DEV_GLO", "ign-key.on")), self.kombi_instrument.write_to_display, text, static=False)
-		self.kombi_instrument.request_ign_state()
-
-	def start_cd_emulation(self, bind_event):
-
-		""" Start the CD-changer emulation, broadcast poll periodically until acknowledged """
-
-		bind_event(signaldb.create(("IBUS_DEV_RAD", CDChanger.DEVICE, "device.poll")), self.cd_changer.poll_response)
-		event_handler.add(self.cd_changer.broadcast, interval=CDChanger.INTERVAL)
 
 
 class Events(object):
@@ -124,9 +90,10 @@ class Events(object):
 		self.send = send
 		self.events = []
 		self.index = Index()
-		self.methods = Methods(self.send)
 
-		init_basic_controls(self.bind_event)
+		# devices
+		self.cd_changer = CDChanger(send)
+		self.kombi_instrument = KombiInstrument(send)
 
 	def initialize_events(self):
 
@@ -134,8 +101,10 @@ class Events(object):
 		Initial events launched when system is just started (called from service.py)!
 		"""
 
-		self.methods.welcome_text(self.bind_event)
-		self.methods.start_cd_emulation(self.bind_event)
+		init_basic_controls(self.bind_event)
+
+		self.kombi_instrument.init_events(self.bind_event)
+		self.cd_changer.init_events(self.bind_event)
 
 	def bind_event(self, signal, method, *args, **kwargs):
 

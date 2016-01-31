@@ -113,6 +113,27 @@
 			<byte val="0xA2" ref:id="UNDEFINED">NAV position and time</byte>
 			<byte val="0xA5" ref:id="UNDEFINED">unknown</byte>
 
+			<CD_STATUS_REQUEST>
+				<byte val="0x00 0x00"			signal:id="cd-changer.req-status"/>
+				<byte val="0x01 0x00"			signal:id="cd-changer.req-stop"/>
+				<byte val="0x03 0x00"			signal:id="cd-changer.req-play"/>
+				<byte val="0x04 0x0{DIRECTION}" signal:id="cd-changer.req-fast-scan"/>
+				<byte val="0x06 0x0{DISC}"		signal:id="cd-changer.req-change-cd"/>
+				<byte val="0x07 0x0{DIRECTION}" signal:id="cd-changer.req-scan"/>
+				<byte val="0x08 0x0{STATE}"		signal:id="cd-changer.req-random"/>
+				<byte val="0x0A 0x0{DIRECTION}"	signal:id="cd-changer.req-change-track"/>
+			</CD_STATUS_REQUEST>
+
+			<CD_STATUS_RESPONSE>
+				<byte val="0x00 0x02 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-stopped"/>
+				<byte val="0x00 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-playing"/>
+				<byte val="0x02 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-start-playing"/>
+				<byte val="0x03 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-fast-scan-forward"/>
+				<byte val="0x04 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-fast-scan-backward"/>
+				<byte val="0x07 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-track-end"/>
+				<byte val="0x08 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-cd-seek"/>
+			</CD_STATUS_RESPONSE>
+
 			<DEV_READY>
 				<byte val="0x00" signal:id="device.ready"/>
 				<byte val="0x01" signal:id="device.broadcast"/>
