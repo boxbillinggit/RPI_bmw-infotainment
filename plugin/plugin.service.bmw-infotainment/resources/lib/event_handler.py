@@ -93,10 +93,7 @@ class EventHandler(threading.Thread):
 
 			method, interval, args, kwargs = task[METHOD], task[INTERVAL], task[ARGS], task[KWARGS]
 
-			try:
-				reschedule = method(*args, **kwargs)
-			except TypeError as error:
-				log.error("{} - {}".format(self.__class__.__name__, error))
+			reschedule = method(*args, **kwargs)
 
 			self.schedule.remove(task)
 
