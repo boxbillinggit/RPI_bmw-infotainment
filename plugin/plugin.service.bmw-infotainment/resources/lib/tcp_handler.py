@@ -4,6 +4,7 @@ This is the current main TCP-interface.
 import time
 import event_handler
 import signaldb
+import settings
 import gateway_protocol
 import log as log_module
 
@@ -54,7 +55,9 @@ class BusStats(object):
 
 		percent = self.bytes / ((time.time() - self.timestamp) * self.max_rate)
 		GUI.event(UPDATE_STATS, percent)
-		log.debug("Current bus-activity: {:.2%}".format(percent))
+
+		if settings.TCPIP.LOG_BUS_ACTIVITY:
+			log.debug("Current bus-activity: {:.2%}".format(percent))
 
 		self.bytes = 0
 		self.timestamp = time.time()

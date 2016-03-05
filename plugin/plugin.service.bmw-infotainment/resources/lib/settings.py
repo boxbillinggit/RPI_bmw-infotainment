@@ -45,6 +45,7 @@ class TCPIP(object):
 	ALIVE_TIMEOUT 		= 10
 	MAX_ATTEMPTS 		= 5
 
+	LOG_BUS_ACTIVITY = False
 
 class SignalDB(object):
 
