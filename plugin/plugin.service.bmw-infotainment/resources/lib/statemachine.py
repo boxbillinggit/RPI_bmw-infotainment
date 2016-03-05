@@ -7,9 +7,7 @@ __author__ = 'lars'
 
 class StateMachine(object):
 
-	"""
-	Minimalistic state-machine.
-	"""
+	""" Minimalistic state-machine. """
 
 	states = ()
 
@@ -47,6 +45,11 @@ class StateMachine(object):
 
 				if self.on_new_state:
 					self.on_new_state(new_state)
+
+				action = transition.get("action")
+
+				if action:
+					action()
 
 				self.state = new_state
 				return True
