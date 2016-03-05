@@ -7,9 +7,10 @@ import events
 # can be overriden from test-script
 event = events.Debug()
 
-class WindowXML(object):
 
-	def __init__(self):
+class Window(object):
+
+	def __init__(self, *args, **kwargs):
 		pass
 
 	def doModal(self):
@@ -21,6 +22,14 @@ class WindowXML(object):
 	@classmethod
 	def getControl(cls, control_id):
 		return Control()
+
+
+class WindowXML(Window):
+	pass
+
+
+class WindowXMLDialog(Window):
+	pass
 
 
 class Control(object):

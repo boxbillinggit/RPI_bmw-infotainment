@@ -1,6 +1,8 @@
 import datetime
 __author__ = 'lars'
 
+USE_DEFAULT = True
+
 
 class Debug(object):
 
@@ -16,4 +18,9 @@ class Debug(object):
 
 	def user_input(self, module="", method="", args=None, default=""):
 		print "{} - {}".format(module, method)
+
+		if USE_DEFAULT:
+			print ("{} >> {}".format(args, default))
+			return default
+
 		return raw_input("{}: [{}] >>".format(args, default))
