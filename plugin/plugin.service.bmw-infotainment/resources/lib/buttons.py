@@ -3,18 +3,17 @@ This module contains a class used as template for constructing buttons
 with a state-machine.
 """
 import time
-
 import event_handler
 import settings
-import statemachine
 import log as log_module
+from statemachine import StateMachine
 
 log = log_module.init_logger(__name__)
 
 __author__ = 'Lars'
 
 
-class State(statemachine.State):
+class State(StateMachine):
 
 	"""
 	Object containing current state, new object for each Button.

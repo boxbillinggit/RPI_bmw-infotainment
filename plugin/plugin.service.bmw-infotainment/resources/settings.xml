@@ -1,32 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<!-- 
-	Add-on settings
-	Reference: http://kodi.wiki/view/Add-on_settings 
--->
+<!-- Reference: http://kodi.wiki/view/Add-on_settings -->
 
 <settings>
 
-	<category label="Gateway">
+	<setting label="Gateway settings" type="lsep"/>
+	<setting label="Address" id="gateway.ip-address" type="ipaddress" default="127.0.0.1"/>
+	<setting label="Port" id="gateway.port" type="number" default="4287"/>
 
-		<!--- Gateway settings -->
-		<setting label="Gateway settings" type="lsep"/>
-		<setting label="Address" id="gateway.ip-address" type="ipaddress" default="127.0.0.1"/>
-		<setting label="Port" id="gateway.port" type="number" default="4287"/>
-
-		<setting label="Status" type="lsep"/>
-		<setting label="Bus activity" type="text" id="gateway.bus-activity" default="0%" enable="false"/>
-		<setting label="Connection status" type="text" id="gateway.status" default="Disconnected" enable="false"/>
-		<setting label="Connect" type="action" action="RunScript(plugin.service.bmw-infotainment, connect)"/>
-		<setting label="Disconnect" type="action" action="RunScript(plugin.service.bmw-infotainment, disconnect)"/>
-
-	</category>
-
-	<category label="BMW-infotainment">
-		<setting label="Welcome text" type="lsep"/>
-		<setting label="Text in Kombi-instument" type="text" default="Welcome!" id="welcome-text"/>
-		<setting label="Enabled" type="bool" id="welcome-text.enabled" default="true"/>
-	</category>
+	<setting label="BMW-infotainment" type="lsep"/>
+	<setting label="Show welcome text" type="bool" id="welcome-text.enabled" default="true"/>
+	<setting label="Welcome text in kombi-instument" enable="eq(-1,true)" type="text" default="Welcome!" id="welcome-text"/>
 
 </settings>
-
-

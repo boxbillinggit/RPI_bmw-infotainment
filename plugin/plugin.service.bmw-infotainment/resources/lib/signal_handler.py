@@ -3,10 +3,13 @@ This module handles received BUS-signals.
 """
 
 import re
-
+import system
 import event_handler
 import log as log_module
-from signal_events import Events
+import bmw
+import bmbt
+
+import signal_recorder
 
 log = log_module.init_logger(__name__)
 __author__ = 'lars'
@@ -14,9 +17,7 @@ __author__ = 'lars'
 
 def check_if_data_matches(string, pattern):
 
-	"""
-	Find exact match for DATA by evaluating with regular expression.
-	"""
+	""" Find exact match for DATA by evaluating with regular expression. """
 
 	res = re.match("{}$".format(pattern), string)
 
@@ -47,11 +48,68 @@ def match_found(bus_sig, event_sig):
 	return None if not devices_matches else check_if_data_matches(bus_data, data)
 
 
-class SignalHandler(Events):
+class Events(object):
 
 	"""
-	Interface implementing callbacks and methods for bus-signals.
+	Callbacks to be triggered from a received signal. also containing
+	methods for to dynamically update, add -or remove events at runtime.
 	"""
+
+	INDEX, SIGNAL, METHOD, ARGS, KWARGS = range(5)
+
+	def __init__(self, send):
+
+		self.send = send
+		self.events = []
+		self.index = 0
+
+		# devices
+		self.cd_changer = bmw.CDChanger(send)
+		self.kombi_instrument = bmw.KombiInstrument(send)
+		self.bmbt_monitor = bmbt.Monitor(send)
+
+	def inc_idx(self):
+
+		self.index += 1
+		return self.index
+
+	def initialize_events(self):
+
+		""" Initial events launched when system is just started (called from service.py) """
+
+		components = (system, signal_recorder, self.kombi_instrument, self.cd_changer, self.bmbt_monitor)
+
+		for component in components:
+
+			component.init_events(self.bind_event)
+
+	def bind_event(self, signal, method, *args, **kwargs):
+
+		"""	Add one event to list. if keyword argument "static=False" is used, event will
+		be deleted from list after execution (one-time event) """
+
+		index = self.inc_idx()
+		item = (index, signal, method, args, kwargs)
+
+		self.events.append(item)
+		return index
+
+	def unbind_event(self, ref):
+
+		""" Remove one event, with index as reference. """
+
+		for item in self.events:
+
+			index = item[Events.INDEX]
+
+			if index == ref:
+				self.events.remove(item)
+				return index
+
+
+class SignalHandler(Events):
+
+	"""	Interface implementing callbacks and methods for bus-signals. """
 
 	def __init__(self, handle_send):
 		self.handle_send = handle_send
@@ -59,10 +117,8 @@ class SignalHandler(Events):
 
 	def send(self, signal, *args, **kwargs):
 
-		"""
-		Use event-handler for sending since "handle_send is directly refereed down to
-		socket (could maybe be blocking, etc).
-		"""
+		"""	Use event-handler for sending since "handle_send is directly refereed down to
+		socket (could maybe be blocking, etc). """
 
 		event_handler.add(self.handle_send, signal, *args, **kwargs)
 
@@ -89,5 +145,5 @@ class SignalHandler(Events):
 				if not kwargs.pop("static", True):
 					self.events.remove(item)
 
-				event_handler.add(method, *(match+args), **kwargs)
-				log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(signal)))
+				event_handler.add(method, *(args+match), **kwargs)
+				# log.debug("{} - match for signal: {}".format(self.__class__.__name__, log_module.pritty_hex(signal)))

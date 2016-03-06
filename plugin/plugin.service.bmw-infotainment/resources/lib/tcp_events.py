@@ -1,28 +1,23 @@
 import time
 import threading
-
-import kodi
-import statemachine
 import settings
-import gateway_protocol
-import tcp_socket
 import event_handler
 import log as log_module
 
-try:
-	import xbmc
-except ImportError:
-	import debug.xbmc as xbmc
+from statemachine import StateMachine
+from kodi import __addonid__, __xbmcgui__, addon_settings
+from kodi.callbacks import GUI, UPDATE_STATUS
+from gateway_protocol import Protocol
+from tcp_socket import ThreadedSocket
 
 log = log_module.init_logger(__name__)
-Protocol = gateway_protocol.Protocol
-addon_settings = kodi.AddonSettings()
 
-__author__		= 'lars'
-__monitor__ 	= xbmc.Monitor()
+__author__ = 'lars'
+
+ADDRESS, PORT = range(2)
 
 
-class State(statemachine.State):
+class State(StateMachine):
 
 	"""
 	Current state on TCP-connection.
@@ -32,8 +27,10 @@ class State(statemachine.State):
 
 	INIT, REROUTING, CONNECTING, CONNECTED, DISCONNECTED, RECONNECTING = range(6)
 
+	CurrentState = INIT
+
 	def __init__(self):
-		super(State, self).__init__(State.INIT)
+		super(State, self).__init__(State.INIT, State.new_state)
 
 		self.transitions = \
 			{"from": (State.INIT,),         "to": (State.REROUTING, State.DISCONNECTED)}, \
@@ -42,6 +39,13 @@ class State(statemachine.State):
 			{"from": (State.CONNECTED,),    "to": (State.DISCONNECTED,)}, \
 			{"from": (State.DISCONNECTED,), "to": (State.RECONNECTING, State.INIT)}, \
 			{"from": (State.RECONNECTING,), "to": (State.INIT,)}
+
+	@classmethod
+	def new_state(cls, new_state):
+
+		""" update static class-variable for current state on TCP connection """
+
+		cls.CurrentState = new_state
 
 
 class Request(object):
@@ -56,7 +60,7 @@ class Request(object):
 		self.current_request = Request.RUNNING
 
 
-class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
+class Events(Protocol, ThreadedSocket, State):
 
 	"""
 	Base class for handling all events for the TCP/IP-layer with help from a
@@ -70,25 +74,25 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 	def next_reconnect():
 		return time.time() + settings.TCPIP.TIME_RECONNECT
 
-	def __init__(self, event=None):
+	def __init__(self, condition=None, event=None):
 		State.__init__(self)
-		gateway_protocol.Protocol.__init__(self)
-		tcp_socket.ThreadedSocket.__init__(self)
+		Protocol.__init__(self)
+		ThreadedSocket.__init__(self, condition)
 
 		self.event = event or Events.Event
 
 		self.host = addon_settings.get_host()
 		self.timestamp = time.time()
 		self.attempts = 0
-		self.send_buffer = ""
+		self.send_buffer = []
 
 		request = Request()
 		self.request = request.current_request
 
-	def start_service(self):
+	def _request_connect(self):
 
 		"""
-		Used to start -or restart service (from user -or internally by event-handler).
+		Used to connect -or reconnect (from user -or internally by event-handler).
 		"""
 
 		if self.request is Request.STOPPED:
@@ -99,7 +103,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 			self.timestamp = time.time()
 			self.event.set()
 
-	def stop_service(self):
+	def _request_disconnect(self):
 
 		"""
 		Request from user to disconnect. Broadcast disconnect to gateway
@@ -119,15 +123,16 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 		if self.state_is(State.CONNECTED):
 			self.sendall(data)
 		else:
-			self.send_buffer += data
+			self.send_buffer.append(data)
 
 	def send_data_buffered(self):
 
 		"""	Send data accumulated when DISCONNECTED """
 
-		if self.send_buffer:
-			self.sendall(self.send_buffer)
-			del self.send_buffer[:]
+		for chunk in self.send_buffer:
+			self.sendall(chunk)
+
+		del self.send_buffer[:]
 
 	def reset_attempts(self):
 
@@ -148,6 +153,13 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 		# TODO how to handle, is pipe broken??
 		# self.set_state_to(State.DISCONNECTED)
 		log.error("{} - Alive timeout! Is pipe broken???".format(self.__class__.__name__))
+
+	def notify_disconnected(self):
+
+		""" Notify user, but only if an unintended disconnection occurred (not triggered by user) """
+
+		msg = "Connection lost, reconnecting... ({} of {})".format(self.attempts, settings.TCPIP.MAX_ATTEMPTS)
+		__xbmcgui__.Dialog().notification(__addonid__, msg)
 
 	def check_still_alive(self):
 
@@ -186,7 +198,7 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 
 		"""	Received a rerouting-request from gateway """
 
-		self.host = (addon_settings.address, port)
+		self.host = (self.host[ADDRESS], port)
 		self.set_state_to(State.REROUTING)
 
 	def handle_reconnect(self):
@@ -202,10 +214,10 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 
 		if self.allowed_to_reconnect() and self.set_state_to(State.RECONNECTING):
 			self.attempts += 1
-			event_handler.add(self.start_service, timestamp=Events.next_reconnect())
-			kodi.notify_disconnected(self.attempts)
+			self.notify_disconnected()
+			event_handler.add(self._request_connect, timestamp=Events.next_reconnect())
 
-		while not (self.event.wait(timeout=Events.POLL) or __monitor__.abortRequested()):
+		while not (self.event.wait(timeout=Events.POLL) or not self.still_alive()):
 			pass
 
 		self.event.clear()
@@ -217,19 +229,20 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 		"""
 
 		if self.state_is(State.INIT):
-			addon_settings.set_status(self.translate_state(State.CONNECTING))
+			GUI.event(UPDATE_STATUS, self.translate_state(State.CONNECTING))
 
 		self.set_state_to(State.CONNECTING)
 
 	def state_connected(self):
 
 		"""
-		Successfully connected, Empty the send-buffer
+		Successfully connected, Empty the send-buffer (not from current ThreadedSocket
+		but from EventHandler-thread)
 		"""
 
 		if self.set_state_to(State.CONNECTED):
-			addon_settings.set_status(self.translate_state())
-			self.send_data_buffered()
+			GUI.event(UPDATE_STATUS, self.translate_state())
+			event_handler.add(self.send_data_buffered)
 
 	def state_disconnected(self):
 
@@ -238,4 +251,4 @@ class Events(gateway_protocol.Protocol, tcp_socket.ThreadedSocket, State):
 		"""
 
 		if self.set_state_to(State.DISCONNECTED):
-			addon_settings.set_status(self.translate_state())
+			GUI.event(UPDATE_STATUS, self.translate_state())

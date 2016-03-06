@@ -8,6 +8,36 @@ import events
 event = events.Debug()
 
 
+class Window(object):
+
+	def __init__(self, *args, **kwargs):
+		pass
+
+	def doModal(self):
+		pass
+
+	def close(self):
+		pass
+
+	@classmethod
+	def getControl(cls, control_id):
+		return Control()
+
+
+class WindowXML(Window):
+	pass
+
+
+class WindowXMLDialog(Window):
+	pass
+
+
+class Control(object):
+
+	def setLabel(self):
+		pass
+
+
 class Dialog(object):
 
 	def __init__(self):

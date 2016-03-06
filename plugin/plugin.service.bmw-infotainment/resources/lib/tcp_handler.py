@@ -1,26 +1,26 @@
 """
-This is the current main TCP-interface to use.
+This is the current main TCP-interface.
 """
 import time
-
 import event_handler
-import kodi
-import log as log_module
 import signaldb
+import settings
 import gateway_protocol
-import tcp_events
+import log as log_module
+
+from kodi.callbacks import GUI, Application, UPDATE_STATS
+from tcp_events import Events, Request
 from signal_handler import SignalHandler
 
 __author__ = 'lars'
 
 log = log_module.init_logger(__name__)
-Request = tcp_events.Request
 
 
 class BusStats(object):
 
 	"""
-	Calculating bus activity, always good to know when tampering with the lin-bus.
+	Calculating bus activity, always good to know when tampering with the LIN-bus.
 	Each tcp-frame has an overhead, subtract these from bytes handled.
 
 	BaudRate - bits/second
@@ -28,7 +28,7 @@ class BusStats(object):
 	Ref: https://learn.sparkfun.com/tutorials/serial-communication/rules-of-serial
 	"""
 
-	TCP_OVERHEAD = 5
+	TCP_OVERHEAD = 4
 	UPDATE_RATE = 5
 
 	def __init__(self):
@@ -51,9 +51,13 @@ class BusStats(object):
 
 	def update_value(self):
 
+		""" Updates bus-activity periodically """
+
 		percent = self.bytes / ((time.time() - self.timestamp) * self.max_rate)
-		kodi.AddonSettings.set_bus_activity(percent)
-		log.debug("Current bus-activity: {:.2%}".format(percent))
+		GUI.event(UPDATE_STATS, percent)
+
+		if settings.TCPIP.LOG_BUS_ACTIVITY:
+			log.debug("Current bus-activity: {:.2%}".format(percent))
 
 		self.bytes = 0
 		self.timestamp = time.time()
@@ -62,18 +66,28 @@ class BusStats(object):
 		return True
 
 
-class TCPIPHandler(tcp_events.Events):
+class TCPIPHandler(Events):
 
 	"""
 	Main interface for all TCP/IP-handling.
 	"""
 
-	def __init__(self):
-		super(TCPIPHandler, self).__init__()
+	def __init__(self, condition=None):
+		super(TCPIPHandler, self).__init__(condition)
 		self.signal_handler = SignalHandler(self.send)
 		self.bus_stats = BusStats()
+		self._bind_callbacks()
 
-	def request_start(self):
+	def _bind_callbacks(self):
+
+		"""
+		Set callbacks, triggered from GUI.
+		"""
+
+		Application.Callbacks.update(onConnect=self.request_connect)
+		Application.Callbacks.update(onDisconnect=self.request_disconnect)
+
+	def request_connect(self):
 
 		"""
 		User calls this method for connecting.
@@ -81,16 +95,16 @@ class TCPIPHandler(tcp_events.Events):
 
 		self.request = Request.RUNNING
 		self.reset_attempts()
-		self.start_service()
+		self._request_connect()
 
-	def request_stop(self):
+	def request_disconnect(self):
 
 		"""
 		User calls this method for disconnecting (also system shutdown).
 		"""
 
 		self.request = Request.STOPPED
-		self.stop_service()
+		self._request_disconnect()
 
 	def send(self, signal):
 

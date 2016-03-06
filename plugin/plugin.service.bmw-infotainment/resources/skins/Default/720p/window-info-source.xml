@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	References:
+	http://kodi.wiki/view/XBMC_Skinning_Manual
+	http://kodi.wiki/view/Controls
+	http://kodi.wiki/view/Container_Item_Layout
+
+	default skin:
+	/usr/share/kodi/addons/skin.confluence
+ -->
+
+<window>
+	<id>13001</id>
+	<animation effect="fade" time="800">WindowOpen</animation>
+	<onunload>ClearProperty(SideBladeOpen,Home)</onunload>
+	<onload>SetProperty(SideBladeOpen,True,Home)</onload>
+	<defaultcontrol always="false">9000</defaultcontrol>
+	<coordinates>
+		<posx>0</posx>
+		<posy>0</posy>
+	</coordinates>
+
+	<!-- For faster rendering when using background image -->
+	<backgroundcolor>0x00000000</backgroundcolor>
+
+	<controls>
+
+		<control type="largeimage">
+			<description>background-image</description>
+			<posx>0</posx>
+			<posy>0</posy>
+			<width>1280</width>
+			<height>720</height>
+			<texture>../../../../fanart.jpg</texture>
+		</control>
+
+		<control type="label" id="90">
+			<posx>40%</posx>
+			<posy>50</posy>
+			<height>50</height>
+			<width>350</width>
+			<label>BMW-infotainment</label>
+			<font>font35_title</font>
+			<textcolor>white</textcolor>
+			<align>center</align>
+			<aligny>center</aligny>
+		</control>
+
+		<control type="group">
+			<left>-250</left>
+			<include>SideBladeLeft-Local</include>
+
+
+			<control type="grouplist" id="9000">
+
+				<left>0</left>
+				<top>110</top>
+				<width>250</width>
+				<height>600</height>
+				<!--<onfocus condition="IsEmpty(Window.Property(SideBladeOpen))">SetProperty(SideBladeOpen,True,Home)</onfocus>-->
+				<onleft>SetProperty(SideBladeOpen, True, Home)</onleft>
+				<onleft>9000</onleft>
+				<onright>ClearProperty(SideBladeOpen, Home)</onright>
+				<onright>50</onright>
+				<onup>9000</onup>
+				<ondown>9000</ondown>
+				<onback>ClearProperty(SideBladeOpen, Home)</onback>
+				<onback>50</onback>
+				<itemgap>0</itemgap>
+
+				<control type="label" id="90">
+					<height>50</height>
+					<include>LeftSideBlade.ListItem</include>
+					<label>General</label>
+					<font>font30</font>
+					<textcolor>blue</textcolor>
+					<align>left</align>
+				</control>
+
+				<control type="button" id="94">
+					<label>Open Settings</label>
+					<description>Launch Settings</description>
+					<textwidth>235</textwidth>
+					<include>ButtonCommonValues</include>
+				</control>
+
+				<control type="label" id="100">
+					<height>50</height>
+					<include>LeftSideBlade.ListItem</include>
+					<label>Gateway</label>
+					<font>font30</font>
+					<textcolor>blue</textcolor>
+				</control>
+
+				<control type="label" id="101">
+					<include>LeftSideBlade.ListItem</include>
+					<label>Bus-activity: 0.00%</label>
+					<font>font12</font>
+					<textcolor>grey3</textcolor>
+				</control>
+
+				<control type="label" id="102">
+					<include>LeftSideBlade.ListItem</include>
+					<label>Status: Unknown</label>
+					<font>font12</font>
+					<textcolor>grey3</textcolor>
+					<align>left</align>
+				</control>
+
+				<control type="button" id="200">
+					<description>connect</description>
+					<textwidth>235</textwidth>
+					<include>ButtonCommonValues</include>
+					<label>Connect</label>
+				</control>
+
+				<control type="button" id="201">
+					<description>disconnect</description>
+					<textwidth>235</textwidth>
+					<include>ButtonCommonValues</include>
+					<label>Disconnect</label>
+				</control>
+
+			</control>
+		</control>
+
+	</controls>
+</window>
+

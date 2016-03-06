@@ -45,6 +45,7 @@ class TCPIP(object):
 	ALIVE_TIMEOUT 		= 10
 	MAX_ATTEMPTS 		= 5
 
+	LOG_BUS_ACTIVITY = False
 
 class SignalDB(object):
 
@@ -56,8 +57,6 @@ class SignalDB(object):
 class Buttons(object):
 
 	"""	Settings for BUTTONS, etc..	"""
-
-	SCROLL_SPEED = 0.01
 
 	STATE_HOLD_INIT 	= 1.5
 	STATE_HOLD_INTERVAL = 0.5

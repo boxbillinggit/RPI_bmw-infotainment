@@ -12,20 +12,12 @@ https://docs.python.org/2/library/xml.etree.elementtree.html
 import xml.etree.ElementTree as ElementTree
 import os
 import settings
-
-# import local modules
 import log as log_module
+from kodi import __addonpath__
+
 log = log_module.init_logger(__name__)
 
-try:
-	import xbmcaddon
-
-except ImportError as err:
-	import debug.xbmcaddon as xbmcaddon
-
-__author__ 		= 'Lars'
-__addon__		= xbmcaddon.Addon()
-__addonpath__	= __addon__.getAddonInfo('path')
+__author__ = 'Lars'
 
 
 # read XML-database
@@ -70,7 +62,7 @@ def uniform(string):
 
 def validate(obj, ref=""):
 
-	""" Check and validate number of results found from searching xml-db """
+	""" Check and validate number of results found from lookup in xml-db """
 
 	if len(obj) != 1:
 		raise DBError("{} - {} references(s) found in XML-database for '{}', expecting one item".format(__name__, len(obj), ref))

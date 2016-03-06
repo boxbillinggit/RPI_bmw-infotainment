@@ -16,8 +16,8 @@ build-guicallback-armhf:
   type: build
   script:
   - cd plugin
-  - plugin.service.bmw-infotainment/guicallback/build-armhf.sh
+  - python plugin.service.bmw-infotainment/resources/skins/Default/720p/build-xml.py
+  - python plugin.service.bmw-infotainment/make-package.py
   - python deploy.py
   only:
   - master
-

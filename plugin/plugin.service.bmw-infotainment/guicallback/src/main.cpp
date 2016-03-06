@@ -4,8 +4,6 @@
  *
  * Created on den 20 juli 2015, 23:18
  * 
- * References: 
- * CPython development docs - https://docs.python.org/2/extending/extending.html#a-simple-example
  * 
  */
 

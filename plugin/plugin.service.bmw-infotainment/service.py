@@ -3,64 +3,59 @@ This is the service add-on for XBMC/KODI
 
 References:
 http://kodi.wiki/view/Service_addons
-Python dev docs - http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
+http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 """
 import resources.lib.winpdb as winpdb
 import resources.lib.log as logger
-import resources.lib.libguicallback as guicallback
 
+from resources.lib.kodi import gui, __monitor__
+from resources.lib.main_thread import MainThread
 from resources.lib.event_handler import EventHandler
 from resources.lib.tcp_handler import TCPIPHandler
 
-log = logger.init_logger(__name__)
-
-try:
-	import xbmc
-except ImportError as err:
-	log.warning("%s - using debug-modules instead" % err.message)
-	import resources.lib.debug.xbmc as xbmc
-
 __author__ 		= 'Lars'
-__monitor__ 	= xbmc.Monitor()
 
+log = logger.init_logger(__name__)
 winpdb.launch_debugger()
 
-event_handler = EventHandler()
-tcp_ip = TCPIPHandler()
+
+def still_alive():
+
+	""" Run threads until abort is requested """
+
+	return not __monitor__.abortRequested()
 
 
-def launch_initial_events():
-
-	"""
-	Initial events launched when system is started!
-	"""
-
-	tcp_ip.signal_handler.launch_initial_events()
-
-
-def set_callbacks():
+def handle_init():
 
 	"""
-	cPython library "libguicallback.so" acts as an interface between script(GUI)
-	and service module, allowing callbacks from GUI to interact with service-module.
+	Start threads, launch initial events.
 	"""
 
-	guicallback.setOnConnect(tcp_ip.request_start)
-	guicallback.setOnDisconnect(tcp_ip.request_stop)
+	event_thread.start()
+	tcpip_thread.start()
+
+	tcpip_thread.signal_handler.initialize_events()
+
+
+def handle_shutdown():
+
+	"""
+	Perform necessary shutdowns (main-thread may be	blocked	with an open GUI)
+	"""
+
+	gui.close_all_windows()
+	tcpip_thread.request_disconnect()
+
+
+event_thread, tcpip_thread, main_thread = EventHandler(condition=still_alive, handle_exit=handle_shutdown), TCPIPHandler(condition=still_alive), MainThread(condition=still_alive)
+
 
 if __name__ == "__main__":
 
-	set_callbacks()
+	handle_init()
 
-	event_handler.start()
+	# blocking until abort is requested (but may still be blocked from open GUI's)
+	main_thread.start()
 
-	tcp_ip.start()
-
-	launch_initial_events()
-
-	if __monitor__.waitForAbort():
-
-		log.info("Bye!")
-
-		# Close socket gracefully (XBMC/KODI waits for thread to finish before it closes down)
-		tcp_ip.request_stop()
+	log.info("Bye!")

@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<window>
+	<id>13001</id>
+	<coordinates>
+		<posx>0</posx>
+		<posy>0</posy>
+	</coordinates>
+	<animation effect="fade" time="400">WindowOpen</animation>
+	<animation effect="fade" time="400">WindowClose</animation>
+	<backgroundcolor>0x00000000</backgroundcolor>
+	<controls>
+		<control id="80" type="largeimage">
+			<description>background-image</description>
+			<posx>0</posx>
+			<posy>0</posy>
+			<width>1280</width>
+			<height>720</height>
+			<texture>../backgrounds/screen-default.png</texture>
+		</control>
+		<control id="90" type="label">
+			<posx>440</posx>
+			<posy>300</posy>
+			<height>50</height>
+			<width>400</width>
+			<!--<label>Screen inactive</label>-->
+			<font>font35_title</font>
+			<textcolor>white</textcolor>
+			<align>center</align>
+			<aligny>center</aligny>
+		</control>
+	</controls>
+</window>
