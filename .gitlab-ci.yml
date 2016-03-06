@@ -18,7 +18,7 @@ build-plugin:
   - cd plugin
   - python plugin.service.bmw-infotainment/resources/skins/Default/720p/build-xml.py
   - python plugin.service.bmw-infotainment/make-package.py
-  - python deploy.py --version=release --sftp-host=deploy
+  - python publish.py --version=release --sftp-host=deploy
   only:
   - master
 
@@ -28,6 +28,6 @@ build-plugin:
   - cd plugin
   - python plugin.service.bmw-infotainment/resources/skins/Default/720p/build-xml.py
   - python plugin.service.bmw-infotainment/make-package.py
-  - python deploy.py --version=development --sftp-host=deploy
+  - python publish.py --version=development --sftp-host=deploy
   only:
   - Development
