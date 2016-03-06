@@ -1,3 +1,9 @@
+v1.0.3
+ - CDChanger emulation implemented! Improved handling for welcome-text
+   when display is occupied. BMBT state-machine implemented and controls
+   is active only in state CDchanger. Default GUI is available when
+   pressing "clock".
+
 v1.0.2
  - New implementation; Welcome-text when ignition turns on, system
    shutdown scheduled when ignition turns off. Monitor for LIN-bus
