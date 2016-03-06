@@ -25,18 +25,14 @@ def addon_settings():
 
 def create_changelog(addon_ver):
 
-	"""
-	Create a changelog with current version-suffix
-	"""
+	""" Create a changelog with current version-suffix """
 
 	shutil.copy("changelog.txt", "changelog-{VERSION}.txt".format(VERSION=addon_ver))
 
 
 def package_cfg():
 
-	"""
-	Exclude/include files from archive (defined in file with name PACKAGE)
-	"""
+	""" Exclude/include files from archive (defined in file with name PACKAGE) """
 
 	cfg = dict()
 
@@ -55,9 +51,7 @@ def package_cfg():
 
 def create_args(package):
 
-	"""
-	Generate arguments defining files to include -or exclude in archive.
-	"""
+	""" Generate arguments defining files to include -or exclude in archive. """
 
 	args = list()
 
@@ -70,12 +64,14 @@ def create_args(package):
 	return args
 
 
-def create_archive(addon_id, addon_ver, args):
+def create_archive(filename, args):
 
-	filename = "{ID}-{VERSION}.zip".format(ID=addon_id, VERSION=addon_ver)
+	""" Must go back a step in current path before creating the archive """
 
 	try:
-		os.system("zip -qr {ARGS} {DST} {FILES}".format(ARGS=" ".join(args), DST=os.path.join(DESTINATION, filename), FILES="*"))
+		path = os.path.basename(os.getcwd())
+		os.chdir("../")
+		os.system("zip -qr {ARGS} {DST} {FILES}".format(ARGS=" ".join(args), DST=os.path.join(DESTINATION, filename), FILES=path))
 
 	except OSError as err:
 		print err.strerror
@@ -89,4 +85,8 @@ if __name__ == "__main__":
 
 	create_changelog(addon_ver)
 
-	create_archive(addon_id, addon_ver, create_args(package_cfg()))
+	filename = "{ID}-{VERSION}.zip".format(ID=addon_id, VERSION=addon_ver)
+
+	create_archive(filename, create_args(package_cfg()))
+
+	print("Created archive \"{FILE}\"".format(FILE=filename))
