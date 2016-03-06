@@ -74,6 +74,8 @@
 
 		<DATA>
 
+			<byte val="{DATA}" signal:id="ARBITRARY">Catch Arbitrary data (for debugging, etc)</byte>
+
 			<!-- Operations is defined as first byte in 'data' -->
 			<byte val="0x01" signal:id="device.poll">Poll any device</byte>
 			<byte val="0x02" ref:id="DEV_READY">Poll response from device (answer to poll message)</byte>
@@ -86,18 +88,19 @@
 			<byte val="0x18" ref:id="UNDEFINED">Speed and rpm</byte>
 			<byte val="0x1A" ref:id="IKE_DISPLAY_TEXT">IKE text display</byte>
 			<byte val="0x21" ref:id="UNDEFINED">unknown</byte>
-			<byte val="0x23" ref:id="BM_UPDATE_TEXTFIELD">Write value to boardmonitor text field</byte>
+			<byte val="0x23" ref:id="UPDATE_UPPER_TEXTFIELD">Write value to boardmonitor upper text field</byte>
 			<byte val="0x24" ref:id="UNDEFINED">IKE byte request</byte>
 			<byte val="0x2B" ref:id="UNDEFINED">LED command to BM </byte>
 			<byte val="0x2C" ref:id="UNDEFINED">Display Phone symbol</byte>
 			<byte val="0x31" ref:id="UNDEFINED">unknown</byte>
 			<byte val="0x32" ref:id="VOLUME_CTRL">Volume adjustment (wheel button and BMBT button)</byte>
+			<byte val="0x37" ref:id="TONE_SELECT_GRAPHICS"> graphics for tone / select etc</byte>
 			<byte val="0x38" ref:id="CD_STATUS_REQUEST">CD status and track info, request</byte>
 			<byte val="0x39" ref:id="CD_STATUS_RESPONSE">CD status and track info, response</byte>
 			<byte val="0x3B" ref:id="MFL_BUTTON">Steering wheel button action</byte>
 			<byte val="0x40" ref:id="UNDEFINED">Set date and time </byte>
 			<byte val="0x41" ref:id="UNDEFINED">OBC get and reset value</byte>
-			<byte val="0x46" ref:id="UNDEFINED">Menu commands to NAV </byte>
+			<byte val="0x46" ref:id="UPDATE_GRAPHICS">Menu commands to graphics driver</byte>
 			<byte val="0x47" ref:id="BMBT_INFO_SELECT">INFO/SELECT board monitor button</byte>
 			<byte val="0x48" ref:id="BMBT_BUTTON">Board monitor button action</byte>
 			<byte val="0x49" ref:id="BMBT_RIGHT_KNOB">Board monitor right-knob turn left/right</byte>
@@ -110,12 +113,33 @@
 			<byte val="0x76" ref:id="UNDEFINED">External lights</byte>
 			<byte val="0x79" ref:id="UNDEFINED">unknown</byte>
 			<byte val="0x7A" ref:id="UNDEFINED">Window and door message, interior light control</byte>
-			<byte val="0xA2" ref:id="UNDEFINED">NAV position and time</byte>
-			<byte val="0xA5" ref:id="UNDEFINED">unknown</byte>
+			<byte val="0xA2" ref:id="NAV_DATA">NAV position and time</byte>
+			<byte val="0xA5" ref:id="INDEX_AREA">Write value to nav field</byte>
+
+			<UPDATE_GRAPHICS>
+				<!-- TODO: bitmasked, use that method instead? -->
+				<byte val="0x01" signal:id="screen.current"/>
+				<byte val="0x02" signal:id="screen.mainmenu"/>
+				<byte val="0x04" signal:id="screen.select-off"/>
+				<byte val="0x08" signal:id="screen.tone-off"/>
+				<byte val="0x0c" signal:id="screen.tone-select-off"/>
+			</UPDATE_GRAPHICS>
+
+			<TONE_SELECT_GRAPHICS>
+				<byte val="0x90 0x10 0x10 0x10" signal:id="screen.tone-on"/>
+				<!--<byte val="0x[C-F]0" signal:id="screen.tone-on"/>-->
+				<!--<byte val="0x[0-3]4" signal:id="screen.select-on"/>--> <!-- current button in state  -->
+			</TONE_SELECT_GRAPHICS>
+
+			<INDEX_AREA>
+				<byte val="0x60 0x01 0x00" signal:id="index-area.refresh"/>
+				<byte val="0x62 0x01 0x0{FIELD} {TEXT}" signal:id="index-area.write"/>
+			</INDEX_AREA>
 
 			<CD_STATUS_REQUEST>
 				<byte val="0x00 0x00"			signal:id="cd-changer.req-status"/>
 				<byte val="0x01 0x00"			signal:id="cd-changer.req-stop"/>
+				<byte val="0x02 0x00"			signal:id="cd-changer.req-pause"/>
 				<byte val="0x03 0x00"			signal:id="cd-changer.req-play"/>
 				<byte val="0x04 0x0{DIRECTION}" signal:id="cd-changer.req-fast-scan"/>
 				<byte val="0x06 0x0{DISC}"		signal:id="cd-changer.req-change-cd"/>
@@ -125,13 +149,14 @@
 			</CD_STATUS_REQUEST>
 
 			<CD_STATUS_RESPONSE>
-				<byte val="0x00 0x02 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-stopped"/>
-				<byte val="0x00 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-playing"/>
-				<byte val="0x02 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-start-playing"/>
-				<byte val="0x03 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-fast-scan-forward"/>
-				<byte val="0x04 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-fast-scan-backward"/>
-				<byte val="0x07 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-track-end"/>
-				<byte val="0x08 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.sts-cd-seek"/>
+				<byte val="0x00 0x02 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.stopped"/>
+				<byte val="0x00 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.playing"/>
+				<byte val="0x01 0x0C 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.paused"/>
+				<byte val="0x02 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.start-playing"/>
+				<byte val="0x03 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.fast-scan-forward"/>
+				<byte val="0x04 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.fast-scan-backward"/>
+				<byte val="0x07 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.track-end"/>
+				<byte val="0x08 0x09 0x00 0x3F 0x00 {DISC} {TRACK}" signal:id="cd-changer.seek-disc"/>
 			</CD_STATUS_RESPONSE>
 
 			<DEV_READY>
@@ -197,7 +222,7 @@
 				<byte val="0x81" signal:id="two.release"/>
 				
 				<byte val="0x13" signal:id="five.push"/>
-				<byte val="0x52" signal:id="five.hold"/>
+				<byte val="0x53" signal:id="five.hold"/>
 				<byte val="0x93" signal:id="five.release"/>
 				
 				<byte val="0x12" signal:id="three.push"/>
@@ -219,7 +244,7 @@
 				<byte val="0x23" signal:id="mode.push"/>
 				<byte val="0x63" signal:id="mode.hold"/>
 				<byte val="0xA3" signal:id="mode.release"/>
-				
+
 				<byte val="0x30" signal:id="source.push"/>
 				<byte val="0x70" signal:id="source.hold"/>
 				<byte val="0xB0" signal:id="source.release"/>
@@ -269,6 +294,13 @@
 				<byte val="0x85" signal:id="right-knob.release"/>
 			</BMBT_BUTTON>
 
+			<!-- on BMBT-monitor this is not a real button, but sent as button press from GT when pressing "info"  -->
+			<BMBT_BUTTON>
+				<byte val="0x22" signal:id="rds.push"/>
+				<byte val="0x62" signal:id="rds.hold"/>
+				<byte val="0xA2" signal:id="rds.release"/>
+			</BMBT_BUTTON>
+
 			<BMBT_INFO_SELECT>
 				<byte val="0x00 0x38" signal:id="info.push"/>
 				<byte val="0x00 0x78" signal:id="info.hold"/>
@@ -285,13 +317,16 @@
 			</BMBT_RIGHT_KNOB>
 
 			<IKE_DISPLAY_TEXT>
-				<byte val="0x35 0x00 {TEXT}" signal:id="ike-text.normal"/>
 				<byte val="0x30 0x00 {TEXT}" signal:id="ike-text.gong"/>
+				<byte val="0x35 0x00 {TEXT}" signal:id="ike-text.normal"/>
+				<byte val="0x37 0x01 {TEXT}" signal:id="ike-text.normal-with-arrows"/>
+				<byte val="0x37 0x04 {TEXT}" signal:id="ike-text.gong-with-arrows"/>
+				<byte val="0x37 0x14 {TEXT}" signal:id="ike-text.gong-and-disappears"/>
 			</IKE_DISPLAY_TEXT>
 
-			<BM_UPDATE_TEXTFIELD>
-				<byte val="0x62 0x10 {DATA}" signal:id="text-area.unknown"/>
-			</BM_UPDATE_TEXTFIELD>
+			<UPDATE_UPPER_TEXTFIELD>
+				<byte val="0x62 0x30{LEFT} 0x07 {MID} 0x08 {RIGHT}" signal:id="text-area.upper"/>
+			</UPDATE_UPPER_TEXTFIELD>
 
 		</DATA>
 	</MESSAGE>

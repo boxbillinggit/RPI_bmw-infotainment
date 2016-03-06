@@ -18,7 +18,8 @@ def shutdown():
 
 	"""	system shutdown has been requested """
 
-	# __xbmc__.shutdown()  # we don't want abrupt shutdown during testing ;)
+	# TODO: change later. but for now we don't want abrupt shutdowns during testing ;)
+	# __xbmc__.shutdown()
 	__xbmc__.executebuiltin("Quit")
 
 
@@ -31,19 +32,15 @@ def action(event):
 
 def scroll(direction):
 
-	"""
-	Factory method for creating callback for e'scrolling (supports different
-	scroll-speeds
-	"""
+	"""	Factory method for creating callback for e'scrolling (supports different
+	scroll-speeds """
 
 	return lambda *args: _action(direction, *args)
 
 
 def _action(event, *args):
 
-	"""
-	Execute an action in KODI (could be repeatedly).
-	"""
+	"""	Execute an action in KODI (could be repeatedly). """
 
 	repeat = int(args[0]) if args else 1
 
@@ -53,3 +50,10 @@ def _action(event, *args):
 			time.sleep(SCROLL_SPEED)
 
 		__xbmc__.executebuiltin("Action({event})".format(event=event))
+
+
+def media_player(command):
+
+	""" Controls the current media. "Play" is toggling between play and pause though """
+
+	__xbmc__.executebuiltin("PlayerControl({COMMAND})".format(COMMAND=command))

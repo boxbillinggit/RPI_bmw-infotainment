@@ -1,65 +1,64 @@
 import time
 import log as log_module
 import settings
+import signaldb
 import event_handler
 
-from statemachine import StateMachine
-from kodi import builtin as kodi
+import kodi.builtin
 
 log = log_module.init_logger(__name__)
 __author__ = 'lars'
 
 
-# TODO: finish this
-class State(StateMachine):
+class SystemState(object):
 
-	"""
-	Interface for controlling system shutdown, etc
-	"""
+	""" Storage class for system states """
 
-	INIT, SHUTDOWN = range(2)
+	request_shutdown = False
 
-	# MID-states
-	states = ("UNDEFINED", "MENU", "RADIO", "CD", "TAPE")
 
-	UNDEFINED, MENU, RADIO, CD, TAPE = range(5)
+def init_events(bind_event):
 
-	def __init__(self):
-		super(State, self).__init__(State.UNDEFINED)
+	""" system shutdown, GPIO-pins, etc..  """
 
-		self.transitions = \
-			{"from": (State.UNDEFINED,), "to": (State.MENU, State.RADIO, State.CD, State.TAPE)}, \
-			{"from": (State.RADIO,), 	"to": (State.CD,)}, \
-			{"from": (State.CD,), 		"to": (State.TAPE,)}, \
-			{"from": (State.TAPE,), 	"to": (State.MENU,)}, \
-			{"from": (State.MENU,), 	"to": (State.RADIO,)}
+	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), abort_shutdown)
+	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), schedule_shutdown)
 
-		# we expecting a state change only when button is pressed
-		self.transition_allowed = False
-		self.sys_state = State.INIT
 
-	def button_pressed(self):
-		self.transition_allowed = True
+def screen_on():
 
-	def set_state_init(self):
+	""" Turn on GPIO pin #X to activate RCA input """
 
-		""" Driver came back within time, abort shutdown """
+	pass
 
-		if self.sys_state == State.SHUTDOWN:
-			event_handler.remove(kodi.shutdown)
-			log.info("{} - Welcome back! (Aborting system shutdown request)".format(self.__class__.__name__))
 
-		self.sys_state = State.INIT
+def screen_off():
 
-	def set_state_shutdown(self):
+	""" turn off GPIO pin #X and deactivate RCA input """
 
-		""" Schedule shutdown when key has been pulled out from ignition lock """
+	pass
 
-		if self.sys_state == State.INIT:
 
-			shutdown = settings.System.IDLE_SHUTDOWN
+def schedule_shutdown():
 
-			event_handler.add(kodi.shutdown, timestamp=time.time()+shutdown)
-			log.info("{} - System shutdown is scheduled within {} min".format(self.__class__.__name__, (shutdown/60)))
+	""" Schedule shutdown only once """
 
-		self.sys_state = State.SHUTDOWN
+	if not SystemState.request_shutdown:
+
+		shutdown_time = settings.System.IDLE_SHUTDOWN
+
+		event_handler.add(kodi.builtin.shutdown, timestamp=time.time()+shutdown_time)
+		log.info("System shutdown is scheduled within {} min".format(shutdown_time/60))
+
+	SystemState.request_shutdown = True
+
+
+def abort_shutdown():
+
+	""" Driver came back within time, abort shutdown """
+
+	if SystemState.request_shutdown:
+		event_handler.remove(kodi.builtin.shutdown)
+		log.info("Welcome back! (Aborting system shutdown request)")
+
+	SystemState.request_shutdown = False

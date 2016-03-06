@@ -14,7 +14,7 @@ def open_window(Window):
 	window = Window.new()
 	window_stack.update({Window.__name__: window})
 	window.doModal()
-	window.unbind_callbacks()
+	unbind_callbacks()
 	window_stack.pop(Window.__name__, None)
 	del window
 
@@ -29,28 +29,32 @@ def close_all_windows():
 	window_stack.clear()
 
 
+def unbind_callbacks():
+
+	""" Unbind events before deleting object """
+
+	GUI.Callbacks.clear()
+
+
+class DefaultScreen(__xbmcgui__.WindowXML):
+
+	""" GUI for when screen is disabled """
+
+	@classmethod
+	def new(cls):
+		return cls("window-default.xml", __addonpath__)
+
+
 class AddonOverview(__xbmcgui__.WindowXML):
 
-	"""
-	GUI for add-on default overview
-	"""
+	"""	GUI for add-on default overview	"""
 
 	BUS_ACTIVITY = 101
 	CONN_STATUS  = 102
 
 	@classmethod
 	def new(cls):
-
-		""" Factory for creating new window """
-
 		return cls("window-info.xml", __addonpath__)
-
-	@staticmethod
-	def unbind_callbacks():
-
-		""" Unbind events before deleting object """
-
-		GUI.Callbacks.clear()
 
 	def __init__(self, *args, **kwargs):
 		super(AddonOverview, self).__init__()
@@ -68,7 +72,6 @@ class AddonOverview(__xbmcgui__.WindowXML):
 
 		GUI.Callbacks.update(onBusActivity=self.on_bus_activity)
 		GUI.Callbacks.update(onConnectionStatus=self.on_connection_status)
-
 
 	def on_bus_activity(self, percent):
 
