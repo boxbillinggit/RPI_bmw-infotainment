@@ -16,9 +16,7 @@ files = list()
 
 def prettify_xml(elem):
 
-	"""
-	Return a pretty-printed XML string for the Element.
-	"""
+	""" Return a pretty-printed XML string for the Element.	"""
 
 	rough_string = ET.tostring(elem).replace("\t", "").replace("\n", "")
 
@@ -27,10 +25,8 @@ def prettify_xml(elem):
 
 def generate_master_xml(xml_root):
 
-	"""
-	Generate the master-xml as a register for all plugins available in the repository.
-	Ref: http://kodi.wiki/view/Add-on_repositories
-	"""
+	"""	Generate the master-xml as a register for all plugins available in the repository.
+	Ref: http://kodi.wiki/view/Add-on_repositories """
 
 	xml = prettify_xml(xml_root)
 
@@ -60,9 +56,7 @@ def add_components(plugin_path):
 
 def deploy(items):
 
-	"""
-	Make the actual deployment
-	"""
+	"""	Publish files """
 
 	stdin = list(["END"])
 

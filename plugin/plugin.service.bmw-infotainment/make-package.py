@@ -70,8 +70,8 @@ def create_archive(filename, args):
 
 	try:
 		path = os.path.basename(os.getcwd())
-		os.chdir("../")
-		os.system("zip -qr {ARGS} {DST} {FILES}".format(ARGS=" ".join(args), DST=os.path.join(DESTINATION, filename), FILES=path))
+		os.chdir(DESTINATION)
+		os.system("zip -qr {ARGS} {DST} {FILES}".format(ARGS=" ".join(args), DST=filename, FILES=path))
 
 	except OSError as err:
 		print err.strerror
