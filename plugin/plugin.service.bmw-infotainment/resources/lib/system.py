@@ -2,13 +2,12 @@ import time
 import log as log_module
 import signaldb
 import event_handler
+from kodi import __xbmcgui__, __addonid__
 import kodi.builtin
 import kodi.addon_settings
 
 log = log_module.init_logger(__name__)
 __author__ = 'lars'
-
-# TODO: notify when shutdown is scheduled (won't be visible anyway, but during testing/debugging)
 
 
 class SystemState(object):
@@ -49,7 +48,11 @@ def schedule_shutdown():
 	if (shutdown is not None) and (not SystemState.request_shutdown):
 
 		event_handler.add(kodi.builtin.shutdown, timestamp=time.time()+shutdown)
-		log.info("System shutdown is scheduled within {} min".format(shutdown/60))
+
+		msg = "System shutdown in {} min".format(shutdown/60)
+		log.info(msg)
+
+		__xbmcgui__.Dialog().notification(__addonid__, msg)
 
 	SystemState.request_shutdown = True
 
