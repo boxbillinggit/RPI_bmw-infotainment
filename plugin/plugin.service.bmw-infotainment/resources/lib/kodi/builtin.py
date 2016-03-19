@@ -5,6 +5,7 @@ Reference:
 http://kodi.wiki/view/List_of_Built_In_Functions
 http://kodi.wiki/view/keymap#Actions
 http://kodi.wiki/view/Action_IDs
+http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 """
 import time
 from __init__ import __xbmc__
@@ -18,9 +19,7 @@ def shutdown():
 
 	"""	system shutdown has been requested """
 
-	# TODO: change later. but for now we don't want abrupt shutdowns during testing ;)
-	# __xbmc__.shutdown()
-	__xbmc__.executebuiltin("Quit")
+	__xbmc__.shutdown()
 
 
 def action(event):

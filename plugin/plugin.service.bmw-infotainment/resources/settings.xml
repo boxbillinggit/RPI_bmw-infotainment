@@ -8,7 +8,10 @@
 	<setting label="Port" id="gateway.port" type="number" default="4287"/>
 
 	<setting label="BMW-infotainment" type="lsep"/>
-	<setting label="Show welcome text" type="bool" id="welcome-text.enabled" default="true"/>
-	<setting label="Welcome text in kombi-instument" enable="eq(-1,true)" type="text" default="Welcome!" id="welcome-text"/>
+	<setting label="Show welcome-message in kombi-instument on start" type="bool" id="welcome-msg.enabled" default="true"/>
+	<setting label="Welcome-message text" enable="eq(-1,true)" type="text" default="Welcome!" id="welcome-msg.text"/>
 
+	<setting type="sep"/>
+	<setting label="Shutdown on ignition-key out (recommended)" type="bool" id="system-shutdown.enabled" default="true"/>
+	<setting label="Shutdown after (hr:min)" enable="eq(-1,true)" type="time" id="system-shutdown.time" default="00:30"/>
 </settings>

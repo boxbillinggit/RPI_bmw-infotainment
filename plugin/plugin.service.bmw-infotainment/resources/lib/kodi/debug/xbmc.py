@@ -53,7 +53,7 @@ def shutdown():
 	event.emit(module=__modulename__, method="shutdown", args="shutdown requested!")
 
 
-def exit_main_thread(sig, frame):
+def exit_main_thread(*args):
 	Monitor.abort_requested = True
 
 

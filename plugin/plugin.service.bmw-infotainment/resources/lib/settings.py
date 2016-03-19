@@ -16,14 +16,6 @@ class WinPDB(object):
 	TIMEOUT = 30
 
 
-class System(object):
-
-	"""	System settings	"""
-
-	# shutdown after 30min idle (after key has been pulled out from ignition lock)
-	IDLE_SHUTDOWN = 30 * 60
-
-
 class Logging(object):
 
 	""" Settings for logger (console -and file-handler) """
@@ -46,6 +38,7 @@ class TCPIP(object):
 	MAX_ATTEMPTS 		= 10
 
 	LOG_BUS_ACTIVITY = False
+
 
 class SignalDB(object):
 
