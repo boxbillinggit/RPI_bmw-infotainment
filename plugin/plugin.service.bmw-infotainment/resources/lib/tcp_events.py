@@ -9,9 +9,10 @@ from kodi import __addonid__, __xbmcgui__, addon_settings
 from kodi.callbacks import GUI, UPDATE_STATUS
 from gateway_protocol import Protocol
 from tcp_socket import ThreadedSocket
+# TODO: merge all tcp/ip modules ino one (except gateway-protocol)
+# TODO: fix state-machine better (define "action" in transitions instead, remove State-class?)
 
 log = log_module.init_logger(__name__)
-
 __author__ = 'lars'
 
 ADDRESS, PORT = range(2)
@@ -19,9 +20,7 @@ ADDRESS, PORT = range(2)
 
 class State(StateMachine):
 
-	"""
-	Current state on TCP-connection.
-	"""
+	""" Current state on TCP-connection """
 
 	states = ("INIT", "REROUTING", "CONNECTING", "CONNECTED", "DISCONNECTED", "RECONNECTING")
 
@@ -31,14 +30,6 @@ class State(StateMachine):
 
 	def __init__(self):
 		super(State, self).__init__(State.INIT, State.new_state)
-
-		self.transitions = \
-			{"from": (State.INIT,),         "to": (State.REROUTING, State.DISCONNECTED)}, \
-			{"from": (State.REROUTING,),    "to": (State.CONNECTING,)}, \
-			{"from": (State.CONNECTING,),   "to": (State.CONNECTED, State.DISCONNECTED)}, \
-			{"from": (State.CONNECTED,),    "to": (State.DISCONNECTED,)}, \
-			{"from": (State.DISCONNECTED,), "to": (State.RECONNECTING, State.INIT)}, \
-			{"from": (State.RECONNECTING,), "to": (State.INIT,)}
 
 	@classmethod
 	def new_state(cls, new_state):
@@ -50,9 +41,7 @@ class State(StateMachine):
 
 class Request(object):
 
-	"""
-	Current request from user.
-	"""
+	""" Current request from user """
 
 	RUNNING, STOPPED = range(2)
 
@@ -62,10 +51,8 @@ class Request(object):
 
 class Events(Protocol, ThreadedSocket, State):
 
-	"""
-	Base class for handling all events for the TCP/IP-layer with help from a
-	state-machine.
-	"""
+	""" Base class for handling all events for the TCP/IP-layer with help from a
+	state-machine. """
 
 	Event = threading.Event()
 	POLL = 1
@@ -89,11 +76,18 @@ class Events(Protocol, ThreadedSocket, State):
 		request = Request()
 		self.request = request.current_request
 
+		self.transitions = \
+			{"from": (State.INIT,),         "to": (State.REROUTING, State.DISCONNECTED)}, \
+			{"from": (State.REROUTING,),    "to": (State.CONNECTING,)}, \
+			{"from": (State.CONNECTING,),   "to": (State.DISCONNECTED,)}, \
+			{"from": (State.CONNECTING,),   "to": (State.CONNECTED,), "action": self.reset_attempts}, \
+			{"from": (State.CONNECTED,),    "to": (State.DISCONNECTED,), "action": self.notify_disconnected}, \
+			{"from": (State.DISCONNECTED,), "to": (State.RECONNECTING, State.INIT)}, \
+			{"from": (State.RECONNECTING,), "to": (State.INIT,)}
+
 	def _request_connect(self):
 
-		"""
-		Used to connect -or reconnect (from user -or internally by event-handler).
-		"""
+		""" Used to connect -or reconnect (from user -or internally by event-handler) """
 
 		if self.request is Request.STOPPED:
 			return
@@ -105,20 +99,16 @@ class Events(Protocol, ThreadedSocket, State):
 
 	def _request_disconnect(self):
 
-		"""
-		Request from user to disconnect. Broadcast disconnect to gateway
-		and the server will disconnect us gracefully.
-		"""
+		""" Request from user to disconnect. Broadcast disconnect to gateway
+		and the server will disconnect us gracefully. """
 
 		if self.state_is(State.CONNECTED):
 			self.sendall(Protocol.DISCONNECT)
 
 	def handle_send(self, data):
 
-		"""
-		Method for sending data. we must be connected, else buffer data and send
-		when connected.
-		"""
+		""" Method for sending data. we must be connected, else buffer data and send
+		when connected. """
 
 		if self.state_is(State.CONNECTED):
 			self.sendall(data)
@@ -136,7 +126,7 @@ class Events(Protocol, ThreadedSocket, State):
 
 	def reset_attempts(self):
 
-		"""	Called only when user requests to connect """
+		"""	Called only when user requests to connect, or when connected! """
 
 		self.attempts = 0
 
@@ -144,7 +134,15 @@ class Events(Protocol, ThreadedSocket, State):
 
 		"""	Are we allowed to reconnect (after a unintended disconnection)? """
 
-		return self.request is Request.RUNNING and (self.attempts < settings.TCPIP.MAX_ATTEMPTS)
+		if self.request is Request.STOPPED:
+			return
+
+		if self.attempts >= settings.TCPIP.MAX_ATTEMPTS:
+			msg = "Ough, tried reconnecting {ATTEMPTS} times now.. Giving up!".format(ATTEMPTS=self.attempts)
+			__xbmcgui__.Dialog().notification(__addonid__, msg)
+			return
+
+		return True
 
 	def alive_timeout(self):
 
@@ -158,15 +156,15 @@ class Events(Protocol, ThreadedSocket, State):
 
 		""" Notify user, but only if an unintended disconnection occurred (not triggered by user) """
 
-		msg = "Connection lost, reconnecting... ({} of {})".format(self.attempts, settings.TCPIP.MAX_ATTEMPTS)
-		__xbmcgui__.Dialog().notification(__addonid__, msg)
+		if self.request is Request.STOPPED:
+			return
+
+		__xbmcgui__.Dialog().notification(__addonid__, "Connection lost, reconnecting...")
 
 	def check_still_alive(self):
 
-		"""
-		Scheduled to get called periodically, as long as method returns "True" (while
-		still connected). Send a ping to the gateway.
-		"""
+		""" Scheduled to get called periodically, as long as method returns "True" (while
+		still connected). Send a ping to the gateway. """
 
 		if not self.state_is(State.CONNECTED):
 			return
@@ -203,18 +201,15 @@ class Events(Protocol, ThreadedSocket, State):
 
 	def handle_reconnect(self):
 
-		"""
-		Called just after a disconnection. Reschedule new attempt to connect (if
+		""" Called just after a disconnection. Reschedule new attempt to connect (if
 		allowed). This method blocks until event is set. Using a polling loop, else
-		XBMC/KODI locks during system shutdown.
-		"""
+		XBMC/KODI locks during system shutdown. """
 
 		if self.state_is(State.REROUTING):
 			return
 
 		if self.allowed_to_reconnect() and self.set_state_to(State.RECONNECTING):
 			self.attempts += 1
-			self.notify_disconnected()
 			event_handler.add(self._request_connect, timestamp=Events.next_reconnect())
 
 		while not (self.event.wait(timeout=Events.POLL) or not self.still_alive()):
@@ -224,9 +219,7 @@ class Events(Protocol, ThreadedSocket, State):
 
 	def state_connecting(self):
 
-		"""
-		Set status connecting in the very beginning of the connection.
-		"""
+		""" Set status connecting in the very beginning of the connection """
 
 		if self.state_is(State.INIT):
 			GUI.event(UPDATE_STATUS, self.translate_state(State.CONNECTING))
@@ -235,10 +228,8 @@ class Events(Protocol, ThreadedSocket, State):
 
 	def state_connected(self):
 
-		"""
-		Successfully connected, Empty the send-buffer (not from current ThreadedSocket
-		but from EventHandler-thread)
-		"""
+		"""	Successfully connected, Empty the send-buffer (not from current ThreadedSocket
+		but from EventHandler-thread) """
 
 		if self.set_state_to(State.CONNECTED):
 			GUI.event(UPDATE_STATUS, self.translate_state())
@@ -246,9 +237,7 @@ class Events(Protocol, ThreadedSocket, State):
 
 	def state_disconnected(self):
 
-		"""
-		Socket is disconnected.
-		"""
+		""" Socket is disconnected """
 
 		if self.set_state_to(State.DISCONNECTED):
 			GUI.event(UPDATE_STATUS, self.translate_state())
