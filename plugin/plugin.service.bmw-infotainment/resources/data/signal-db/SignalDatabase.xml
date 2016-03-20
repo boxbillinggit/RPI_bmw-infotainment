@@ -132,6 +132,26 @@
 			</TONE_SELECT_GRAPHICS>
 
 			<INDEX_AREA>
+
+				<!--
+
+				21 60 00 {START_POS} {TEXTFIELD} 0x06 {TEXTFIELD+1} 0x06 {TEXTFIELD+2} ...
+
+				"0x06" means move to next textfield (index+1)
+
+				start positions:
+				__________________________
+				| #1 - 0x60 | #6  - 0x45 |
+				| #2 - 0x41 | #7  - 0x46 |
+				| #3 - 0x42 | #8  - 0x47 |
+				| #4 - 0x43 | #9  - 0x48 |
+				| #5 - 0x44 | #10 - 0x49 |
+				|________________________|
+
+				-->
+
+				<!--<byte val="0x60 0x00 0x20" signal:id="index-area.unknown"/>-->
+				<byte val="0x60 0x00 0x60 0x06 0x06 0x06 0x06 0x06 0x06 0x06 0x06 0x06" signal:id="index-area.flush"/>
 				<byte val="0x60 0x01 0x00" signal:id="index-area.refresh"/>
 				<byte val="0x62 0x01 0x0{FIELD} {TEXT}" signal:id="index-area.write"/>
 			</INDEX_AREA>
@@ -172,6 +192,8 @@
 			</IGN_KEY_STATUS>
 
 			<IGN_LOCK_STATUS>
+				<!--<byte val="0x05 0x04" signal:id="ign-key.unknown"/>-->
+				<!--<byte val="0x04 0x04" signal:id="ign-key.unknown"/>-->
 				<byte val="0x04 0x01" signal:id="ign-key.in"/>
 				<byte val="0x00 0xFF" signal:id="ign-key.out"/>
 			</IGN_LOCK_STATUS>

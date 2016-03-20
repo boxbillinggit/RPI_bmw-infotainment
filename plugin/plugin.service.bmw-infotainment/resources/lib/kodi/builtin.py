@@ -8,7 +8,7 @@ http://kodi.wiki/view/Action_IDs
 http://mirrors.kodi.tv/docs/python-docs/14.x-helix/
 """
 import time
-from __init__ import __xbmc__
+from __init__ import __xbmc__, __player__
 
 __author__ = 'lars'
 
@@ -51,8 +51,22 @@ def _action(event, *args):
 		__xbmc__.executebuiltin("Action({event})".format(event=event))
 
 
-def media_player(command):
+def pause():
 
-	""" Controls the current media. "Play" is toggling between play and pause though """
+	""" Not using stop(), since we loosing current playlist then (can't resume).. """
+
+	if __xbmc__.getCondVisibility("Player.Playing"):
+		__player__.pause()
+
+
+def play():
+
+	""" pause() is toggling: play-pause-play.. """
+
+	if __xbmc__.getCondVisibility("Player.Paused"):
+		__player__.pause()
+
+
+def media_ctrl(command):
 
 	__xbmc__.executebuiltin("PlayerControl({COMMAND})".format(COMMAND=command))

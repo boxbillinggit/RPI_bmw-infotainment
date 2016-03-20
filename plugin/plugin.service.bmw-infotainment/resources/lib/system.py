@@ -21,6 +21,7 @@ def init_events(bind_event):
 
 	""" system shutdown, GPIO-pins, etc..  """
 
+	# TODO: ignition in is not detected (no bus-signal exists accordingly to signal-db)
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), abort_shutdown)
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), schedule_shutdown)
 

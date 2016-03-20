@@ -1,4 +1,5 @@
 import event_handler
+from kodi import __player__
 import kodi.builtin
 import kodi.addon_settings
 import time
@@ -120,6 +121,20 @@ class CDChanger(object):
 		# bind_event(sdb.create((src, dst, "cd-changer.req-fast-scan"), DIRECTION=regexp), self.respond, "fast-scan")
 		# bind_event(sdb.create((src, dst, "cd-changer.req-scan"), DIRECTION=regexp), self.respond, "scan")
 
+		# TODO:  scan fast forward while holding button (until release)
+		# steering wheel buttons
+		src, dst = "IBUS_DEV_MFL", "IBUS_DEV_RAD"
+
+		bind_event(sdb.create((src, dst, "next.push")), self.media_ctrl, __player__.playnext)
+		bind_event(sdb.create((src, dst, "previous.push")), self.media_ctrl, __player__.playprevious)
+
+	def media_ctrl(self, fcn):
+
+		""" next, previous, etc.. allowed only if media source CDC is active """
+
+		if self.state is CDChanger.PLAYING:
+			fcn()
+
 	def poll_response(self):
 
 		""" Reply on poll, stop broadcasting """
@@ -127,6 +142,7 @@ class CDChanger(object):
 		self.acknowledged = True
 		self.send(sdb.create((self.DEVICE, "IBUS_DEV_LOC", "device.ready")))
 
+	# TODO: shall only broadcast when radio is awake (from first message from radio)
 	def broadcast(self):
 
 		""" periodically broadcast until poll is answered """
@@ -141,30 +157,30 @@ class CDChanger(object):
 
 	def handle_play(self):
 
-		# Can't play if stopped, must have a playlist or similar as reference to play
-		# kodi.builtin.media_player("Play")
+		kodi.builtin.play()
 		self.state = CDChanger.PLAYING
 		self._respond(CDChanger.Response[self.state])
 
 	def handle_stop(self):
 
-		kodi.builtin.media_player("Stop")
+		kodi.builtin.pause()
 		self.state = CDChanger.STOPPED
 		self._respond(CDChanger.Response[self.state])
 
 	def handle_pause(self):
 
-		# Play is toggling. and we don't know current state
-		# kodi.builtin.media_player("Play")
+		kodi.builtin.pause()
 		self.state = CDChanger.PAUSED
 		self._respond(CDChanger.Response[self.state])
 
+	# TODO: does not work (random off)?
 	def handle_random(self, state):
 
-		""" handle random-playing from original BMW UI """
+		""" handles random request from original BMW UI """
 
-		kodi.builtin.media_player(("RandomOn" if int(state) else "RandomOff"))
+		kodi.builtin.media_ctrl(("RandomOn" if int(state) else "RandomOff"))
 
+	# TODO: fix this
 	def handle_scan(self):
 		pass
 

@@ -44,6 +44,7 @@ class Monitor(object):
 		self.current_screen = Monitor.SCREEN_OFF
 		self.current_media = Monitor.MEDIA_OFF
 		self.cdc_active = False
+		self.flush_bmbt = False
 
 	def init_events(self, bind_event):
 
@@ -108,6 +109,10 @@ class Monitor(object):
 
 		bind_event(sdb.create((src, None, "clock.push")), self.ctrl_handler, toggle_gui, gui.AddonOverview)
 
+		src, dst = "IBUS_DEV_RAD", "IBUS_DEV_GT"
+
+		bind_event(sdb.create((src, dst, "index-area.refresh")), self.flush_bmbt_menu)
+
 	def ctrl_handler(self, fcn, *args, **kwargs):
 
 		""" Controls is active only if current state is correct """
@@ -157,7 +162,24 @@ class Monitor(object):
 		else:
 			self.state_not_cdc()
 
+	def flush_bmbt_menu(self):
+
+		""" This removes the CD-changer buttons (releases the turn knob from changing disc during use) """
+
+		if not self.flush_bmbt:
+			return
+
+		self.flush_bmbt = False
+
+		# TODO: does this work? (test using CDC as device also)
+		src, dst = "IBUS_DEV_RAD", "IBUS_DEV_GT"
+
+		self.send(sdb.create((src, dst, "index-area.flush")))
+		self.send(sdb.create((src, dst, "index-area.refresh")))
+
 	def state_not_cdc(self):
+
+		""" transition from CDC -> OTHER """
 
 		if not self.cdc_active:
 			return
@@ -170,15 +192,16 @@ class Monitor(object):
 
 	def state_cdc(self):
 
+		""" transition from OTHER -> CDC """
+
 		if self.cdc_active:
 			return
 
 		log.debug("Screen on")
 
-		# removes CD-changer buttons TODO: does this work? (test using CDC as device also)
-		self.send(sdb.create(("IBUS_DEV_RAD", "IBUS_DEV_GT", "index-area.refresh")))
-
 		self.cdc_active = True
+		self.flush_bmbt = True
+
 		gui.close_all_windows()
 		system.screen_on()
 
