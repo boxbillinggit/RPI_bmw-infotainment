@@ -175,6 +175,9 @@ class Monitor(object):
 
 		log.debug("Screen on")
 
+		# removes CD-changer buttons TODO: does this work? (test using CDC as device also)
+		self.send(sdb.create(("IBUS_DEV_RAD", "IBUS_DEV_GT", "index-area.refresh")))
+
 		self.cdc_active = True
 		gui.close_all_windows()
 		system.screen_on()
