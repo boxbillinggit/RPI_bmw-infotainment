@@ -16,6 +16,8 @@ SYS_SHUTDOWN_TIME = "system-shutdown.time"
 SYS_SHUTDOWN_ACTV = "system-shutdown.enabled"
 GATEWAY_ADDR = "gateway.ip-address"
 GATEWAY_PORT = "gateway.port"
+SCREEN_GPIO_PIN = "screen.gpio"
+SCREEN_GPIO_ACTV = "screen.enabled"
 
 
 def _get_setting(ident):
@@ -47,8 +49,18 @@ def schedule_shutdown():
 
 	""" Setting for enabling shutdown on ignition-key out """
 
-	if _get_setting(SYS_SHUTDOWN_ACTV) == "true":
-		time = datetime.strptime(_get_setting(SYS_SHUTDOWN_TIME), "%H:%M")
-		return timedelta(hours=time.hour, minutes=time.minute).seconds
+	if _get_setting(SYS_SHUTDOWN_ACTV) == "false":
+		return None
 
-	return None
+	time = datetime.strptime(_get_setting(SYS_SHUTDOWN_TIME), "%H:%M")
+	return timedelta(hours=time.hour, minutes=time.minute).seconds
+
+
+def get_gpio_screen():
+
+	""" Return current configured GPIO pin controlling screen """
+
+	if _get_setting(SCREEN_GPIO_ACTV) == "false":
+		return None
+
+	return _get_setting(SCREEN_GPIO_PIN)

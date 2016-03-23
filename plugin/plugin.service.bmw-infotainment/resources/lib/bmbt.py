@@ -184,7 +184,7 @@ class Monitor(object):
 		if not self.cdc_active:
 			return
 
-		log.debug("Screen off")
+		log.debug("Request screen off")
 
 		self.cdc_active = False
 		system.screen_off()
@@ -197,7 +197,7 @@ class Monitor(object):
 		if self.cdc_active:
 			return
 
-		log.debug("Screen on")
+		log.debug("Request screen on")
 
 		self.cdc_active = True
 		self.flush_bmbt = True

@@ -15,7 +15,9 @@ settings = {
 	"welcome-msg.text": "Welcome!",
 	"welcome-msg.enabled": "true",
 	"system-shutdown.time": "00:01",
-	"system-shutdown.enabled": "true"
+	"system-shutdown.enabled": "true",
+	"screen.gpio": "1",
+	"screen.enabled": "true"
 }
 
 addon = {
