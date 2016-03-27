@@ -5,6 +5,8 @@ import event_handler
 from kodi import __xbmcgui__, __addonid__
 import kodi.builtin
 import kodi.addon_settings
+import RPi.GPIO as GPIO
+
 from subprocess import Popen, PIPE
 
 log = log_module.init_logger(__name__)
@@ -15,7 +17,7 @@ GPIO_OFF, GPIO_ON = range(2)
 GPIO_CTRL_STATE = "/sys/class/gpio/gpio{GPIO_PIN}/value"
 GPIO_CTRL_DIR   = "/sys/class/gpio/gpio{GPIO_PIN}/direction"
 GPIO_CTRL_INIT  = "/sys/class/gpio/export"
-
+GPIO_PIN = kodi.addon_settings.get_gpio_screen()
 
 class GPIOError(Exception):
 
@@ -29,7 +31,6 @@ class System(object):
 	""" Storage class for system states """
 
 	request_shutdown = False
-	GPIO_pin = None
 
 
 def init_events(bind_event):
@@ -44,35 +45,15 @@ def init_events(bind_event):
 	screen_init()
 
 
-def gpio_init_pin(pin):
+def gpio_init_pin():
 
 	""" initialize GPIO-pin for control """
 
-	try:
-		proc = Popen(GPIO_CTRL_INIT, stdout=PIPE, stdin=PIPE, stderr=PIPE)
-	except OSError as error:
-		raise GPIOError(error.strerror)
-
-	stdout, stderr = proc.communicate(input=str(pin))
-
-	if stderr:
-		raise GPIOError(stderr)
-
-
-def gpio_init_direction(pin, direction):
-
-	""" initialize direction for GPIO-pin (input / output) """
-
-	try:
-		proc = Popen(GPIO_CTRL_DIR.format(GPIO_PIN=pin), stdout=PIPE, stdin=PIPE, stderr=PIPE)
-	except OSError as error:
-		raise GPIOError(error.strerror)
-
-	stdout, stderr = proc.communicate(input=direction)
-
-	if stderr:
-		raise GPIOError(stderr)
-
+	GPIO.setmode(GPIO.BCM)
+	GPIO.setwarnings(False)
+	GPIO.setup(7, GPIO.OUT)
+	if GPIO.input(7) is False:
+		log.info("GPIO-pin initialization success for controlling RCA-video (screen): " + error.message)
 
 def screen_init():
 
@@ -84,8 +65,7 @@ def screen_init():
 		return
 
 	try:
-		gpio_init_pin(pin)
-		gpio_init_direction(pin, "out")
+		gpio_init_pin()
 	except GPIOError as error:
 		log.error("GPIO-pin initialization failed for controlling RCA-video (screen): " + error.message)
 		return
@@ -99,7 +79,7 @@ def screen_on():
 	""" Turn on GPIO pin activating RCA-video input """
 
 	try:
-		_screen_ctrl(GPIO_ON)
+		GPIO.output(7, 0)
 	except GPIOError as error:
 		log.error("Screen activation failed: " + error.message)
 
@@ -109,27 +89,9 @@ def screen_off():
 	""" turn off GPIO pin deactivating RCA-video input """
 
 	try:
-		_screen_ctrl(GPIO_OFF)
+		GPIO.output(7, 1)
 	except GPIOError as error:
 		log.error("Screen deactivation failed: " + error.message)
-
-
-def _screen_ctrl(state):
-
-	""" controlling state of screen from GPIO pin """
-
-	if not System.GPIO_pin:
-		return
-
-	try:
-		proc = Popen(GPIO_CTRL_STATE.format(GPIO_PIN=System.GPIO_pin), stdout=PIPE, stdin=PIPE, stderr=PIPE)
-	except OSError as error:
-		raise GPIOError(error.strerror)
-
-	stdout, stderr = proc.communicate(input=str(state))
-
-	if stderr:
-		raise GPIOError(stderr)
 
 
 def schedule_shutdown():
@@ -159,7 +121,8 @@ def abort_shutdown():
 		log.info("Welcome back! (Aborting system shutdown request)")
 
 	System.request_shutdown = False
-	
+
+
 def blinking():
     
     	""" Blinkin Left or Right Directions """
