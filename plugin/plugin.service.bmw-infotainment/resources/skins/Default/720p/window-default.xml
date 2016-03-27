@@ -9,13 +9,13 @@
 	<animation effect="fade" time="400">WindowClose</animation>
 	<backgroundcolor>0x00000000</backgroundcolor>
 	<controls>
-		<control id="80" type="largeimage">
+		<control id="80" type="image">
 			<description>background-image</description>
 			<posx>0</posx>
 			<posy>0</posy>
 			<width>1280</width>
 			<height>720</height>
-			<texture>../backgrounds/screen-default.png</texture>
+			<texture>screen-default.png</texture>
 		</control>
 		<control id="90" type="label">
 			<posx>440</posx>

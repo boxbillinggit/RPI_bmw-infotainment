@@ -3,12 +3,24 @@
 
 <settings>
 
-	<setting label="Gateway settings" type="lsep"/>
-	<setting label="Address" id="gateway.ip-address" type="ipaddress" default="127.0.0.1"/>
-	<setting label="Port" id="gateway.port" type="number" default="4287"/>
+	<category label="General">
+		<setting label="Gateway settings" type="lsep"/>
+		<setting label="Address" id="gateway.ip-address" type="ipaddress" default="127.0.0.1"/>
+		<setting label="Port" id="gateway.port" type="number" default="4287"/>
 
-	<setting label="BMW-infotainment" type="lsep"/>
-	<setting label="Show welcome text" type="bool" id="welcome-text.enabled" default="true"/>
-	<setting label="Welcome text in kombi-instument" enable="eq(-1,true)" type="text" default="Welcome!" id="welcome-text"/>
+		<setting label="BMW-infotainment" type="lsep"/>
+		<setting label="Show welcome-message in kombi-instument on start" type="bool" id="welcome-msg.enabled" default="true"/>
+		<setting label="Welcome-message text" enable="eq(-1,true)" type="text" default="Welcome!" id="welcome-msg.text"/>
+	</category>
+
+	<category label="System settings">
+		<setting label="System shutdown" type="lsep"/>
+		<setting label="Shutdown on ignition-key out (recommended)" type="bool" id="system-shutdown.enabled" default="true"/>
+		<setting label="Shutdown after (hr:min)" enable="eq(-1,true)" type="time" id="system-shutdown.time" default="00:30"/>
+
+		<setting label="Screen (NOTE: settings applied after restart)" type="lsep"/>
+		<setting label="RCA-video control" type="bool" id="screen.enabled" default="true"/>
+		<setting label="GPIO pin #" enable="eq(-1,true)" type="number" id="screen.gpio" default="7"/>
+	</category>
 
 </settings>

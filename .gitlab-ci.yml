@@ -12,12 +12,22 @@ build-gateway-armhf:
   only:
   - master
 
-build-guicallback-armhf:
+build-plugin:
   type: build
   script:
   - cd plugin
   - python plugin.service.bmw-infotainment/resources/skins/Default/720p/build-xml.py
   - python plugin.service.bmw-infotainment/make-package.py
-  - python deploy.py
+  - python publish.py --version=release --sftp-host=deploy
   only:
   - master
+
+build-plugin:
+  type: build
+  script:
+  - cd plugin
+  - python plugin.service.bmw-infotainment/resources/skins/Default/720p/build-xml.py
+  - python plugin.service.bmw-infotainment/make-package.py
+  - python publish.py --version=development --sftp-host=deploy
+  only:
+  - Development
