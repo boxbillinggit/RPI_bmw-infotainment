@@ -80,6 +80,7 @@
 			<byte val="0x01" signal:id="device.poll">Poll any device</byte>
 			<byte val="0x02" ref:id="DEV_READY">Poll response from device (answer to poll message)</byte>
 			<byte val="0x0C" ref:id="UNDEFINED">External lights, boot lid and lock/unlock car</byte>
+			<byte val="0x06" ref:id="MIRROR">Mirror Open/Close</byte>
 			<byte val="0x10" signal:id="ign-key.req-sts">Ignition status request</byte>
 			<byte val="0x11" ref:id="IGN_KEY_STATUS">Ignition key status</byte>
 			<byte val="0x13" ref:id="IKE_STATE">IKE informs about its state</byte>
