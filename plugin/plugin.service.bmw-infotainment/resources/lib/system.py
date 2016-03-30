@@ -40,6 +40,8 @@ def init_events(bind_event):
 	# TODO: ignition in is not detected (no bus-signal exists accordingly to signal-db)
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), abort_shutdown)
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), schedule_shutdown)
+	bind_event(signaldb.create(("IBUS_DEV_FBZV", "IBUS_DEV_GLO", "remote-key.lock")), lock_car)
+	bind_event(signaldb.create(("IBUS_DEV_FBZV", "IBUS_DEV_GLO", "remote-key.unlock")), unlock_car)
 
 	# TODO: also initialize optional input-pin for shutdown request from power-supply
 	screen_init()
@@ -121,6 +123,25 @@ def abort_shutdown():
 		log.info("Welcome back! (Aborting system shutdown request)")
 
 	System.request_shutdown = False
+
+def lock_car():
+	
+	""" Lock Car Close Mirror """
+	
+	self.send(sdb.create(("IBUS_DEV_DIA", "IBUS_DEV_GM", "mirror_driver.close")))
+	self.send(sdb.create(("IBUS_DEV_DIA", "IBUS_DEV_GM", "mirror_passenger.close")))
+	
+	log.info("Close Mirror :)")
+
+
+def unlock_car():
+	
+	""" Unlock car open Mirror """
+	
+	self.send(sdb.create(("IBUS_DEV_DIA", "IBUS_DEV_GM", "mirror_driver.open")))
+	self.send(sdb.create(("IBUS_DEV_DIA", "IBUS_DEV_GM", "mirror_passenger.open")))
+	
+	log.info("Open Mirror :)")
 
 
 def blinking():
