@@ -349,6 +349,14 @@
 			<UPDATE_UPPER_TEXTFIELD>
 				<byte val="0x62 0x30{LEFT} 0x07 {MID} 0x08 {RIGHT}" signal:id="text-area.upper"/>
 			</UPDATE_UPPER_TEXTFIELD>
+			
+			<!-- Close D: 3F 06 00 0C 01 31 01 04 Close P: 3F 06 00 0C 02 31 01 07 Open D: 3F 06 00 0C 01 30 01 05 Open P: 3F 06 00 0C 02 30 01 06 -->
+			<MIRROR>
+				<byte val="0x0C 0x01 0x31 0x01 0x04" signal:id="mirror_driver.close"/>
+				<byte val="0x0C 0x02 0x31 0x01 0x07" signal:id="mirror_passenger.close"/>
+				<byte val="0x0C 0x01 0x30 0x01 0x05" signal:id="mirror_driver.open"/>
+				<byte val="0x0C 0x02 0x30 0x01 0x06" signal:id="mirror_passenger.open"/>
+			</MIRROR>
 
 		</DATA>
 	</MESSAGE>
