@@ -40,8 +40,8 @@ def init_events(bind_event):
 	# TODO: ignition in is not detected (no bus-signal exists accordingly to signal-db)
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.in")), abort_shutdown)
 	bind_event(signaldb.create(("IBUS_DEV_EWS", "IBUS_DEV_GLO", "ign-key.out")), schedule_shutdown)
-	bind_event(signaldb.create(("IBUS_DEV_FBZV", "IBUS_DEV_GLO", "remote-key.lock")), lock_car)
-	bind_event(signaldb.create(("IBUS_DEV_FBZV", "IBUS_DEV_GLO", "remote-key.unlock")), unlock_car)
+	bind_event(signaldb.create(("IBUS_DEV_GM", "IBUS_DEV_GLO", "remote-key.lock")), lock_car)
+	bind_event(signaldb.create(("IBUS_DEV_GM", "IBUS_DEV_GLO", "remote-key.unlock")), unlock_car)
 
 	# TODO: also initialize optional input-pin for shutdown request from power-supply
 	screen_init()
