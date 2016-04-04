@@ -151,7 +151,4 @@ def send(self, signal, *args, **kwargs):
 def blinking():
     
     	""" Blinkin Left or Right Directions """
-    	if signaldb.create((None, None, "blinking.left")) is "D0 07 BF 5B 40 00 04 00 77"
-        	self.send(sdb.create((None, None, "blinking.left")))
-        	time.sleep(15)
-        	self.send(sdb.create((None, None, "blinking.control")))
+    	pass
