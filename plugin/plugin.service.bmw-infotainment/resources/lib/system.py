@@ -33,8 +33,7 @@ class System(object):
 	request_shutdown = False
 
 
-def init_events(bind_event, self, handle_send):
-	self.handle_send = handle_send
+def init_events(bind_event):
 
 	""" system shutdown, GPIO-pins, etc..  """
 
@@ -146,7 +145,7 @@ def unlock_car():
 
 def send(self, signal, *args, **kwargs):
 
-	event_handler.add(self.handle_send, signal, *args, **kwargs)
+	event_handler.add(self.send, signal, *args, **kwargs)
 
 def blinking():
     
