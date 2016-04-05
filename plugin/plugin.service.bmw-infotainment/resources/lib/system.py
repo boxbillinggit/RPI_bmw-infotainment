@@ -32,16 +32,18 @@ class System(object):
 
 	request_shutdown = False
 
+def __init__(self, send):
+	self.send = send
 
 def init_events(bind_event):
 
 	""" system shutdown, GPIO-pins, etc..  """
 
 	# TODO: ignition in is not detected (no bus-signal exists accordingly to signal-db)
+	bind_event(signaldb.create((None, None, "remote-key.lock")), lock_car)
+	bind_event(signaldb.create((None, None, "remote-key.unlock")), unlock_car)
 	bind_event(signaldb.create(("IBUS_DEV_IKE", "IBUS_DEV_GLO", "ign-key.in")), abort_shutdown)
 	bind_event(signaldb.create(("IBUS_DEV_IKE", "IBUS_DEV_GLO", "ign-key.out")), schedule_shutdown)
-	bind_event(signaldb.create(("IBUS_DEV_GM", "IBUS_DEV_GLO", "remote-key.lock")), lock_car)
-	bind_event(signaldb.create(("IBUS_DEV_GM", "IBUS_DEV_GLO", "remote-key.unlock")), unlock_car)
 
 	# TODO: also initialize optional input-pin for shutdown request from power-supply
 	screen_init()
@@ -124,12 +126,13 @@ def abort_shutdown():
 
 	System.request_shutdown = False
 
+
 def lock_car():
 	
 	""" Lock Car Close Mirror """
 	
-	self.send(sdb.create(("IBUS_DEV_DIA", "IBUS_DEV_GM", "mirror_driver.close")))
-	self.send(sdb.create(("IBUS_DEV_DIA", "IBUS_DEV_GM", "mirror_passenger.close")))
+	self.send(sdb.create((None, None, "mirror_driver.close")))
+	self.send(sdb.create((None, None, "mirror_passenger.close")))
 	
 	log.info("Close Mirror :)")
 
@@ -138,14 +141,11 @@ def unlock_car():
 	
 	""" Unlock car open Mirror """
 	
-	self.send(sdb.create(("IBUS_DEV_DIA", "IBUS_DEV_GM", "mirror_driver.open")))
-	self.send(sdb.create(("IBUS_DEV_DIA", "IBUS_DEV_GM", "mirror_passenger.open")))
+	self.send(sdb.create((None, None, "mirror_driver.open")))
+	self.send(sdb.create((None, None, "mirror_passenger.open")))
 	
 	log.info("Open Mirror :)")
 
-def send(self, signal, *args, **kwargs):
-
-	event_handler.add(self.send, signal, *args, **kwargs)
 
 def blinking():
     
