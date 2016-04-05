@@ -1,0 +1,6 @@
+{
+  "name": "bmw-infotainment RPi 2",
+  "tagline": "",
+  "body": "## Overview\r\n\r\n- `gateway/` Source for LIN-bus TCP/IP gateway\r\n- `plugin/` XBMC/KODI-plugins\r\n - `plugin.service.bmw-infotainment/` Main script for controlling XBMC/KODI through LIN-bus\r\n - `script.module.bluetooth/` Handles the bluetooth-interface through DBus\r\n- `.gitlab-ci.yml` Configuration file for GitLab CI (continuous integration)\r\n- `__init__.py ` Init script fixing paths when using Python-interpreter in PyCharm (run `__init__`)\r\n\r\n## References\r\n For detailed description -and further instructions, please see [Wiki](http://git.one-infiniteloop.com/larsa/bmw-infotainment/wikis/home).\r\n\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
