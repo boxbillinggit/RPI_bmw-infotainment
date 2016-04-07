@@ -201,8 +201,8 @@
 
 			<REMOTE_KEY>
 				<byte val="0x02" signal:id="remote-key.release"/>
-				<byte val="0x00 0x04 0xBF 0x72 0x10 0xD9" signal:id="remote-key.lock"/>
-				<byte val="0x00 0x04 0xBF 0x72 0x22 0xEB" signal:id="remote-key.unlock"/>
+				<byte val="0x12" signal:id="remote-key.lock"/>
+				<byte val="0x22" signal:id="remote-key.unlock"/>
 				<byte val="0x42" signal:id="remote-key.boot-lid"/>
 			</REMOTE_KEY>
 
